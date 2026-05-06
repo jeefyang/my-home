@@ -4,13 +4,16 @@ import cors from 'cors';
 import { createServer } from 'vite';
 import http from 'http';
 import path from 'path';
-import { fileURLToPath } from 'node:url';
 import helmet from 'helmet';
 import router from './routes/api';
+import { dataInit } from './stores/data';
 
-
+// 数据初始化
+dataInit();
 
 const app: Express = express();
+
+
 
 app.use(cors());
 app.use(express.json());
@@ -23,7 +26,6 @@ app.get('/health', (_req, res) => {
 
 
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const isDev = process.env.NODE_ENV === 'development';
 
 if (isDev) {
@@ -41,8 +43,8 @@ if (isDev) {
                         server: httpServer
                     }
                 },
-                configFile: path.resolve(__dirname, '../vite.config.ts'),
-                root: path.resolve(__dirname, '..')
+                configFile: path.resolve('./vite.config.ts'),
+                root: path.resolve('./')
             });
 
             // ✅ 3. 挂载中间件

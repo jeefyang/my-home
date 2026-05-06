@@ -1,0 +1,161 @@
+import { nanoid } from "nanoid";
+import { UsersFolder, DATA_DIR } from "./data";
+import fs from "fs";
+import path from "path";
+
+export const UserFileName = "user.jsonc";
+
+/** 创建用户 */
+export function createUser(type: UserTypeType): [UserType | undefined, any] {
+    const pathID = nanoid(8);
+    const user: UserType = {
+        type,
+        pageUUIDList: [],
+        uuid: nanoid(8),
+        name: type == "admin" ? "管理员" : "用户",
+        pathID,
+        createTime: Date.now(),
+        modifyTime: Date.now(),
+    };
+    const p = path.join(DATA_DIR, UsersFolder, pathID);
+    try {
+        fs.mkdirSync(p);
+        fs.writeFileSync(path.join(p, UserFileName), JSON.stringify(user));
+        return [user, undefined];
+    }
+    catch (e) {
+        return [undefined, e];
+    }
+}
+
+/** 获取用户 */
+export function getUser(pathID: string): [UserType | undefined, any] {
+    const p = path.join(DATA_DIR, UsersFolder, pathID);
+    if (!fs.existsSync(p)) {
+        // 如果是首次加载，则创建一个用户
+        const list = fs.readdirSync(path.join(DATA_DIR, UsersFolder));
+        if (list.length == 0) {
+            return createUser("user");
+        }
+        return [undefined, "用户不存在"];
+    }
+    return [JSON.parse(fs.readFileSync(path.join(p, UserFileName), "utf-8")), undefined];
+}
+
+/** 修改用户路径id */
+export function editUserPathID(fromPathID: string, toPathID: string): [UserType | undefined, any] {
+    const p = path.join(DATA_DIR, UsersFolder, fromPathID);
+    if (!fs.existsSync(p)) {
+        return [undefined, "用户不存在"];
+    }
+    const toP = path.join(DATA_DIR, UsersFolder, toPathID);
+    if (fs.existsSync(toP)) {
+        return [undefined, "用户已存在"];
+    }
+    if (!/^[a-zA-Z0-9_-]{8,20}$/.test(toPathID)) {
+        return [undefined, "路径id只能包含数字、字母、下划线、中划线、且8-20位"];
+    }
+    try {
+        fs.renameSync(p, toP);
+        const data = getUser(toPathID);
+        if (data[1]) {
+            return [undefined, data[1]];
+        }
+        data[0]!.pathID = toPathID;
+        data[0]!.modifyTime = Date.now();
+        fs.writeFileSync(path.join(toP, UserFileName), JSON.stringify(data[0]!),);
+        return [data[0]!, undefined];
+    }
+    catch (e) {
+        return [undefined, e];
+    }
+
+}
+
+/** 注销用户 */
+export function overCancelUser(pathID: string): [string | undefined, any] {
+    const p = path.join(DATA_DIR, UsersFolder, pathID);
+    if (!fs.existsSync(p)) {
+        return [undefined, "用户不存在"];
+    }
+    try {
+        fs.rmSync(p, { recursive: true });
+        return [pathID, undefined];
+    }
+    catch (e) {
+        return [undefined, e];
+    }
+}
+
+/** 删除用户 */
+export function deleteUser(uuid: string): [string | undefined, any] {
+    try {
+        const p = path.join(DATA_DIR, UsersFolder);
+        const list = fs.readdirSync(p);
+        for (const pathID of list) {
+            const f = path.join(p, pathID, UserFileName);
+            if (!fs.existsSync(f)) {
+                continue;
+            }
+            const user = JSON.parse(fs.readFileSync(f, "utf-8")) as UserType;
+            if (user.uuid != uuid) {
+                continue;
+            }
+            return overCancelUser(user.pathID);
+        }
+        return [undefined, "用户不存在"];
+    }
+    catch (e) {
+        return [undefined, e];
+    }
+};
+
+/** 更新用户 */
+export function updateUser(pathID: string, obj: Partial<UserType>): [UserType | undefined, any] {
+    if (!pathID) {
+        return [undefined, "用户不存在"];
+    }
+    const data = getUser(pathID);
+    if (data[1]) {
+        return [undefined, data[1]];
+    }
+    try {
+        data[0] = { ...data[0]!, ...obj, uuid: data[0]!.uuid, pathID: data[0]!.pathID, type: data[0]!.type };
+        data[0]!.modifyTime = Date.now();
+        fs.writeFileSync(path.join(DATA_DIR, UsersFolder, pathID, UserFileName), JSON.stringify(data[0]!),);
+        return [data[0]!, undefined];
+    }
+    catch (e) {
+        return [undefined, e];
+    }
+}
+
+/** 获取用户列表 */
+export function getUserList(): [Partial<UserType>[] | undefined, any] {
+    try {
+        const list = fs.readdirSync(path.join(DATA_DIR, UsersFolder));
+        let data: Partial<UserType>[] = [];
+        for (const pathID of list) {
+            const f = path.join(DATA_DIR, UsersFolder, pathID, UserFileName);
+            if (!fs.existsSync(f)) {
+                continue;
+            }
+            const user = JSON.parse(fs.readFileSync(f, "utf-8")) as Partial<UserType>;
+            delete user.pathID;
+            data.push(user);
+        }
+        data = data.sort((a, b) => {
+            if (a.type == 'admin' && b.type != 'admin') {
+                return -1;
+            }
+            if (a.type != 'admin' && b.type == 'admin') {
+                return 1;
+            }
+            return 0;
+        });
+        return [data, undefined];
+    }
+    catch (e) {
+        return [undefined, e];
+    }
+}
