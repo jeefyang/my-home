@@ -7,11 +7,11 @@ export const UserFileName = "user.jsonc";
 
 /** 创建用户 */
 export function createUser(type: UserTypeType): [UserType | undefined, any] {
-    const pathID = nanoid(8);
+    const pathID = nanoid(10);
     const user: UserType = {
         type,
         pageUUIDList: [],
-        uuid: nanoid(8),
+        uuid: nanoid(10),
         name: type == "admin" ? "管理员" : "用户",
         pathID,
         createTime: Date.now(),
@@ -20,7 +20,7 @@ export function createUser(type: UserTypeType): [UserType | undefined, any] {
     const p = path.join(DATA_DIR, UsersFolder, pathID);
     try {
         fs.mkdirSync(p);
-        fs.writeFileSync(path.join(p, UserFileName), JSON.stringify(user));
+        fs.writeFileSync(path.join(p, UserFileName), JSON.stringify(user, null, '\t'));
         return [user, undefined];
     }
     catch (e) {
@@ -63,7 +63,7 @@ export function editUserPathID(fromPathID: string, toPathID: string): [UserType 
         }
         data[0]!.pathID = toPathID;
         data[0]!.modifyTime = Date.now();
-        fs.writeFileSync(path.join(toP, UserFileName), JSON.stringify(data[0]!),);
+        fs.writeFileSync(path.join(toP, UserFileName), JSON.stringify(data[0]!, null, '\t'));
         return [data[0]!, undefined];
     }
     catch (e) {
@@ -122,7 +122,7 @@ export function updateUser(pathID: string, obj: Partial<UserType>): [UserType | 
     try {
         data[0] = { ...data[0]!, ...obj, uuid: data[0]!.uuid, pathID: data[0]!.pathID, type: data[0]!.type };
         data[0]!.modifyTime = Date.now();
-        fs.writeFileSync(path.join(DATA_DIR, UsersFolder, pathID, UserFileName), JSON.stringify(data[0]!),);
+        fs.writeFileSync(path.join(DATA_DIR, UsersFolder, pathID, UserFileName), JSON.stringify(data[0]!, null, '\t'));
         return [data[0]!, undefined];
     }
     catch (e) {

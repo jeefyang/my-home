@@ -46,4 +46,4 @@ test
 ecosystem.config.cjs
 components.d.ts
 
-initPage.js
+initPages.js

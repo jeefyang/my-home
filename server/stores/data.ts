@@ -3,9 +3,12 @@ import path from 'path';
 
 export const DATA_DIR = process.env.DATA_DIR;
 
+console.log(`数据目录:${DATA_DIR}`);
+
 export const UsersFolder = "users";
 export const PagesFolder = "pages";
-export const toolsFolder = "tools";
+export const itemsFolder = "items";
+export const filesFolder = "files";
 
 export function dataInit() {
     if (!fs.existsSync(DATA_DIR)) {
@@ -18,11 +21,4 @@ export function dataInit() {
         console.log(`创建用户目录:${path.join(DATA_DIR, UsersFolder)}`);
     }
 }
-
-
-
-export function getGroupPages(userUUid?: string) {
-
-}
-
 

@@ -15,7 +15,8 @@
         "env.d.ts", // ← 关键：包含根目录的 env.d.ts，它会自动引入 vite/client 类型，解决 import.meta.env 报错
         "types/**/*.d.ts",
         "./*.ts",
-        "./*.js"
+        "./*.js",
+        "plugins/**/*.ts"
     ],
     "exclude": [
         "node_modules",

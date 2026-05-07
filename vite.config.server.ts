@@ -1,22 +1,33 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import { VitePluginNode } from 'vite-plugin-node';
 import { fileURLToPath, URL } from 'node:url';
 import { memoryMonitorPlugin } from "./plugins/memoryMonitorPlugin";
 import fs from "fs";
 
 
+const initFileList: { path: string, examplePath: string; }[] = [
+    { path: "ecosystem.config.cjs", examplePath: "ecosystem.config.example.cjs" },
+    { path: "initPages.js", examplePath: "initPages.example.js" }
+];
 
-const pm2ExamplePath = 'ecosystem.config.example.cjs';
-const pm2Path = 'ecosystem.config.cjs';
-if (!fs.existsSync(pm2Path)) {
-    fs.writeFileSync(pm2Path, fs.readFileSync(pm2ExamplePath));
+
+
+for (const item of initFileList) {
+    if (!fs.existsSync(item.path)) {
+        fs.writeFileSync(item.path, fs.readFileSync(item.examplePath));
+    }
 }
 
+
 export default defineConfig(({ mode }) => {
+    const env = loadEnv(mode, process.cwd(), "");
     const isDev = mode === 'development';
     return {
         build: {
             outDir: 'dist/server',
+        },
+        define: {
+            'process.env': env // 将环境变量注入到全局
         },
         plugins: [
             ...VitePluginNode({
