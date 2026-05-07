@@ -10,7 +10,7 @@ type UserType = {
     type: UserTypeType;
     createTime: number;
     modifyTime: number;
-    option?: {};
+    option?: any;
 };
 
 
@@ -24,7 +24,7 @@ type PageType = {
     uuid: string;
     itemList: ItemType[];
     style: import("vue").StyleValue;
-    option?: {};
+    option?: any;
     createTime: number;
     modifyTime: number;
 };
