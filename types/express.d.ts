@@ -1,0 +1,13 @@
+// types/express.d.ts
+import 'express';
+
+declare module 'express' {
+
+    // 扩展 headers 类型
+    interface Request {
+        headers: {
+            pathID: string;
+            password?: string;
+        };
+    }
+}

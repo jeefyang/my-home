@@ -57,7 +57,6 @@ export class TransFetch<T extends ReturnType<typeof apiUrlsTrans>> {
             }
             let url = this.prevUrl + item.url;
             if (item.method == "GET" && data) {
-                //@ts-expect-error
                 url += "?" + new URLSearchParams(data).toString();
             }
             const headers = await this.getHeaderFn(key);

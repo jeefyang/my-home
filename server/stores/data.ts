@@ -10,6 +10,11 @@ export const PagesFolder = "pages";
 export const itemsFolder = "items";
 export const filesFolder = "files";
 
+export const dataOptions = {
+    /** 是否为空用户 */
+    isEmptyUser: true
+};
+
 export function dataInit() {
     if (!fs.existsSync(DATA_DIR)) {
         fs.mkdirSync(DATA_DIR, { recursive: true });
@@ -21,4 +26,7 @@ export function dataInit() {
         console.log(`创建用户目录:${path.join(DATA_DIR, UsersFolder)}`);
     }
 }
+
+const list = fs.readdirSync(path.join(DATA_DIR, UsersFolder));
+dataOptions.isEmptyUser = list.length == 0;
 

@@ -9,7 +9,12 @@ export const ItemRouterList: { [key: string]: ItemRouterType; } = {
         title: "搜索",
         style: {},
         component: "SearchItem",
-        dataFileList: {}
+        dataFileList: {
+            "data": {
+                ext: "json",
+                defaultContent: '[]'
+            }
+        }
     }
 
 };

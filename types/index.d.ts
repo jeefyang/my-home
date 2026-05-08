@@ -10,9 +10,22 @@ type UserType = {
     type: UserTypeType;
     createTime: number;
     modifyTime: number;
+    /** 一般存放可以快速重置的数据(直接清空) */
     option?: any;
+    password?: string;
 };
 
+type ItemDisplayType = "btn" | "icon" | 'fullScreen' | "window" | "modal";
+
+type ItemGroupType = {
+    display: ItemDisplayType;
+    list: ItemType[];
+    style?: import("vue").StyleValue;
+    /** 一般存放可以快速重置的数据(直接清空) */
+    option?: any;
+    uuid: string;
+    title?: string;
+};
 
 type PageType = {
     /** 标题 */
@@ -22,19 +35,20 @@ type PageType = {
     /** 是否为第一个默认 */
     isDefault?: boolean;
     uuid: string;
-    itemList: ItemType[];
+    itemGroupList: ItemGroupType[];
     style: import("vue").StyleValue;
+     /** 一般存放可以快速重置的数据(直接清空) */
     option?: any;
     createTime: number;
     modifyTime: number;
 };
 
-type ItemDisplayType = "btn" | "icon" | 'fullScreen' | "window" | "modal";
+
 
 type ItemType<T extends any = any> = {
     type: string;
     uuid: string;
-    /** 配置数据 */
+     /** 一般存放可以快速重置的数据(直接清空) */
     option?: T;
     style?: import("vue").StyleValue;
     display: ItemDisplayType;

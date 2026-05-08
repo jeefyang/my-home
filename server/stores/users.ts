@@ -1,9 +1,15 @@
 import { nanoid } from "nanoid";
-import { UsersFolder, DATA_DIR } from "./data";
+import { UsersFolder, DATA_DIR, dataOptions } from "./data";
 import fs from "fs";
 import path from "path";
+import { verify } from "crypto";
+import { ResSendType } from "@common/apis/tools/apiUrlsTrans";
+import { type Request } from "express";
 
 export const UserFileName = "user.jsonc";
+
+const cacheUserMax = 1000;// 缓存用户数量
+export const cacheUserList: UserType[] = [];
 
 /** 创建用户 */
 export function createUser(type: UserTypeType): [UserType | undefined, any] {
@@ -30,16 +36,40 @@ export function createUser(type: UserTypeType): [UserType | undefined, any] {
 
 /** 获取用户 */
 export function getUser(pathID: string): [UserType | undefined, any] {
+
+    const index = cacheUserList.findIndex(v => v.pathID == pathID);
+    // 缓存中存在
+    if (index != -1) {
+        const user = cacheUserList.splice(index, 1)[0];
+        cacheUserList.push(user);
+        return [user, undefined];
+    }
+
+    //  如果是首次加载，则创建一个用户
+    if (!dataOptions.isEmptyUser) {
+        const [user, err] = createUser('admin');
+        if (err) {
+            return [undefined, err];
+        }
+        console.log(`首次管理员创建成功,uuid:${user!.uuid},pathID:${user!.pathID}`);
+        cacheUserList.push(user!);
+        if (cacheUserList.length > cacheUserMax) {
+            cacheUserList.shift();
+        }
+        dataOptions.isEmptyUser = false;
+        return [user, undefined];
+
+    }
     const p = path.join(DATA_DIR, UsersFolder, pathID);
     if (!fs.existsSync(p)) {
-        // 如果是首次加载，则创建一个用户
-        const list = fs.readdirSync(path.join(DATA_DIR, UsersFolder));
-        if (list.length == 0) {
-            return createUser("user");
-        }
         return [undefined, "用户不存在"];
     }
-    return [JSON.parse(fs.readFileSync(path.join(p, UserFileName), "utf-8")), undefined];
+    const user = JSON.parse(fs.readFileSync(path.join(p, UserFileName), "utf-8")) as UserType;
+    cacheUserList.push(user);
+    if (cacheUserList.length > cacheUserMax) {
+        cacheUserList.shift();
+    }
+    return [user, undefined];
 }
 
 /** 修改用户路径id */
@@ -79,6 +109,10 @@ export function overCancelUser(pathID: string): [string | undefined, any] {
         return [undefined, "用户不存在"];
     }
     try {
+        const index = cacheUserList.findIndex(v => v.pathID == pathID);
+        if (index != -1) {
+            cacheUserList.splice(index, 1);
+        }
         fs.rmSync(p, { recursive: true });
         return [pathID, undefined];
     }
@@ -92,6 +126,9 @@ export function deleteUser(uuid: string): [string | undefined, any] {
     try {
         const p = path.join(DATA_DIR, UsersFolder);
         const list = fs.readdirSync(p);
+        if (list.length <= 1) {
+            return [undefined, "至少需要一个管理员"];
+        }
         for (const pathID of list) {
             const f = path.join(p, pathID, UserFileName);
             if (!fs.existsSync(f)) {
@@ -141,6 +178,7 @@ export function getUserList(): [Partial<UserType>[] | undefined, any] {
                 continue;
             }
             const user = JSON.parse(fs.readFileSync(f, "utf-8")) as Partial<UserType>;
+            // 删除pathID,防止pathID泄露,尊重隐私(doge)
             delete user.pathID;
             data.push(user);
         }
@@ -158,4 +196,35 @@ export function getUserList(): [Partial<UserType>[] | undefined, any] {
     catch (e) {
         return [undefined, e];
     }
+}
+
+/** 验证用户 */
+export function verifyUser(pathID: string, password?: string): [UserType | undefined, any] {
+    // 空用户,双undefined判断
+    if (dataOptions.isEmptyUser) {
+        return [undefined, undefined];
+    }
+    if (!pathID) {
+        return [undefined, "用户不存在"];
+    }
+    const data = getUser(pathID);
+    if (data[1]) {
+        return [undefined, data[1]];
+    }
+    const user = data[0]!;
+    if (user.password && user.password != password) {
+        return [undefined, "密码错误"];
+    }
+    return [user, undefined];
+}
+
+export async function verifyUserFromReq(req: Request): Promise<ResSendType<any> | undefined> {
+    const data = verifyUser(req.headers.pathID, req.headers.password);
+    if (data[1]) {
+        return { code: 401, msg: data[1], err: 'Unauthorized' };
+    }
+    if (!data[0]) {
+        return { code: 200, msg: "用户列表暂时为空,请创建管理员" };
+    }
+    return undefined;
 }
