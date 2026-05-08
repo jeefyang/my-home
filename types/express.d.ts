@@ -6,7 +6,7 @@ declare module 'express' {
     // 扩展 headers 类型
     interface Request {
         headers: {
-            pathID: string;
+            pathid: string;
             password?: string;
         };
     }

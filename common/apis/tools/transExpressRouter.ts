@@ -15,7 +15,7 @@ export class TransExpressRouter<T extends ReturnType<typeof apiUrlsTrans>> {
                     const code = data.code || 500;
                     res.status(code).json({
                         code: code,
-                        msg: data.msg || "服务器错误",
+                        msg: data.msg || "操作错误",
                         err: data.err
                     });
                     return;

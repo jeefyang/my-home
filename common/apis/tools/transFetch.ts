@@ -57,7 +57,8 @@ export class TransFetch<T extends ReturnType<typeof apiUrlsTrans>> {
             }
             let url = this.prevUrl + item.url;
             if (item.method == "GET" && data) {
-                url += "?" + new URLSearchParams(data).toString();
+                // data as any 防止严格模式报错
+                url += "?" + new URLSearchParams(data as any).toString();
             }
             const headers = await this.getHeaderFn(key);
             const res = await (await fetch(url, { method: item.method, body: item.method == "POST" ? JSON.stringify(data) : undefined, headers: headers })).json();

@@ -11,8 +11,11 @@ export const UserFileName = "user.jsonc";
 const cacheUserMax = 1000;// 缓存用户数量
 export const cacheUserList: UserType[] = [];
 
+
 /** 创建用户 */
 export function createUser(type: UserTypeType): [UserType | undefined, any] {
+    // 提前触发,阻止重复创建
+    dataOptions.isEmptyUser = false;
     const pathID = nanoid(10);
     const user: UserType = {
         type,
@@ -30,12 +33,13 @@ export function createUser(type: UserTypeType): [UserType | undefined, any] {
         return [user, undefined];
     }
     catch (e) {
+        console.log(e);
         return [undefined, e];
     }
 }
 
 /** 获取用户 */
-export function getUser(pathID: string): [UserType | undefined, any] {
+export function getUser(pathID: string, autoInit?: boolean): [UserType | undefined, any] {
 
     const index = cacheUserList.findIndex(v => v.pathID == pathID);
     // 缓存中存在
@@ -46,7 +50,7 @@ export function getUser(pathID: string): [UserType | undefined, any] {
     }
 
     //  如果是首次加载，则创建一个用户
-    if (!dataOptions.isEmptyUser) {
+    if (!dataOptions.isEmptyUser && autoInit) {
         const [user, err] = createUser('admin');
         if (err) {
             return [undefined, err];
@@ -56,7 +60,7 @@ export function getUser(pathID: string): [UserType | undefined, any] {
         if (cacheUserList.length > cacheUserMax) {
             cacheUserList.shift();
         }
-        dataOptions.isEmptyUser = false;
+
         return [user, undefined];
 
     }
@@ -97,6 +101,7 @@ export function editUserPathID(fromPathID: string, toPathID: string): [UserType 
         return [data[0]!, undefined];
     }
     catch (e) {
+        console.log(e);
         return [undefined, e];
     }
 
@@ -117,6 +122,7 @@ export function overCancelUser(pathID: string): [string | undefined, any] {
         return [pathID, undefined];
     }
     catch (e) {
+        console.log(e);
         return [undefined, e];
     }
 }
@@ -143,6 +149,7 @@ export function deleteUser(uuid: string): [string | undefined, any] {
         return [undefined, "用户不存在"];
     }
     catch (e) {
+        console.log(e);
         return [undefined, e];
     }
 };
@@ -163,6 +170,7 @@ export function updateUser(pathID: string, obj: Partial<UserType>): [UserType | 
         return [data[0]!, undefined];
     }
     catch (e) {
+        console.log(e);
         return [undefined, e];
     }
 }
@@ -194,6 +202,7 @@ export function getUserList(): [Partial<UserType>[] | undefined, any] {
         return [data, undefined];
     }
     catch (e) {
+        console.log(e);
         return [undefined, e];
     }
 }
@@ -219,7 +228,7 @@ export function verifyUser(pathID: string, password?: string): [UserType | undef
 }
 
 export async function verifyUserFromReq(req: Request): Promise<ResSendType<any> | undefined> {
-    const data = verifyUser(req.headers.pathID, req.headers.password);
+    const data = verifyUser(req.headers.pathid, req.headers.password);
     if (data[1]) {
         return { code: 401, msg: data[1], err: 'Unauthorized' };
     }

@@ -6,6 +6,26 @@ import { createUser, deleteUser, getUser, getUserList, overCancelUser, updateUse
 export function useUserApi(router: Router) {
     const userRouter = new TransExpressRouter(UserApiUrl, router);
 
+    userRouter.setRouter("getUser", async (from, req, res) => {
+        const [user, err] = verifyUser(req.headers.pathid, req.headers.password);
+        if (err) {
+            return { err: err };
+        }
+        // 证明是程序首次运行
+        if (!user) {
+            const [newUser, err] = createUser("admin");
+            if (err) {
+                return {
+                    err: err,
+                };
+            }
+            return { data: newUser,msg:"程序首次运行,自动创建管理员成功" };
+        }
+        return { data: user };
+
+
+    });
+
     userRouter.setRouter("verifyUser", async (_from, req, res) => {
         const check = await verifyUserFromReq(req);
         if (check) {
@@ -33,7 +53,7 @@ export function useUserApi(router: Router) {
     });
 
     userRouter.setRouter("deleteUser", async (from, req, res) => {
-        const [adminUser, adminError] = verifyUser(req.headers.pathID, req.headers.password);
+        const [adminUser, adminError] = verifyUser(req.headers.pathid, req.headers.password);
         if (adminError || !adminUser || adminUser.type !== "admin") {
             return { code: 401, msg: "管理员验证失败" };
         }
@@ -53,7 +73,7 @@ export function useUserApi(router: Router) {
         if (check) {
             return check;
         }
-        const [_pathID, err] = overCancelUser(req.headers.pathID);
+        const [_pathID, err] = overCancelUser(req.headers.pathid);
         if (err) {
             return {
                 err: err,
@@ -66,7 +86,7 @@ export function useUserApi(router: Router) {
 
     userRouter.setRouter("userList", async (_from, req, res) => {
 
-        const [adminUser, adminError] = verifyUser(req.headers.pathID, req.headers.password);
+        const [adminUser, adminError] = verifyUser(req.headers.pathid, req.headers.password);
         if (adminError || !adminUser || adminUser.type !== "admin") {
             return { code: 401, msg: "管理员验证失败" };
         }
@@ -84,7 +104,7 @@ export function useUserApi(router: Router) {
         if (check) {
             return check;
         }
-        const [user, err] = updateUser(req.headers.pathID, from);
+        const [user, err] = updateUser(req.headers.pathid, from);
         if (err) {
             return {
                 err: err,

@@ -1,12 +1,59 @@
 import { PageApiUrl } from "@common/apis/page";
 import { TransExpressRouter } from "@common/apis/tools/transExpressRouter";
 import { Router } from "express";
-import { verifyUserFromReq } from "../stores/users";
-import { addPage, deletePage, getPage, updatePage } from "../stores/pages";
+import { updateUser, verifyUser, verifyUserFromReq } from "../stores/users";
+import { addPage, deletePage, getPage, initPages, updatePage } from "../stores/pages";
 
 
 export function usePageApi(router: Router) {
     const pageRouter = new TransExpressRouter(PageApiUrl, router);
+
+    pageRouter.setRouter("initPages", async (from, req, res) => {
+        const [user, err] = verifyUser(req.headers.pathid, req.headers.password);
+        if (err) {
+            return { err: err };
+        }
+        const [pageList, pageErr] = initPages();
+        if (pageErr) {
+            return {
+                err: pageErr,
+            };
+        }
+        user!.pageUUIDList.forEach(uuid => {
+            deletePage(uuid);
+        });
+        user!.pageUUIDList = pageList!.map(item => item.uuid);
+        const [_user2, err2] = updateUser(user!.pathID, user!);
+        if (err2) {
+            return {
+                err: err2,
+                msg: "操作失败",
+                code: 500
+            };
+        }
+        return { data: pageList };
+    });
+
+    pageRouter.setRouter("getPageList", async (from, req, res) => {
+        const check = await verifyUserFromReq(req);
+        if (check) {
+            return check;
+        }
+        const pages: PageType[] = [];
+        for (let i = 0; i < from.uuidList.length; i++) {
+            const uuid = from.uuidList[i];
+            const [page, err] = getPage(uuid);
+            if (err) {
+                return {
+                    err: err,
+                    msg: "操作失败",
+                    code: 500
+                };
+            }
+            pages.push(page!);
+        }
+        return { data: pages };
+    });
 
     pageRouter.setRouter("getPage", async (from, req, res) => {
         const check = await verifyUserFromReq(req);

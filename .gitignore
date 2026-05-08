@@ -47,3 +47,4 @@ ecosystem.config.cjs
 components.d.ts
 
 initPages.js
+auto-imports.d.ts

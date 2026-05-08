@@ -1,6 +1,11 @@
 import { apiUrlsTrans } from "./tools/apiUrlsTrans";
 
 export const UserApiUrl = apiUrlsTrans("user/", {
+
+    getUser: {
+        method: "GET",
+        to: {} as UserType
+    },
     userList: {
         method: "GET",
         to: {} as Partial<UserType>[]
