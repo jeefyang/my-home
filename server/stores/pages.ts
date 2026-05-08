@@ -190,7 +190,7 @@ export function deletePageItemGroup(pageUUID: string, itemGroupUUID: string): [s
         }
         const itemGroup = page.itemGroupList.splice(index, 1)[0];
         itemGroup.list.forEach(item => {
-            const p = getItemPath(item.type, item.uuid);
+            const p = getItemPath(item.type, item.uuid!);
             if (fs.existsSync(p)) {
                 fs.rmSync(p, { recursive: true });
             }
@@ -269,7 +269,7 @@ export function deletePageItem(pageUUID: string, itemUUID: string): [ItemGroupTy
         }
         const item = page.itemGroupList[index.groupIndex].list[index.itemIndex];
         page.itemGroupList[index.groupIndex].list.splice(index.itemIndex, 1);
-        const p = getItemPath(item.type, item.uuid);
+        const p = getItemPath(item.type, item.uuid!);
         if (fs.existsSync(p)) {
             fs.rmSync(p, { recursive: true });
         }

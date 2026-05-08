@@ -15,7 +15,7 @@ type UserType = {
     password?: string;
 };
 
-type ItemDisplayType = "btn" | "icon" | 'fullScreen' | "window" | "modal";
+type ItemDisplayType = "btn" | "icon" | 'fullScreen' | "box" | "widthBox" | "modal";
 
 type ItemGroupType = {
     display: ItemDisplayType;
@@ -23,7 +23,7 @@ type ItemGroupType = {
     style?: import("vue").StyleValue;
     /** 一般存放可以快速重置的数据(直接清空) */
     option?: any;
-    uuid: string;
+    uuid?: string;
     title?: string;
 };
 
@@ -37,7 +37,7 @@ type PageType = {
     uuid: string;
     itemGroupList: ItemGroupType[];
     style: import("vue").StyleValue;
-     /** 一般存放可以快速重置的数据(直接清空) */
+    /** 一般存放可以快速重置的数据(直接清空) */
     option?: any;
     createTime: number;
     modifyTime: number;
@@ -47,13 +47,12 @@ type PageType = {
 
 type ItemType<T extends any = any> = {
     type: string;
-    uuid: string;
-     /** 一般存放可以快速重置的数据(直接清空) */
+    uuid?: string;
+    /** 一般存放可以快速重置的数据(直接清空) */
     option?: T;
     style?: import("vue").StyleValue;
-    display: ItemDisplayType;
-    createTime: number;
-    modifyTime: number;
+    createTime?: number;
+    modifyTime?: number;
 };
 
 

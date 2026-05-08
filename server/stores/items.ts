@@ -50,7 +50,7 @@ export function initItem(item: Partial<ItemType>): [ItemType | undefined, any] {
             createTime: Date.now(),
             modifyTime: Date.now(),
         } as ItemType;
-        const d = getItemPath(item.type!, obj.uuid);
+        const d = getItemPath(item.type!, obj.uuid!);
         fs.mkdirSync(path.join(d), { recursive: true });
         fs.mkdirSync(path.join(d, itemDataFolder), { recursive: true });
         fs.mkdirSync(path.join(d, itemFilesFolder), { recursive: true });
