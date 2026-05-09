@@ -16,18 +16,23 @@
     </n-flex>
     <x-modal v-model:show="show">
         <div>搜索设置</div>
-          <n-button size="small" type="primary">
-                <n-icon v-html="addIcon" @click="toAddEngine(0)"></n-icon>
-            </n-button>
-          <x-divider></x-divider>
+        <n-button size="small" type="primary">
+            <n-icon v-html="addIcon" @click="toAddEngine(0)"></n-icon>
+        </n-button>
+        <x-divider></x-divider>
         <n-flex v-if="cacheEngineList.length > 0" vertical>
             <n-flex vertical v-for="item in cacheEngineList" :key="item.uuid">
                 <label>名称:</label>
-                <n-input v-model:value="item.name"></n-input>
+                <n-input v-model:value="item.name" placeholder="请输入引擎名称"></n-input>
                 <label>icon:</label>
                 <n-input v-model:value="item.icon" placeholder="接受图片url和base64"></n-input>
                 <label>搜索路径:</label>
                 <n-input v-model:value="item.url" placeholder="搜索关键字替换请用$$key$$来替换"></n-input>
+                <label>生成icon:</label>
+                <n-flex align="center">
+                    <n-input style="flex: 1" v-model:value="item._iconUrl" placeholder="输入网站网址"></n-input>
+                    <n-button size="small" @click="toCreatIcon(item)">生成</n-button>
+                </n-flex>
             </n-flex>
         </n-flex>
         <n-empty v-else description="快添加新的搜索引擎吧"> </n-empty>
@@ -41,6 +46,7 @@ import { itemFetch } from "@/utils/jFetch";
 import { useMessage } from "naive-ui";
 import { nanoid } from "nanoid";
 import XDivider from "@/components/XDivider.vue";
+import { getBase64ByUrl, getExternalFaviconUrl } from "@/utils/image";
 
 const dataStore = useDataStore();
 const msg = useMessage();
@@ -95,6 +101,18 @@ const toAddEngine = (index: number) => {
         url: "",
         _iconUrl: ""
     });
+};
+
+const toCreatIcon = async (item: EngineType) => {
+    if (!item._iconUrl) {
+        return msg.error("无效网址");
+    }
+    const url = getExternalFaviconUrl(item._iconUrl, "google");
+    if (!url) {
+        return msg.error("无效网址");
+    }
+    const base64 = await getBase64ByUrl(url);
+    item.icon = base64;
 };
 
 const getEngineList = async () => {
