@@ -10,16 +10,20 @@ export const ItemApiUrl = apiUrlsTrans("item/", {
     updateItemGroup: { method: "POST", from: {} as { pageUUID: string; obj: Partial<ItemGroupType>; }, to: {} as ItemGroupType },
     deleteItemGroup: { method: "POST", from: {} as { pageUUID: string; uuid: string; }, to: {} as ItemGroupType[] },
     getItemData: {
-        method: "GET",
-        from: {} as { itemType: string, itemUUID: string, dataName: string; }, to: {} as string
+        method: "POST",
+        from: {} as { itemType: string, itemUUID: string, filename: string; }, to: {} as string
     },
     updateItemData: {
         method: "POST",
-        from: {} as { itemType: string, itemUUID: string, dataName: string, data: string; }
+        from: {} as { itemType: string, itemUUID: string, filename: string, content: string; }
     },
     clearItemData: {
         method: "POST",
-        from: {} as { itemType: string, itemUUID: string, dataName: string; }
+        from: {} as { itemType: string, itemUUID: string }
+    },
+    deleteItemData:{
+        method: "POST",
+        from: {} as { itemType: string, itemUUID: string, filename: string; }
     }
 
 });

@@ -1,0 +1,69 @@
+<template>
+    <!-- @vue-ignore -->
+    <n-config-provider :theme-overrides="themeOverrides">
+        <div class="parent">
+            <template v-if="curPage">
+                <div v-for="item in curPage.itemGroupList" :key="item.uuid">
+                    <!-- 按钮分组  -->
+                    <n-card v-if="item.display == 'btn'" class="btnGroup card">
+                        <n-button type="primary" v-for="citem in item.list" :key="citem.uuid">{{ getItemTitle(citem) }}</n-button>
+                    </n-card>
+                    <!-- 宽度盒子分组(占满屏幕宽度) -->
+                    <n-card v-else-if="item.display == 'widthBox'" class="widthBoxGroup" style="width: 100%">
+                        <item-view v-for="citem in item.list" :key="citem.uuid" :item="citem" :display="item.display"></item-view>
+                    </n-card>
+                </div>
+            </template>
+        </div>
+    </n-config-provider>
+</template>
+<script setup lang="ts">
+import { useDataStore } from "@/stores/data";
+import { pageFetch } from "@/utils/jFetch";
+import { ItemRouterList } from "@common/utils/itemRouterouterList";
+import { useThemeVars, type GlobalThemeOverrides } from "naive-ui";
+import { computed, defineAsyncComponent, onMounted, ref, watch } from "vue";
+import ItemView from "@/components/ItemView.vue";
+
+const dataStore = useDataStore();
+const themeVars = useThemeVars();
+const themeOverrides = ref(<GlobalThemeOverrides>null);
+
+const curPage = ref(<PageType>null);
+
+const getItemTitle = (item: ItemType): string => {
+    if (item?.option?.title) {
+        return item.option.title;
+    }
+    const data = ItemRouterList[item.type]!;
+    return data?.title || "unknown";
+};
+
+const initPage = async () => {
+    const index = dataStore.pageList.findIndex((item) => item.uuid == dataStore.switchPageUUID);
+    curPage.value = dataStore.pageList[index];
+    const themeRes = await pageFetch.request("getPageData", { pageUUID: curPage.value.uuid, filename: "theme.json" });
+    if (themeRes.code == 200) {
+        themeOverrides.value = themeRes.data ? JSON.parse(themeRes.data) : {};
+    }
+};
+
+onMounted(() => {
+    watch(
+        () => dataStore.switchPageUUID,
+        (v) => {
+            initPage();
+        },
+        { immediate: true }
+    );
+});
+</script>
+
+<style lang="css" scoped>
+.parent {
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    scrollbar-width: none;
+}
+</style>

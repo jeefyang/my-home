@@ -1,11 +1,10 @@
 import { nanoid } from "nanoid";
-import { DATA_DIR, itemsFolder } from "./data";
+import { DATA_DIR, dataFolder, filesFolder, itemsFolder } from "./data";
 import fs, { mkdir } from "fs";
 import path from "path";
 import { ItemRouterList } from "@common/utils/itemRouterouterList";
 
-const itemDataFolder = 'data';
-const itemFilesFolder = 'files';
+
 
 export function initItems(groupList: Partial<ItemGroupType>[]) {
     return groupList.map(group => {
@@ -52,13 +51,8 @@ export function initItem(item: Partial<ItemType>): [ItemType | undefined, any] {
         } as ItemType;
         const d = getItemPath(item.type!, obj.uuid!);
         fs.mkdirSync(path.join(d), { recursive: true });
-        fs.mkdirSync(path.join(d, itemDataFolder), { recursive: true });
-        fs.mkdirSync(path.join(d, itemFilesFolder), { recursive: true });
-        Object.keys(router.dataFileList || []).forEach(k => {
-            const o = router.dataFileList![k];
-            const f = `${k}.${o.ext}`;
-            fs.writeFileSync(path.join(d, f), o.defaultContent || '');
-        });
+        fs.mkdirSync(path.join(d, dataFolder), { recursive: true });
+        fs.mkdirSync(path.join(d, filesFolder), { recursive: true });
         return [obj as ItemType, undefined];
     }
     catch (e) {
@@ -68,7 +62,7 @@ export function initItem(item: Partial<ItemType>): [ItemType | undefined, any] {
 }
 
 
-export function getItemData(itemUUID: string, itemType: string, dataName: string): [string | undefined, any] {
+export function getItemData(itemUUID: string, itemType: string, filename: string): [string | undefined, any] {
     if (!itemType) {
         return [undefined, "类型不存在"];
     }
@@ -76,20 +70,15 @@ export function getItemData(itemUUID: string, itemType: string, dataName: string
     if (!router) {
         return [undefined, "类型不存在"];
     }
-    const fileData = router.dataFileList[dataName];
-    if (!fileData) {
-        return [undefined, "数据不存在"];
-    }
     try {
         const d = getItemPath(itemType!, itemUUID);
         if (!fs.existsSync(d)) {
             return [undefined, "项目不存在"];
         }
-        const f = `${dataName}.${fileData.ext}`;
-        if (!fs.existsSync(path.join(d, itemDataFolder, f))) {
-            return [fileData.defaultContent, undefined];
+        if (!fs.existsSync(path.join(d, dataFolder, filename))) {
+            return [undefined, undefined];
         }
-        return [fs.readFileSync(path.join(d, itemDataFolder, f), 'utf-8'), undefined];
+        return [fs.readFileSync(path.join(d, dataFolder, filename), 'utf-8'), undefined];
     }
     catch (e) {
         console.log(e);
@@ -97,7 +86,7 @@ export function getItemData(itemUUID: string, itemType: string, dataName: string
     }
 }
 
-export function updateItemData(itemUUID: string, itemType: string, dataName: string, data: string): [boolean | undefined, any] {
+export function updateItemData(itemUUID: string, itemType: string, filename: string, content: string): [boolean | undefined, any] {
     if (!itemType) {
         return [undefined, "类型不存在"];
     }
@@ -105,17 +94,12 @@ export function updateItemData(itemUUID: string, itemType: string, dataName: str
     if (!router) {
         return [undefined, "类型不存在"];
     }
-    const fileData = router.dataFileList[dataName];
-    if (!fileData) {
-        return [undefined, "数据不存在"];
-    }
     try {
         const d = getItemPath(itemType!, itemUUID);
         if (!fs.existsSync(d)) {
             return [undefined, "项目不存在"];
         }
-        const f = `${dataName}.${fileData.ext}`;
-        fs.writeFileSync(path.join(d, itemDataFolder, f), data);
+        fs.writeFileSync(path.join(d, dataFolder, filename), content);
         return [true, undefined];
     }
     catch (e) {
@@ -124,7 +108,7 @@ export function updateItemData(itemUUID: string, itemType: string, dataName: str
     }
 }
 
-export function clearItemData(itemUUID: string, itemType: string, dataName: string): [boolean | undefined, any] {
+export function deleteItemData(itemUUID: string, itemType: string, filename: string): [boolean | undefined, any] {
     if (!itemType) {
         return [undefined, "类型不存在"];
     }
@@ -132,23 +116,43 @@ export function clearItemData(itemUUID: string, itemType: string, dataName: stri
     if (!router) {
         return [undefined, "类型不存在"];
     }
-    const fileData = router.dataFileList[dataName];
-    if (!fileData) {
-        return [undefined, "数据不存在"];
-    }
     try {
         const d = getItemPath(itemType!, itemUUID);
         if (!fs.existsSync(d)) {
             return [undefined, "项目不存在"];
         }
-        const f = `${dataName}.${fileData.ext}`;
-        if (fs.existsSync(path.join(d, itemDataFolder, f))) {
-            fs.rmSync(path.join(d, itemDataFolder, f));
+        if (fs.existsSync(path.join(d, dataFolder, filename))) {
+            fs.rmSync(path.join(d, dataFolder, filename));
         }
         return [true, undefined];
     }
     catch (e) {
         console.log(e);
         return [undefined, e];
+    }
+
+}
+
+export function clearItemData(itemUUID: string, itemType: string,): [boolean | undefined, any] {
+    if (!itemType) {
+        return [undefined, "类型不存在"];
+    }
+    const router = ItemRouterList[itemType!];
+    if (!router) {
+        return [undefined, "类型不存在"];
+    }
+    try {
+        const d = getItemPath(itemType!, itemUUID);
+        if (!fs.existsSync(d)) {
+            return [undefined, "项目不存在"];
+        }
+        fs.rmSync(path.join(d, dataFolder), { recursive: true });
+        fs.mkdirSync(path.join(d, dataFolder), { recursive: true });
+        return [true, undefined];
+    }
+    catch (e) {
+        console.log(e);
+        return [undefined, e];
+
     }
 }

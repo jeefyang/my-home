@@ -1,5 +1,6 @@
 <template>
-    <n-config-provider :theme="darkTheme ? darkThemePreset : undefined" style="height: 100%;">
+    <!-- @vue-ignore -->
+    <n-config-provider :theme="darkTheme ? darkThemePreset : undefined" style="height: 100%" :theme-overrides="dataStore.themeOverrides || {}">
         <n-global-style />
         <n-dialog-provider>
             <n-message-provider>
@@ -10,18 +11,16 @@
     </n-config-provider>
 </template>
 <script setup lang="ts">
-import { darkTheme, darkTheme as darkThemePreset, useMessage } from "naive-ui";
+import { darkTheme, darkTheme as darkThemePreset } from "naive-ui";
 import { onMounted, ref } from "vue";
-import Test from "./components/test.vue";
 import { itemFetch, pageFetch, userFetch } from "./utils/jFetch";
 import { useDataStore } from "./stores/data";
 import loading from "./layout/loading.vue";
 import home from "./layout/home.vue";
-
+const dataStore = useDataStore();
 const isLoading = ref(true);
 
 onMounted(async () => {
-    const dataStore = useDataStore();
     [userFetch, pageFetch, itemFetch].forEach((item) => {
         item.getHeaderFn = async () => {
             return {
@@ -31,11 +30,20 @@ onMounted(async () => {
             };
         };
     });
-    const res = await dataStore.initUser();
-    if (res.code != 200) {
-        console.log(res);
+    const userRes = await dataStore.initUser();
+    if (userRes.code != 200) {
+        console.log(userRes);
         return;
     }
+    const pageRes = await dataStore.initPages();
+    if (pageRes.code != 200) {
+        console.log(pageRes);
+        return;
+    }
+    // setTimeout(() => {
+    // isLoading.value = false;
+
+    // }, 10000);
     isLoading.value = false;
     window.addEventListener("resize", () => {
         dataStore.resize();

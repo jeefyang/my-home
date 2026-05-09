@@ -1,7 +1,7 @@
 import { TransExpressRouter } from "@common/apis/tools/transExpressRouter";
 import { UserApiUrl } from "@common/apis/user";
 import { Router } from "express";
-import { createUser, deleteUser, getUser, getUserList, overCancelUser, updateUser, verifyUser, verifyUserFromReq } from "../stores/users";
+import { clearUserData, createUser, deleteUser, deleteUserData, editUserPathID, getUser, getUserData, getUserList, overCancelUser, updateUser, updateUserData, verifyUser, verifyUserFromReq } from "../stores/users";
 
 export function useUserApi(router: Router) {
     const userRouter = new TransExpressRouter(UserApiUrl, router);
@@ -19,7 +19,7 @@ export function useUserApi(router: Router) {
                     err: err,
                 };
             }
-            return { data: newUser,msg:"程序首次运行,自动创建管理员成功" };
+            return { data: newUser, msg: "程序首次运行,自动创建管理员成功" };
         }
         return { data: user };
 
@@ -113,6 +113,86 @@ export function useUserApi(router: Router) {
             };
         }
         return { data: user };
+    });
+
+    userRouter.setRouter("editUserPathID", async (from, req, res) => {
+        const check = await verifyUserFromReq(req);
+        if (check) {
+            return check;
+        }
+        const [user, err] = editUserPathID(req.headers.pathid, from.newPathID);
+        if (err) {
+            return {
+                err: err,
+                msg: "操作失败",
+                code: 500
+            };
+        }
+        return { data: user };
+    });
+
+    userRouter.setRouter('getUserData', async (from, req, res) => {
+        const check = await verifyUserFromReq(req);
+        if (check) {
+            return check;
+        }
+        const [data, err] = getUserData(req.headers.pathid, from.filename);
+        if (err) {
+            return {
+                err: err,
+                msg: "操作失败",
+                code: 500
+            };
+        }
+        return { data: data };
+    });
+
+    userRouter.setRouter("updateUserData", async (from, req, res) => {
+        const check = await verifyUserFromReq(req);
+        if (check) {
+            return check;
+        }
+        const [b, err] = updateUserData(req.headers.pathid, from.filename, from.content);
+        if (err) {
+            return {
+                err: err,
+                msg: "操作失败",
+                code: 500
+            };
+        }
+        return {};
+    });
+
+    userRouter.setRouter("deleteUserData", async (from, req, res) => {
+        const check = await verifyUserFromReq(req);
+        if (check) {
+            return check;
+        }
+        const [b, err] = deleteUserData(req.headers.pathid, from.filename);
+        if (err) {
+            return {
+                err: err,
+                msg: "操作失败",
+                code: 500
+            };
+        }
+        return {};
+    });
+
+    userRouter.setRouter("clearUserData", async (from, req, res) => {
+        const check = await verifyUserFromReq(req);
+        if (check) {
+            return check;
+        }
+        const [b, err] = clearUserData(req.headers.pathid);
+        if (err) {
+            return {
+                err: err,
+                msg: "操作失败",
+                code: 500
+            };
+        }
+        return {};
     });
 
 

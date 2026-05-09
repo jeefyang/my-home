@@ -9,12 +9,6 @@ export const ItemRouterList: { [key: string]: ItemRouterType; } = {
         title: "www",
         style: {},
         component: "WWWItem",
-        dataFileList: {
-            "data": {
-                ext: "json",
-                defaultContent: '[]'
-            }
-        }
     }
 
 };

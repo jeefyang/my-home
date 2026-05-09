@@ -2,6 +2,12 @@
 
 type UserTypeType = "admin" | "user";
 
+type MyStyleType = import("vue").CSSProperties;
+
+type UserOptionType = {
+
+};
+
 type UserType = {
     uuid: string;
     name: string;
@@ -11,20 +17,28 @@ type UserType = {
     createTime: number;
     modifyTime: number;
     /** 一般存放可以快速重置的数据(直接清空) */
-    option?: any;
+    option?: Partial<UserOptionType>;
+    style?: MyStyleType;
     password?: string;
 };
 
 type ItemDisplayType = "btn" | "icon" | 'fullScreen' | "box" | "widthBox" | "modal";
 
+type ItemGroupOptionType = {
+};
+
+
 type ItemGroupType = {
     display: ItemDisplayType;
     list: ItemType[];
-    style?: import("vue").StyleValue;
+    style?: MyStyleType;
     /** 一般存放可以快速重置的数据(直接清空) */
-    option?: any;
+    option?: Partial<ItemGroupOptionType>;
     uuid?: string;
     title?: string;
+};
+
+type PageOptionType = {
 };
 
 type PageType = {
@@ -36,23 +50,28 @@ type PageType = {
     isDefault?: boolean;
     uuid: string;
     itemGroupList: ItemGroupType[];
-    style: import("vue").StyleValue;
+    style: MyStyleType;
     /** 一般存放可以快速重置的数据(直接清空) */
-    option?: any;
+    option?: Partial<PageOptionType>;
     createTime: number;
     modifyTime: number;
 };
 
 
 
-type ItemType<T extends any = any> = {
+type ItemType = {
     type: string;
     uuid?: string;
     /** 一般存放可以快速重置的数据(直接清空) */
-    option?: T;
-    style?: import("vue").StyleValue;
+    option?: Partial<ItemOptionType>;
+    style?: MyStyleType;
     createTime?: number;
     modifyTime?: number;
+};
+
+type ItemOptionType = {
+    /** 标题,会覆盖原始标题 */
+    title: string;
 };
 
 
@@ -65,10 +84,6 @@ type ItemRouterType<T extends string = string> = {
     icon?: string;
     /** 组件名 */
     component: string;
-    /** 数据文件列表 */
-    dataFileList: {
-        [x in string]: { ext: string, defaultContent?: string; }
-    };
     /** 初始样式 */
-    style: import("vue").StyleValue;
+    style: MyStyleType;
 };

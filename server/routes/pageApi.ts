@@ -2,7 +2,7 @@ import { PageApiUrl } from "@common/apis/page";
 import { TransExpressRouter } from "@common/apis/tools/transExpressRouter";
 import { Router } from "express";
 import { updateUser, verifyUser, verifyUserFromReq } from "../stores/users";
-import { addPage, deletePage, getPage, initPages, updatePage } from "../stores/pages";
+import { addPage, clearPageData, deletePage, deletePageData, getPage, getPageData, initPages, updatePage, updatePageData } from "../stores/pages";
 
 
 export function usePageApi(router: Router) {
@@ -127,5 +127,69 @@ export function usePageApi(router: Router) {
         //     };
         // }
         // return { data: uuid };
+    });
+
+    pageRouter.setRouter("getPageData", async (from, req, res) => {
+        const check = await verifyUserFromReq(req);
+        if (check) {
+            return check;
+        }
+        const [data, err] = getPageData(from.pageUUID, from.filename);
+        if (err) {
+            return {
+                err: err,
+                msg: "操作失败",
+                code: 500
+            };
+        }
+        return { data: data };
+    });
+
+    pageRouter.setRouter("updatePageData", async (from, req, res) => {
+        const check = await verifyUserFromReq(req);
+        if (check) {
+            return check;
+        }
+        const [data, err] = updatePageData(from.pageUUID, from.filename, from.content);
+        if (err) {
+            return {
+                err: err,
+                msg: "操作失败",
+                code: 500
+            };
+        }
+        return {};
+    });
+
+    pageRouter.setRouter("deletePageData", async (from, req, res) => {
+        const check = await verifyUserFromReq(req);
+        if (check) {
+            return check;
+        }
+        const [data, err] = deletePageData(from.pageUUID, from.filename);
+        if (err) {
+            return {
+                err: err,
+                msg: "操作失败",
+                code: 500
+            };
+        }
+        return {};
+    });
+
+    pageRouter.setRouter("clearPageData", async (from, req, res) => {
+        const check = await verifyUserFromReq(req);
+        if (check) {
+            return check;
+        }
+        const [data, err] = clearPageData(from.pageUUID);
+        if (err) {
+            return {
+                err: err,
+                msg: "操作失败",
+                code: 500
+            };
+        }
+        return {};
     });
 }

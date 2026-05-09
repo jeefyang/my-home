@@ -1,6 +1,8 @@
-import { pageFetch, userFetch } from "@/utils/jFetch";
+import { itemFetch, pageFetch, userFetch } from "@/utils/jFetch";
 import { defineStore } from "pinia";
 import { ref } from "vue";
+import { initThemeOverrides } from "./themeOverride";
+import type { GlobalThemeOverrides } from "naive-ui";
 
 
 export const useDataStore = defineStore("data", () => {
@@ -9,7 +11,8 @@ export const useDataStore = defineStore("data", () => {
     const user = ref(<UserType>null);
     const pageList = ref(<PageType[]>[]);
     const switchPageUUID = ref("");
-    const isMobile = ref(window.innerWidth<768);
+    const isMobile = ref(window.innerWidth < 768);
+    const themeOverrides = ref(<GlobalThemeOverrides>{});
 
     const saveKey = "data";
 
@@ -58,31 +61,39 @@ export const useDataStore = defineStore("data", () => {
         user.value = userRes.data!;
         pathid.value = user.value.pathID;
         password.value = userRes.data!.password;
+        const themeRes = await userFetch.request("getUserData", { filename: "themeOverrides.json" });
+        if (themeRes.code == 200) {
+            const data = themeRes.data ? JSON.parse(themeRes.data) : {};
+            themeOverrides.value = initThemeOverrides(data || {} as any);
+        }
         save();
-        if (user.value.pageUUIDList.length != 0) {
-            const pageRes = await pageFetch.request("getPageList", { uuidList: user.value.pageUUIDList });
-            if (pageRes.code != 200) {
-                return pageRes;
-            }
-            pageList.value = pageRes.data!;
-            return userRes;
-        }
-        let pageRes = await pageFetch.request("initPages");
-        if (pageRes.code != 200) {
-            return pageRes;
-        }
+        return userRes;
+    };
+
+    const initPages = async () => {
+        const pageRes = user.value.pageUUIDList.length != 0 ? await pageFetch.request("getPageList", { uuidList: user.value.pageUUIDList }) : await pageFetch.request("initPages");
         user.value.pageUUIDList = pageRes.data!.map(item => item.uuid);
         pageList.value = pageRes.data!;
+        let pageIndex = pageList.value.findIndex(item => item.uuid == switchPageUUID.value);
+        if (pageIndex != -1) {
+            return pageRes;
+        }
+        pageIndex = pageList.value.findIndex(item => item.isDefault);
+        if (pageIndex != -1) {
+            switchPageUUID.value = pageList.value[pageIndex].uuid;
+            return pageRes;
+        }
+        switchPageUUID.value = pageList.value[0].uuid;
+        save();
         return pageRes;
     };
 
-    const resize=()=>{
-        isMobile.value = window.innerWidth<768;
-
-    }
+    const resize = () => {
+        isMobile.value = window.innerWidth < 768;
+    };
 
 
     load();
 
-    return { ...returnData, user,pageList, load, save, clear, initUser,isMobile,resize };
+    return { ...returnData, user, pageList, load, save, clear, initUser, initPages, isMobile, resize, themeOverrides };
 });

@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { DATA_DIR, itemsFolder, PagesFolder } from "./data";
+import { DATA_DIR, dataFolder, filesFolder, itemsFolder, PagesFolder } from "./data";
 import fs from "fs";
 import path from "path";
 import { getItemPath, initItem, initItems } from "./items";
@@ -25,8 +25,11 @@ export function initPages(): [PageType[] | undefined, any] {
             page.itemGroupList = initItems(page.itemGroupList || []);
             page.createTime = Date.now();
             page.modifyTime = Date.now();
-            fs.mkdirSync(path.join(DATA_DIR, PagesFolder, page.uuid), { recursive: true });
+            const p = path.join(DATA_DIR, PagesFolder, page.uuid);
+            fs.mkdirSync(p, { recursive: true });
+            fs.mkdirSync(path.join(p, dataFolder), { recursive: true });
             writePage(page as PageType);
+            fs.mkdirSync(path.join(p, filesFolder), { recursive: true });
             return page as PageType;
         });
         return [list, undefined];
@@ -285,6 +288,71 @@ export function deletePageItem(pageUUID: string, itemUUID: string): [ItemGroupTy
         }
         writePage(page);
         return [page.itemGroupList, undefined];
+    }
+    catch (e) {
+        console.log(e);
+        return [undefined, e];
+    }
+}
+
+export function getPageData(pageUUID: string, filename: string): [string | undefined, any] {
+    try {
+        const p = path.join(DATA_DIR, PagesFolder, pageUUID);
+        if (!fs.existsSync(p)) {
+            return [undefined, "页面不存在"];
+        }
+        if (!fs.existsSync(path.join(p, dataFolder, filename))) {
+            return [undefined, undefined];
+        }
+        return [fs.readFileSync(path.join(p, dataFolder, filename), "utf-8"), undefined];
+    }
+    catch (e) {
+        console.log(e);
+        return [undefined, e];
+    }
+}
+
+export function updatePageData(pageUUID: string, filename: string, content: string): [boolean | undefined, any] {
+    try {
+        const p = path.join(DATA_DIR, PagesFolder, pageUUID);
+        if (!fs.existsSync(p)) {
+            return [undefined, "页面不存在"];
+        }
+        fs.writeFileSync(path.join(p, dataFolder, filename), content);
+        return [true, undefined];
+    }
+    catch (e) {
+        console.log(e);
+        return [undefined, e];
+    }
+}
+
+export function deletePageData(pageUUID: string, filename: string): [boolean | undefined, any] {
+    try {
+        const p = path.join(DATA_DIR, PagesFolder, pageUUID);
+        if (!fs.existsSync(p)) {
+            return [undefined, "页面不存在"];
+        }
+        if (fs.existsSync(path.join(p, dataFolder, filename))) {
+            fs.rmSync(path.join(p, dataFolder, filename));
+        }
+        return [true, undefined];
+    }
+    catch (e) {
+        console.log(e);
+        return [undefined, e];
+    }
+}
+
+export function clearPageData(pageUUID: string): [boolean | undefined, any] {
+    try {
+        const p = path.join(DATA_DIR, PagesFolder, pageUUID);
+        if (!fs.existsSync(p)) {
+            return [undefined, "页面不存在"];
+        }
+        fs.rmSync(path.join(p, dataFolder), { recursive: true });
+        fs.mkdirSync(path.join(p, dataFolder), { recursive: true });
+        return [true, undefined];
     }
     catch (e) {
         console.log(e);

@@ -13,4 +13,11 @@ export const PageApiUrl = apiUrlsTrans("page/", {
     deletePage: { method: "POST", from: {} as { uuid: string; }, to: {} as string },
     updatePage: { method: "POST", from: {} as { uuid: string; obj: Partial<PageType>; }, to: {} as PageType },
     addPage: { method: "POST", from: {} as Partial<PageType>, to: {} as PageType },
+    getPageData: {
+        method: "POST", from: {} as { pageUUID: string, filename: string; }
+        , to: {} as string
+    },
+    updatePageData: { method: "POST", from: {} as { pageUUID: string, filename: string, content: string; } },
+    clearPageData: { method: "POST", from: {} as { pageUUID: string; } },
+    deletePageData: { method: "POST", from: {} as { pageUUID: string, filename: string; } },
 });

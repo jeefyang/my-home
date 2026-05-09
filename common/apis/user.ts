@@ -30,5 +30,27 @@ export const UserApiUrl = apiUrlsTrans("user/", {
     verifyUser: {
         method: "POST",
         to: {} as UserType
+    },
+    getUserData: {
+        method: "POST",
+        from: {} as { filename: string; },
+        to: {} as string
+    },
+    updateUserData: {
+        method: "POST",
+        from: {} as { filename: string, content: string; },
+        to: {} as string
+    },
+    clearUserData: {
+        method: "POST",
+    },
+    deleteUserData: {
+        method: "POST",
+        from: {} as { filename: string; },
+    },
+    editUserPathID: {
+        method: "POST",
+        from: {} as { newPathID: string; },
+        to: {} as UserType
     }
 });

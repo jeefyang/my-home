@@ -9,6 +9,7 @@ export const UsersFolder = "users";
 export const PagesFolder = "pages";
 export const itemsFolder = "items";
 export const filesFolder = "files";
+export const dataFolder="data";
 
 export const dataOptions = {
     /** 是否为空用户 */

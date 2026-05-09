@@ -3,7 +3,7 @@ import { TransExpressRouter } from "@common/apis/tools/transExpressRouter";
 import { Router } from "express";
 import { verifyUserFromReq } from "../stores/users";
 import { addPageItem, addPageItemGroup, deletePageItem, deletePageItemGroup, updatePageItem, updatePageItemGroup } from "../stores/pages";
-import { clearItemData, getItemData, updateItemData } from "../stores/items";
+import { clearItemData, deleteItemData, getItemData, updateItemData } from "../stores/items";
 export function useItemApi(router: Router) {
     const itemRouter = new TransExpressRouter(ItemApiUrl, router);
 
@@ -114,7 +114,7 @@ export function useItemApi(router: Router) {
         if (check) {
             return check;
         }
-        const [data, err] = getItemData(from.itemUUID, from.itemType, from.dataName);
+        const [data, err] = getItemData(from.itemUUID, from.itemType, from.filename);
         if (err) {
             return {
                 err: err,
@@ -130,7 +130,7 @@ export function useItemApi(router: Router) {
         if (check) {
             return check;
         }
-        const [data, err] = updateItemData(from.itemUUID, from.itemType, from.dataName, from.data);
+        const [data, err] = updateItemData(from.itemUUID, from.itemType, from.filename, from.content);
         if (err) {
             return {
                 err: err,
@@ -145,7 +145,22 @@ export function useItemApi(router: Router) {
         if (check) {
             return check;
         }
-        const [data, err] = clearItemData(from.itemUUID, from.itemType, from.dataName);
+        const [data, err] = clearItemData(from.itemUUID, from.itemType);
+        if (err) {
+            return {
+                err: err,
+                msg: "操作失败",
+            };
+        }
+        return {};
+    });
+
+    itemRouter.setRouter('deleteItemData', async (from, req, res) => {
+        const check = await verifyUserFromReq(req);
+        if (check) {
+            return check;
+        }
+        const [data, err] = deleteItemData(from.itemUUID, from.itemType, from.filename);
         if (err) {
             return {
                 err: err,

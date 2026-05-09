@@ -1,5 +1,5 @@
 import { nanoid } from "nanoid";
-import { UsersFolder, DATA_DIR, dataOptions } from "./data";
+import { UsersFolder, DATA_DIR, dataOptions, dataFolder, filesFolder } from "./data";
 import fs from "fs";
 import path from "path";
 import { verify } from "crypto";
@@ -29,6 +29,8 @@ export function createUser(type: UserTypeType): [UserType | undefined, any] {
     const p = path.join(DATA_DIR, UsersFolder, pathID);
     try {
         fs.mkdirSync(p);
+        fs.mkdirSync(path.join(p, dataFolder), { recursive: true });
+        fs.mkdirSync(path.join(p, filesFolder), { recursive: true });
         fs.writeFileSync(path.join(p, UserFileName), JSON.stringify(user, null, '\t'));
         return [user, undefined];
     }
@@ -236,4 +238,69 @@ export async function verifyUserFromReq(req: Request): Promise<ResSendType<any> 
         return { code: 200, msg: "用户列表暂时为空,请创建管理员" };
     }
     return undefined;
+}
+
+export function getUserData(pathID: string, filename: string): [string | undefined, any] {
+    try {
+        const p = path.join(DATA_DIR, UsersFolder, pathID);
+        if (!fs.existsSync(p)) {
+            return [undefined, "用户不存在"];
+        }
+        if (!fs.existsSync(path.join(p, dataFolder, filename))) {
+            return [undefined, undefined];
+        }
+        return [fs.readFileSync(path.join(p, dataFolder, filename), "utf-8"), undefined];
+    }
+    catch (e) {
+        console.log(e);
+        return [undefined, e];
+    }
+}
+
+export function updateUserData(pathID: string, filename: string, content: string): [boolean | undefined, any] {
+    try {
+        const p = path.join(DATA_DIR, UsersFolder, pathID);
+        if (!fs.existsSync(p)) {
+            return [undefined, "用户不存在"];
+        }
+        fs.writeFileSync(path.join(p, dataFolder, filename), content);
+        return [true, undefined];
+    }
+    catch (e) {
+        console.log(e);
+        return [undefined, e];
+    }
+}
+
+export function deleteUserData(pathID: string, filename: string): [boolean | undefined, any] {
+    try {
+        const p = path.join(DATA_DIR, UsersFolder, pathID);
+        if (!fs.existsSync(p)) {
+            return [undefined, "用户不存在"];
+        }
+        if (fs.existsSync(path.join(p, dataFolder, filename))) {
+            fs.rmSync(path.join(p, dataFolder, filename));
+        }
+        return [true, undefined];
+    }
+    catch (e) {
+        console.log(e);
+        return [undefined, e];
+    }
+}
+
+export function clearUserData(pathID: string): [boolean | undefined, any] {
+    try {
+        const p = path.join(DATA_DIR, UsersFolder, pathID);
+        if (!fs.existsSync(p)) {
+            return [undefined, "用户不存在"];
+        }
+        fs.rmSync(path.join(p, dataFolder), { recursive: true });
+        fs.mkdirSync(path.join(p, dataFolder), { recursive: true });
+        return [true, undefined];
+    }
+    catch (e) {
+        console.log(e);
+        return [undefined, e];
+    }
 }
