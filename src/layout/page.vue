@@ -3,14 +3,16 @@
     <n-config-provider :theme-overrides="themeOverrides">
         <div class="parent">
             <template v-if="curPage">
-                <div v-for="item in curPage.itemGroupList" :key="item.uuid">
+                <div v-for="group in curPage.itemGroupList" :key="group.uuid">
                     <!-- 按钮分组  -->
-                    <n-card v-if="item.display == 'btn'" class="btnGroup card">
-                        <n-button type="primary" v-for="citem in item.list" :key="citem.uuid">{{ getItemTitle(citem) }}</n-button>
+                    <n-card v-if="group.display == 'btn'" class="btnGroup card">
+                        <n-button type="primary" v-for="item in group.list" :key="item.uuid">{{ getItemTitle(item)
+                        }}</n-button>
                     </n-card>
                     <!-- 宽度盒子分组(占满屏幕宽度) -->
-                    <n-card v-else-if="item.display == 'widthBox'" class="widthBoxGroup" style="width: 100%">
-                        <item-view v-for="citem in item.list" :key="citem.uuid" :item="citem" :display="item.display"></item-view>
+                    <n-card v-else-if="group.display == 'widthBox'" class="widthBoxGroup" style="width: 100%">
+                        <item-view v-for="item in group.list" :key="item.uuid" :item="item" :pageUUID="curPage.uuid"
+                            :itemGroupUUID="group.uuid"></item-view>
                     </n-card>
                 </div>
             </template>

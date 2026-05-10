@@ -18,6 +18,8 @@ type UserType = {
     modifyTime: number;
     /** 一般存放可以快速重置的数据(直接清空) */
     option?: Partial<UserOptionType>;
+    /** 自定义数据,可用于跨页面跨项目交互,请谨慎使用 */
+    customData?: Record<string, any>;
     style?: MyStyleType;
     password?: string;
 };
@@ -36,6 +38,8 @@ type ItemGroupType = {
     option?: Partial<ItemGroupOptionType>;
     uuid?: string;
     title?: string;
+    /** 自定义数据,可用于跨页面跨项目交互,请谨慎使用 */
+    customData?: Record<string, any>;
 };
 
 type PageOptionType = {
@@ -53,6 +57,8 @@ type PageType = {
     style: MyStyleType;
     /** 一般存放可以快速重置的数据(直接清空) */
     option?: Partial<PageOptionType>;
+    /** 自定义数据,可用于跨页面跨项目交互,请谨慎使用 */
+    customData?: Record<string, any>;
     createTime: number;
     modifyTime: number;
 };
@@ -64,6 +70,8 @@ type ItemType = {
     uuid?: string;
     /** 一般存放可以快速重置的数据(直接清空) */
     option?: Partial<ItemOptionType>;
+    /** 自定义数据,可用于跨页面跨项目交互,请谨慎使用 */
+    customData?: Record<string, any>;
     style?: MyStyleType;
     createTime?: number;
     modifyTime?: number;

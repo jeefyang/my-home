@@ -16,10 +16,10 @@
     </n-flex>
     <x-modal v-model:show="show">
         <div>搜索设置</div>
-          <n-button size="small" type="primary">
-                <n-icon v-html="addIcon" @click="toAddEngine(0)"></n-icon>
-            </n-button>
-          <x-divider></x-divider>
+        <n-button size="small" type="primary">
+            <n-icon v-html="addIcon" @click="toAddEngine(0)"></n-icon>
+        </n-button>
+        <x-divider></x-divider>
         <n-flex v-if="cacheEngineList.length > 0" vertical>
             <n-flex vertical v-for="item in cacheEngineList" :key="item.uuid">
                 <label>名称:</label>
@@ -79,7 +79,8 @@ const engineListFileName = "engineList.json";
 
 const props = defineProps<{
     item: ItemType;
-    display: ItemDisplayType;
+    pageUUID: string;
+    itemGroupUUID: string;
 }>();
 
 const toShow = () => {
@@ -121,7 +122,6 @@ const updateEngineList = async (list: EngineType[]) => {
 };
 
 onMounted(() => {
-    console.log(props.display);
     getEngineList();
 });
 </script>
