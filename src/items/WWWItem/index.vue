@@ -28,6 +28,11 @@
                 <n-input v-model:value="item.icon" placeholder="接受图片url和base64"></n-input>
                 <label>搜索路径:</label>
                 <n-input v-model:value="item.url" placeholder="搜索关键字替换请用$$key$$来替换"></n-input>
+                <label>icon生成器:</label>
+                <n-flex style="flex-wrap: nowrap;">
+                    <n-input v-model:value="item._iconUrl" placeholder="请输入图标url"> </n-input>
+                    <n-button @click="toCreateIcon(item)">生成</n-button>
+                </n-flex>
             </n-flex>
         </n-flex>
         <n-empty v-else description="快添加新的搜索引擎吧"> </n-empty>
@@ -41,6 +46,7 @@ import { itemFetch } from "@/utils/jFetch";
 import { useMessage } from "naive-ui";
 import { nanoid } from "nanoid";
 import XDivider from "@/components/XDivider.vue";
+import { getExternalFavicon, urlToBase64 } from "@/utils/image";
 
 const dataStore = useDataStore();
 const msg = useMessage();
@@ -96,6 +102,7 @@ const toAddEngine = (index: number) => {
         url: "",
         _iconUrl: ""
     });
+
 };
 
 const getEngineList = async () => {
@@ -120,6 +127,14 @@ const updateEngineList = async (list: EngineType[]) => {
     }
     engineList.value = newList;
 };
+
+const toCreateIcon = async (item: EngineType) => {
+    console.log(item._iconUrl)
+    const url = getExternalFavicon(item._iconUrl, 'google')
+    console.log(url)
+    const b64 = await urlToBase64(url)
+    console.log(b64)
+}
 
 onMounted(() => {
     getEngineList();
