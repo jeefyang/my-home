@@ -2,13 +2,7 @@
     <n-flex style="gap: 0; width: 100%; height: 100%" vertical>
         <div class="content">
             <keep-alive>
-                <template v-for="page in dataStore.pageList" :key="page.uuid">
-                    <template v-if="page.uuid == dataStore.switchPageUUID">
-                        <page :pageUUID="page.uuid"></page>
-                    </template>
-
-                </template>
-
+                <page v-if="currentPage" :key="dataStore.switchPageUUID" :pageUUID="dataStore.switchPageUUID"></page>
             </keep-alive>
         </div>
         <div class="bottom">
@@ -32,6 +26,17 @@ import page from "./page.vue";
 
 const themeVars = useThemeVars();
 const dataStore = useDataStore();
+
+const currentPage = computed(() => {
+    if (!dataStore.pageList || !dataStore.pageList.length) {
+        return null
+    }
+    return dataStore.pageList.find(
+        page => page.uuid === dataStore.switchPageUUID
+    )
+})
+
+
 
 const switchPage = (item: PageType) => {
     dataStore.switchPageUUID = item.uuid;
