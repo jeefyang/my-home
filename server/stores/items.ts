@@ -3,6 +3,7 @@ import { DATA_DIR, dataFolder, filesFolder, itemsFolder } from "./data";
 import fs, { mkdir } from "fs";
 import path from "path";
 import { ItemRouterList } from "@common/utils/itemRouterouterList";
+import { UrlsUtils } from "../utils/urls";
 
 
 
@@ -71,6 +72,9 @@ export function getItemData(itemUUID: string, itemType: string, filename: string
         return [undefined, "类型不存在"];
     }
     try {
+        if (!UrlsUtils.checkSinglePath(itemUUID, filename)) {
+            return [undefined, "用户不存在"];
+        }
         const d = getItemPath(itemType!, itemUUID);
         if (!fs.existsSync(d)) {
             return [undefined, "项目不存在"];
@@ -95,6 +99,9 @@ export function updateItemData(itemUUID: string, itemType: string, filename: str
         return [undefined, "类型不存在"];
     }
     try {
+        if (!UrlsUtils.checkSinglePath(itemUUID, filename)) {
+            return [undefined, "用户不存在"];
+        }
         const d = getItemPath(itemType!, itemUUID);
         if (!fs.existsSync(d)) {
             return [undefined, "项目不存在"];
@@ -117,6 +124,9 @@ export function deleteItemData(itemUUID: string, itemType: string, filename: str
         return [undefined, "类型不存在"];
     }
     try {
+        if (!UrlsUtils.checkSinglePath(itemUUID, filename)) {
+            return [undefined, "用户不存在"];
+        }
         const d = getItemPath(itemType!, itemUUID);
         if (!fs.existsSync(d)) {
             return [undefined, "项目不存在"];
@@ -142,6 +152,9 @@ export function clearItemData(itemUUID: string, itemType: string,): [boolean | u
         return [undefined, "类型不存在"];
     }
     try {
+        if (!UrlsUtils.checkSinglePath(itemUUID)) {
+            return [undefined, "用户不存在"];
+        }
         const d = getItemPath(itemType!, itemUUID);
         if (!fs.existsSync(d)) {
             return [undefined, "项目不存在"];
