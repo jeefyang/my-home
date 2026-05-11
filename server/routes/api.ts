@@ -24,6 +24,8 @@ router.get("/files/users/:pathID/:filename", async (req, res) => {
     if (!fs.existsSync(p)) {
         return res.status(404).send(404);
     }
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+
     return res.sendFile(p);
 });
 
@@ -33,6 +35,8 @@ router.get("/files/pages/:uuid/:filename", async (req, res) => {
         return res.status(404).send(404);
 
     }
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+
     return res.sendFile(p);
 });
 
@@ -42,6 +46,8 @@ router.get("/files/items/:uuid/:filename", async (req, res) => {
         return res.status(404).send(404);
 
     }
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+
     return res.sendFile(p);
 });
 

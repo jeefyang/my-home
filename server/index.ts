@@ -75,6 +75,10 @@ else {
     // 其他路径
     app.get("/{*splat}", (req, res) => {
         const splat: string[] = (<any>req.params).splat;
+        // 随机组件就添加缓存控制
+        if (splat.length > 0 && splat[splat.length - 1].includes('-')) {
+            res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+        }
         res.sendFile(path.join(clientPath, splat.join('/')), (e) => {
             // 如果找不到文件,则返回 index.html
             e && res.sendFile(path.join(clientPath, 'index.html'));
