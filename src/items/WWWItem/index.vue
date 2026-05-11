@@ -1,14 +1,17 @@
 <template>
     <n-flex vertical align="center">
-        <n-input v-model:value="searchKey" type="text" placeholder="世界之窗" round clearable> </n-input>
+        <n-input v-model:value="searchKey" type="text" placeholder="世界之窗" round clearable @keyup.enter="toLink(true)">
+        </n-input>
         <n-flex align="center">
-            <n-button v-for="(item, index) in engineList" :key="item.uuid" size="tiny" @click="switchSearchIndex = index" :type="switchSearchIndex == index ? 'primary' : 'default'">
+            <n-button v-for="(item, index) in engineList" :key="item.uuid" size="tiny"
+                @click="switchSearchIndex = index" :type="switchSearchIndex == index ? 'primary' : 'default'">
                 <div v-if="!item.icon">{{ item.name[0] }}</div>
                 <n-icon size="15" v-else>
                     <img :src="UrlUtils.checkImgUrl(item.icon, `./api/files/users/${dataStore.pathid}`)" class="icon" />
                 </n-icon>
             </n-button>
-            <n-button :bordered="false" :type="switchSearchIndex == -1 ? 'primary' : 'default'" size="tiny" @click="switchSearchIndex = -1">
+            <n-button :bordered="false" :type="switchSearchIndex == -1 ? 'primary' : 'default'" size="tiny"
+                @click="switchSearchIndex = -1">
                 <n-icon v-html="linkIcon"> </n-icon>
             </n-button>
             <n-button :bordered="false" type="info" size="tiny" @click="toShow">
@@ -37,7 +40,8 @@
                 <n-flex align="center" style="flex-wrap: nowrap">
                     <n-input v-model:value="item.icon" placeholder="接受图片url和base64"></n-input>
                     <n-icon style="width: 32px" size="20" v-if="item.icon">
-                        <img :src="UrlUtils.checkImgUrl(item.icon, `./api/files/users/${dataStore.pathid}`)" class="icon"/>
+                        <img :src="UrlUtils.checkImgUrl(item.icon, `./api/files/users/${dataStore.pathid}`)"
+                            class="icon" />
                     </n-icon>
                 </n-flex>
 

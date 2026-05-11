@@ -3,6 +3,7 @@ import { DATA_DIR, dataFolder, filesFolder, itemsFolder, PagesFolder } from "./d
 import fs from "fs";
 import path from "path";
 import { getItemPath, initItem, initItems } from "./items";
+import { UrlsUtils } from "../utils/urls";
 
 export const pageFileName = "page.jsonc";
 
@@ -297,6 +298,9 @@ export function deletePageItem(pageUUID: string, itemUUID: string): [ItemGroupTy
 
 export function getPageData(pageUUID: string, filename: string): [string | undefined, any] {
     try {
+        if (!UrlsUtils.checkSinglePath(pageUUID, filename)) {
+            return [undefined, "页面不存在"];
+        }
         const p = path.join(DATA_DIR, PagesFolder, pageUUID);
         if (!fs.existsSync(p)) {
             return [undefined, "页面不存在"];
@@ -314,6 +318,9 @@ export function getPageData(pageUUID: string, filename: string): [string | undef
 
 export function updatePageData(pageUUID: string, filename: string, content: string): [boolean | undefined, any] {
     try {
+        if (!UrlsUtils.checkSinglePath(pageUUID, filename)) {
+            return [undefined, "页面不存在"];
+        }
         const p = path.join(DATA_DIR, PagesFolder, pageUUID);
         if (!fs.existsSync(p)) {
             return [undefined, "页面不存在"];
@@ -329,6 +336,9 @@ export function updatePageData(pageUUID: string, filename: string, content: stri
 
 export function deletePageData(pageUUID: string, filename: string): [boolean | undefined, any] {
     try {
+        if (!UrlsUtils.checkSinglePath(pageUUID, filename)) {
+            return [undefined, "页面不存在"];
+        }
         const p = path.join(DATA_DIR, PagesFolder, pageUUID);
         if (!fs.existsSync(p)) {
             return [undefined, "页面不存在"];
@@ -346,6 +356,9 @@ export function deletePageData(pageUUID: string, filename: string): [boolean | u
 
 export function clearPageData(pageUUID: string): [boolean | undefined, any] {
     try {
+        if (!UrlsUtils.checkSinglePath(pageUUID)) {
+            return [undefined, "页面不存在"];
+        }
         const p = path.join(DATA_DIR, PagesFolder, pageUUID);
         if (!fs.existsSync(p)) {
             return [undefined, "页面不存在"];

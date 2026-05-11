@@ -6,6 +6,7 @@ import { useToolsImgApi } from './tools/imgApi';
 import path from 'path';
 import fs from "fs";
 import { DATA_DIR, filesFolder, itemsFolder, PagesFolder, UsersFolder } from '../stores/data';
+import { UrlsUtils } from '../utils/urls';
 
 const router: Router = Router();
 
@@ -20,6 +21,9 @@ useToolsImgApi(router);
 // 文件读取
 
 router.get("/files/users/:pathID/:filename", async (req, res) => {
+    if (!UrlsUtils.checkSinglePath(req.params.pathID, req.params.filename)) {
+        return res.status(404).send(404)
+    }
     const p = path.resolve(path.join(DATA_DIR, UsersFolder, req.params.pathID, filesFolder, req.params.filename));
     if (!fs.existsSync(p)) {
         return res.status(404).send(404);
@@ -30,6 +34,9 @@ router.get("/files/users/:pathID/:filename", async (req, res) => {
 });
 
 router.get("/files/pages/:uuid/:filename", async (req, res) => {
+    if (!UrlsUtils.checkSinglePath(req.params.uuid, req.params.filename)) {
+        return res.status(404).send(404)
+    }
     const p = path.resolve(path.join(DATA_DIR, PagesFolder, req.params.uuid, filesFolder, req.params.filename));
     if (!fs.existsSync(p)) {
         return res.status(404).send(404);
@@ -41,6 +48,9 @@ router.get("/files/pages/:uuid/:filename", async (req, res) => {
 });
 
 router.get("/files/items/:uuid/:filename", async (req, res) => {
+    if (!UrlsUtils.checkSinglePath(req.params.uuid, req.params.filename)) {
+        return res.status(404).send(404)
+    }
     const p = path.resolve(path.join(DATA_DIR, itemsFolder, req.params.uuid, filesFolder, req.params.filename));
     if (!fs.existsSync(p)) {
         return res.status(404).send(404);

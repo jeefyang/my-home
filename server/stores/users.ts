@@ -5,6 +5,7 @@ import path from "path";
 import { verify } from "crypto";
 import { ResSendType } from "@common/apis/tools/apiUrlsTrans";
 import { type Request } from "express";
+import { UrlsUtils } from "../utils/urls";
 
 export const UserFileName = "user.jsonc";
 
@@ -242,6 +243,9 @@ export async function verifyUserFromReq(req: Request): Promise<ResSendType<any> 
 
 export function getUserData(pathID: string, filename: string): [string | undefined, any] {
     try {
+        if (!UrlsUtils.checkSinglePath(pathID, filename)) {
+            return [undefined, "用户不存在"];
+        }
         const p = path.join(DATA_DIR, UsersFolder, pathID);
         if (!fs.existsSync(p)) {
             return [undefined, "用户不存在"];
@@ -259,6 +263,9 @@ export function getUserData(pathID: string, filename: string): [string | undefin
 
 export function updateUserData(pathID: string, filename: string, content: string): [boolean | undefined, any] {
     try {
+        if (!UrlsUtils.checkSinglePath(pathID, filename)) {
+            return [undefined, "用户不存在"];
+        }
         const p = path.join(DATA_DIR, UsersFolder, pathID);
         if (!fs.existsSync(p)) {
             return [undefined, "用户不存在"];
@@ -274,6 +281,9 @@ export function updateUserData(pathID: string, filename: string, content: string
 
 export function deleteUserData(pathID: string, filename: string): [boolean | undefined, any] {
     try {
+        if (!UrlsUtils.checkSinglePath(pathID, filename)) {
+            return [undefined, "用户不存在"];
+        }
         const p = path.join(DATA_DIR, UsersFolder, pathID);
         if (!fs.existsSync(p)) {
             return [undefined, "用户不存在"];
@@ -291,6 +301,9 @@ export function deleteUserData(pathID: string, filename: string): [boolean | und
 
 export function clearUserData(pathID: string): [boolean | undefined, any] {
     try {
+        if (!UrlsUtils.checkSinglePath(pathID)) {
+            return [undefined, "用户不存在"];
+        }
         const p = path.join(DATA_DIR, UsersFolder, pathID);
         if (!fs.existsSync(p)) {
             return [undefined, "用户不存在"];
