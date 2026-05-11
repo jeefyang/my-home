@@ -3,7 +3,10 @@
         <div class="content">
             <keep-alive>
                 <template v-for="page in dataStore.pageList" :key="page.uuid">
-                    <page v-if="page.uuid == dataStore.switchPageUUID" :pageUUID="page.uuid"></page>
+                    <template v-if="page.uuid == dataStore.switchPageUUID">
+                        <page :pageUUID="page.uuid"></page>
+                    </template>
+
                 </template>
 
             </keep-alive>
