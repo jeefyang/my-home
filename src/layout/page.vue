@@ -1,19 +1,20 @@
 <template>
     <!-- @vue-ignore -->
-    <n-config-provider :theme-overrides="themeOverrides">
-        <div class="parent">
+    <n-config-provider :theme-overrides="themeOverrides" style="width: 100%; height: 100%">
+        <div class="parent" ref="parentRef">
             <template v-if="curPage">
                 <div v-for="group in curPage.itemGroupList" :key="group.uuid">
                     <!-- 按钮分组  -->
                     <n-card v-if="group.display == 'btn'" class="btnGroup card">
-                        <n-button type="primary" v-for="item in group.list" :key="item.uuid">{{ getItemTitle(item)
-                        }}</n-button>
+                        <n-button type="primary" v-for="item in group.list" :key="item.uuid">{{ getItemTitle(item) }}</n-button>
                     </n-card>
                     <!-- 宽度盒子分组(占满屏幕宽度) -->
                     <n-card v-else-if="group.display == 'widthBox'" class="widthBoxGroup" style="width: 100%">
-                        <item-view v-for="item in group.list" :key="item.uuid" :item="item" :pageUUID="curPage.uuid"
-                            :itemGroupUUID="group.uuid"></item-view>
+                        <item-view v-for="item in group.list" :key="item.uuid" :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid"></item-view>
                     </n-card>
+                    <float-btn v-model:x="floatBtnX" v-model:y="floatBtnY" is-bottom :scale="1" is-right display-type="absolute" :parentBox="parentRef">
+                        <div>123</div>
+                    </float-btn>
                 </div>
             </template>
         </div>
@@ -26,10 +27,16 @@ import { ItemRouterList } from "@common/utils/itemRouterouterList";
 import { useThemeVars, type GlobalThemeOverrides } from "naive-ui";
 import { computed, defineAsyncComponent, onMounted, ref, watch } from "vue";
 import ItemView from "@/components/ItemView.vue";
+import FloatBtn from "@/components/FloatBtn.vue";
 
 const dataStore = useDataStore();
 const themeVars = useThemeVars();
 const themeOverrides = ref(<GlobalThemeOverrides>null);
+
+const floatBtnX = ref(0);
+const floatBtnY = ref(0);
+
+const parentRef = ref(<HTMLElement>null);
 
 const curPage = ref(<PageType>null);
 
@@ -67,5 +74,6 @@ onMounted(() => {
     height: 100%;
     overflow: auto;
     scrollbar-width: none;
+    position: relative;
 }
 </style>
