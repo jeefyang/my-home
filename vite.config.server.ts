@@ -18,16 +18,22 @@ for (const item of initFileList) {
     }
 }
 
+const dirList = ["logs"];
+
+for (let dir of dirList) {
+    if (!fs.existsSync(dir)) {
+        fs.mkdirSync(dir, { recursive: true });
+    }
+
+}
+
 
 export default defineConfig(({ mode }) => {
-    const env = loadEnv(mode, process.cwd(), "");
+  
     const isDev = mode === 'development';
     return {
         build: {
             outDir: 'dist/server',
-        },
-        define: {
-            'process.env': env // 将环境变量注入到全局
         },
         plugins: [
             ...VitePluginNode({

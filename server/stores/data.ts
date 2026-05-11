@@ -1,5 +1,14 @@
 import fs from 'fs';
 import path from 'path';
+import dotenv from 'dotenv';
+
+const envFile = path.resolve(process.cwd(), '.env');
+dotenv.config({ path: envFile });
+const localEnvFile = path.resolve(process.cwd(), '.env.local');
+if (fs.existsSync(localEnvFile)) {
+    dotenv.config({ path: localEnvFile, override: true });
+}
+
 
 export const DATA_DIR = process.env.DATA_DIR;
 
