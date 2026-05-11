@@ -9,7 +9,7 @@ export const UsersFolder = "users";
 export const PagesFolder = "pages";
 export const itemsFolder = "items";
 export const filesFolder = "files";
-export const dataFolder="data";
+export const dataFolder = "data";
 
 export const dataOptions = {
     /** 是否为空用户 */
@@ -26,8 +26,10 @@ export function dataInit() {
         fs.mkdirSync(path.join(DATA_DIR, UsersFolder), { recursive: true });
         console.log(`创建用户目录:${path.join(DATA_DIR, UsersFolder)}`);
     }
+
+    const list = fs.readdirSync(path.join(DATA_DIR, UsersFolder));
+    dataOptions.isEmptyUser = list.length == 0;
 }
 
-const list = fs.readdirSync(path.join(DATA_DIR, UsersFolder));
-dataOptions.isEmptyUser = list.length == 0;
+
 

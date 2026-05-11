@@ -1,6 +1,7 @@
 <template>
     <div>
-        <lazyComponent :item="props.item" :display="props.display"></lazyComponent>
+        <lazyComponent :item="props.item" :pageUUID="props.pageUUID" :itemGroupUUID="props.itemGroupUUID">
+        </lazyComponent>
     </div>
 </template>
 <script setup lang="ts">
@@ -12,7 +13,8 @@ const dataStore = useDataStore();
 
 const props = defineProps<{
     item: ItemType;
-    display: ItemDisplayType;
+    pageUUID: string;
+    itemGroupUUID: string;
 }>();
 
 const lazyComponent = defineAsyncComponent(() => import(`@/items/${ItemRouterList[props.item.type].component}/index.vue`));
