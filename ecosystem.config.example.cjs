@@ -28,6 +28,13 @@ module.exports = {
             // 3. 最大重启次数 (防止死循环)
             // 如果 1 分钟内连续挂了 10 次，PM2 就会放弃重启，让进程保持 "errored" 状态，以免把 CPU 跑满
             max_restarts: 10,
+
+            // 日志配置
+            out_file: './logs/out.log',      // 标准输出日志（console.log）
+            error_file: './logs/error.log',  // 错误输出日志（console.error）
+
+            // 可选配置
+            log_date_format: 'YYYY-MM-DD HH:mm:ss',  // 日志时间格式
         }
     ]
 };
