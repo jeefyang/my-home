@@ -7,7 +7,7 @@
                     <!-- 按钮分组  -->
                     <n-card v-if="group.display == 'btn'" class="btnGroup card">
                         <n-button type="primary" v-for="item in group.list" :key="item.uuid">{{ getItemTitle(item)
-                        }}</n-button>
+                            }}</n-button>
                     </n-card>
                     <!-- 宽度盒子分组(占满屏幕宽度) -->
                     <n-card v-else-if="group.display == 'widthBox'" class="widthBoxGroup" style="width: 100%">
@@ -61,6 +61,7 @@ const getItemTitle = (item: ItemType): string => {
 
 
 onMounted(async () => {
+    console.log(curPage.value)
     const themeRes = await pageFetch.request("getPageData", { pageUUID: props.pageUUID, filename: "theme.json" });
     if (themeRes.code == 200) {
         themeOverrides.value = themeRes.data ? JSON.parse(themeRes.data) : {};
