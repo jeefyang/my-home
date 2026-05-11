@@ -1,13 +1,22 @@
 <template>
     <n-flex style="gap: 0; width: 100%; height: 100%" vertical>
-        <div class="content"><page></page></div>
+        <div class="content">
+            <keep-alive>
+                <template v-for="page in dataStore.pageList" :key="page.uuid">
+                    <page v-if="page.uuid == dataStore.switchPageUUID" :pageUUID="page.uuid"></page>
+                </template>
+
+            </keep-alive>
+        </div>
         <div class="bottom">
             <div class="bottomBtn" v-for="item in dataStore.pageList" :key="item.uuid" @click="switchPage(item)">
-                <n-icon v-if="item.icon" size="18" :color="item.uuid == dataStore.switchPageUUID ? themeVars.primaryColor : undefined">
+                <n-icon v-if="item.icon" size="18"
+                    :color="item.uuid == dataStore.switchPageUUID ? themeVars.primaryColor : undefined">
                     <!-- @vue-ignore -->
                     <span v-html="item.icon"></span>
                 </n-icon>
-                <div :style="{ color: item.uuid == dataStore.switchPageUUID ? themeVars.primaryColor : undefined }">{{ item.title }}</div>
+                <div :style="{ color: item.uuid == dataStore.switchPageUUID ? themeVars.primaryColor : undefined }">{{
+                    item.title }}</div>
             </div>
         </div>
     </n-flex>
@@ -25,7 +34,7 @@ const switchPage = (item: PageType) => {
     dataStore.switchPageUUID = item.uuid;
 };
 
-onMounted(() => {});
+onMounted(() => { });
 </script>
 <style scoped>
 .content {

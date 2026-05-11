@@ -6,11 +6,13 @@
                 <div v-for="group in curPage.itemGroupList" :key="group.uuid">
                     <!-- 按钮分组  -->
                     <n-card v-if="group.display == 'btn'" class="btnGroup card">
-                        <n-button type="primary" v-for="item in group.list" :key="item.uuid">{{ getItemTitle(item) }}</n-button>
+                        <n-button type="primary" v-for="item in group.list" :key="item.uuid">{{ getItemTitle(item)
+                        }}</n-button>
                     </n-card>
                     <!-- 宽度盒子分组(占满屏幕宽度) -->
                     <n-card v-else-if="group.display == 'widthBox'" class="widthBoxGroup" style="width: 100%">
-                        <item-view v-for="item in group.list" :key="item.uuid" :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid"></item-view>
+                        <item-view v-for="item in group.list" :key="item.uuid" :item="item" :pageUUID="curPage.uuid"
+                            :itemGroupUUID="group.uuid"></item-view>
                     </n-card>
                     <!-- <float-btn v-model:x="floatBtnX" v-model:y="floatBtnY" is-bottom :scale="1" is-right display-type="absolute" :parentBox="parentRef">
                         <div>123</div>
@@ -38,7 +40,16 @@ const floatBtnY = ref(0);
 
 const parentRef = ref(<HTMLElement>null);
 
-const curPage = ref(<PageType>null);
+const props = defineProps({
+    pageUUID: {
+        type: String,
+        required: true,
+    },
+});
+
+const curPage = computed(() => {
+    return dataStore.pageList.find(item => item.uuid == props.pageUUID);
+});
 
 const getItemTitle = (item: ItemType): string => {
     if (item?.option?.title) {
@@ -48,24 +59,15 @@ const getItemTitle = (item: ItemType): string => {
     return data?.title || "unknown";
 };
 
-const initPage = async () => {
-    const index = dataStore.pageList.findIndex((item) => item.uuid == dataStore.switchPageUUID);
-    curPage.value = dataStore.pageList[index];
-    const themeRes = await pageFetch.request("getPageData", { pageUUID: curPage.value.uuid, filename: "theme.json" });
+
+onMounted(async () => {
+    const themeRes = await pageFetch.request("getPageData", { pageUUID: props.pageUUID, filename: "theme.json" });
     if (themeRes.code == 200) {
         themeOverrides.value = themeRes.data ? JSON.parse(themeRes.data) : {};
     }
-};
+})
 
-onMounted(() => {
-    watch(
-        () => dataStore.switchPageUUID,
-        (v) => {
-            initPage();
-        },
-        { immediate: true }
-    );
-});
+
 </script>
 
 <style lang="css" scoped>
