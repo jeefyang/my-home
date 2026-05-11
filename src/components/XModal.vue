@@ -1,7 +1,17 @@
 <template>
     <n-modal v-model:show="modelShow">
-         <div class="modalBox">
-            <n-card><slot></slot></n-card>
+        <div class="modalBox">
+            <n-card>
+                <div class="card" :style="{ maxHeight: props.contentMaxHeight }">
+                    <slot></slot>
+                </div>
+                <template #header>
+                    <slot name="header"></slot>
+                </template>
+                <template #footer>
+                    <slot name="footer"></slot>
+                </template>
+            </n-card>
         </div>
     </n-modal>
 </template>
@@ -12,6 +22,10 @@ const props = defineProps({
     show: {
         type: Boolean,
         default: false
+    },
+    contentMaxHeight: {
+        type: String,
+        default: undefined
     }
 });
 

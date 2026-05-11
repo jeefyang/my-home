@@ -56,7 +56,7 @@ export function initItem(item: Partial<ItemType>): [ItemType | undefined, any] {
         return [obj as ItemType, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -81,7 +81,7 @@ export function getItemData(itemUUID: string, itemType: string, filename: string
         return [fs.readFileSync(path.join(d, dataFolder, filename), 'utf-8'), undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -103,7 +103,7 @@ export function updateItemData(itemUUID: string, itemType: string, filename: str
         return [true, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -127,7 +127,7 @@ export function deleteItemData(itemUUID: string, itemType: string, filename: str
         return [true, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 
@@ -151,7 +151,7 @@ export function clearItemData(itemUUID: string, itemType: string,): [boolean | u
         return [true, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
 
     }

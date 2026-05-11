@@ -35,7 +35,7 @@ export function initPages(): [PageType[] | undefined, any] {
         return [list, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -52,7 +52,7 @@ export function getPage(uuid: string): [PageType | undefined, any] {
         return [page, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -69,7 +69,7 @@ export function deletePage(uuid: string): [string | undefined, any] {
         return [uuid, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -89,7 +89,7 @@ export function addPage(obj: Partial<PageType>): [PageType | undefined, any] {
         return [newObj, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 
@@ -107,7 +107,7 @@ export function updatePage(uuid: string, obj: Partial<PageType>): [PageType | un
         return [page, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -156,7 +156,7 @@ export function addPageItemGroup(pageUUID: string, obj: Partial<ItemGroupType>, 
         return [newObj, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -180,7 +180,7 @@ export function updatePageItemGroup(pageUUID: string, obj: Partial<ItemGroupType
         return [newObj, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -208,7 +208,7 @@ export function deletePageItemGroup(pageUUID: string, itemGroupUUID: string): [s
         return [itemGroupUUID, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -231,7 +231,7 @@ export function updatePageItem(pageUUID: string, obj: Partial<ItemType>): [ItemT
         return [item, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -264,7 +264,7 @@ export function addPageItem(pageUUID: string, itemGroupUUID: string, obj: Partia
 
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -290,7 +290,7 @@ export function deletePageItem(pageUUID: string, itemUUID: string): [ItemGroupTy
         return [page.itemGroupList, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -307,7 +307,7 @@ export function getPageData(pageUUID: string, filename: string): [string | undef
         return [fs.readFileSync(path.join(p, dataFolder, filename), "utf-8"), undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -322,7 +322,7 @@ export function updatePageData(pageUUID: string, filename: string, content: stri
         return [true, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -339,7 +339,7 @@ export function deletePageData(pageUUID: string, filename: string): [boolean | u
         return [true, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -355,7 +355,7 @@ export function clearPageData(pageUUID: string): [boolean | undefined, any] {
         return [true, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }

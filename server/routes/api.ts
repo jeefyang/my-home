@@ -2,6 +2,10 @@ import { Router } from 'express';
 import { useUserApi } from './userApi';
 import { usePageApi } from './pageApi';
 import { useItemApi } from './itemApi';
+import { useToolsImgApi } from './tools/imgApi';
+import path from 'path';
+import fs from "fs";
+import { DATA_DIR, filesFolder, itemsFolder, PagesFolder, UsersFolder } from '../stores/data';
 
 const router: Router = Router();
 
@@ -9,6 +13,37 @@ useUserApi(router);
 usePageApi(router);
 useItemApi(router);
 
+// 工具集
+useToolsImgApi(router);
+
+
+// 文件读取
+
+router.get("/files/users/:pathID/:filename", async (req, res) => {
+    const p = path.resolve(path.join(DATA_DIR, UsersFolder, req.params.pathID, filesFolder, req.params.filename));
+    if (!fs.existsSync(p)) {
+        return res.status(404).send(404);
+    }
+    return res.sendFile(p);
+});
+
+router.get("/files/pages/:uuid/:filename", async (req, res) => {
+    const p = path.resolve(path.join(DATA_DIR, PagesFolder, req.params.uuid, filesFolder, req.params.filename));
+    if (!fs.existsSync(p)) {
+        return res.status(404).send(404);
+
+    }
+    return res.sendFile(p);
+});
+
+router.get("/files/items/:uuid/:filename", async (req, res) => {
+    const p = path.resolve(path.join(DATA_DIR, itemsFolder, req.params.uuid, filesFolder, req.params.filename));
+    if (!fs.existsSync(p)) {
+        return res.status(404).send(404);
+
+    }
+    return res.sendFile(p);
+});
 
 
 // 2. 【关键】在所有路由之后，定义 404 处理中间件

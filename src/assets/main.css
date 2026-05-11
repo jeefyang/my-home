@@ -29,6 +29,12 @@ a,
     }
 }
 
+.icon {
+    object-fit: contain;
+    width: 100%;
+    height: 100%;
+}
+
 .box {
     width: 100%;
 }
@@ -39,6 +45,12 @@ a,
     max-height: 80vh;
     overflow: auto;
     scrollbar-width: none;
+}
+
+.modalBox .card {
+    overflow: auto;
+    scrollbar-width: none;
+    max-height: 65vh;
 }
 
 /* PC 端：768px 以上自动切换 */

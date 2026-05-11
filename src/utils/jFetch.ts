@@ -1,6 +1,7 @@
 import { ItemApiUrl } from "@common/apis/item";
 import { PageApiUrl } from "@common/apis/page";
 import { TransFetch } from "@common/apis/tools/transFetch";
+import { ToolsImgApiUrl } from "@common/apis/toolsImg";
 import { UserApiUrl } from "@common/apis/user";
 
 const prevUrl = "api/";
@@ -8,3 +9,5 @@ const prevUrl = "api/";
 export const userFetch = new TransFetch(UserApiUrl, prevUrl);
 export const pageFetch = new TransFetch(PageApiUrl, prevUrl);
 export const itemFetch = new TransFetch(ItemApiUrl, prevUrl);
+
+export const toolsImgFetch = new TransFetch(ToolsImgApiUrl, prevUrl);

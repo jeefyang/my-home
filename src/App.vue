@@ -13,7 +13,7 @@
 <script setup lang="ts">
 import { darkTheme, darkTheme as darkThemePreset } from "naive-ui";
 import { onMounted, ref } from "vue";
-import { itemFetch, pageFetch, userFetch } from "./utils/jFetch";
+import { itemFetch, pageFetch, toolsImgFetch, userFetch } from "./utils/jFetch";
 import { useDataStore } from "./stores/data";
 import loading from "./layout/loading.vue";
 import home from "./layout/home.vue";
@@ -21,7 +21,7 @@ const dataStore = useDataStore();
 const isLoading = ref(true);
 
 onMounted(async () => {
-    [userFetch, pageFetch, itemFetch].forEach((item) => {
+    [userFetch, pageFetch, itemFetch, toolsImgFetch].forEach((item) => {
         item.getHeaderFn = async () => {
             return {
                 "Content-Type": "application/json",

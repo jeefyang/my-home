@@ -35,7 +35,7 @@ export function createUser(type: UserTypeType): [UserType | undefined, any] {
         return [user, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -103,7 +103,7 @@ export function editUserPathID(fromPathID: string, toPathID: string): [UserType 
         return [data[0]!, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 
@@ -124,7 +124,7 @@ export function overCancelUser(pathID: string): [string | undefined, any] {
         return [pathID, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -151,7 +151,7 @@ export function deleteUser(uuid: string): [string | undefined, any] {
         return [undefined, "用户不存在"];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 };
@@ -172,7 +172,7 @@ export function updateUser(pathID: string, obj: Partial<UserType>): [UserType | 
         return [data[0]!, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -204,7 +204,7 @@ export function getUserList(): [Partial<UserType>[] | undefined, any] {
         return [data, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -252,7 +252,7 @@ export function getUserData(pathID: string, filename: string): [string | undefin
         return [fs.readFileSync(path.join(p, dataFolder, filename), "utf-8"), undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -267,7 +267,7 @@ export function updateUserData(pathID: string, filename: string, content: string
         return [true, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -284,7 +284,7 @@ export function deleteUserData(pathID: string, filename: string): [boolean | und
         return [true, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
@@ -300,7 +300,7 @@ export function clearUserData(pathID: string): [boolean | undefined, any] {
         return [true, undefined];
     }
     catch (e) {
-        console.log(e);
+        console.error(e);
         return [undefined, e];
     }
 }
