@@ -12,9 +12,9 @@
                     <n-card v-else-if="group.display == 'widthBox'" class="widthBoxGroup" style="width: 100%">
                         <item-view v-for="item in group.list" :key="item.uuid" :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid"></item-view>
                     </n-card>
-                    <float-btn v-model:x="floatBtnX" v-model:y="floatBtnY" is-bottom :scale="1" is-right display-type="absolute" :parentBox="parentRef">
+                    <!-- <float-btn v-model:x="floatBtnX" v-model:y="floatBtnY" is-bottom :scale="1" is-right display-type="absolute" :parentBox="parentRef">
                         <div>123</div>
-                    </float-btn>
+                    </float-btn> -->
                 </div>
             </template>
         </div>
