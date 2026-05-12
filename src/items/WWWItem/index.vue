@@ -1,17 +1,14 @@
 <template>
     <n-flex vertical align="center">
-        <n-input v-model:value="searchKey" type="text" placeholder="世界之窗" round clearable @keyup.enter="toLink(true)">
-        </n-input>
+        <n-input v-model:value="searchKey" type="text" placeholder="世界之窗" round clearable @keyup.enter="toLink(true)"> </n-input>
         <n-flex align="center">
-            <n-button v-for="(item, index) in engineList" :key="item.uuid" size="tiny"
-                @click="switchSearchIndex = index" :type="switchSearchIndex == index ? 'primary' : 'default'">
+            <n-button v-for="(item, index) in engineList" :key="item.uuid" size="tiny" @click="switchSearchIndex = index" :type="switchSearchIndex == index ? 'primary' : 'default'">
                 <div v-if="!item.icon">{{ item.name[0] }}</div>
                 <n-icon size="15" v-else>
                     <img :src="UrlUtils.checkImgUrl(item.icon, `./api/files/users/${dataStore.pathid}`)" class="icon" />
                 </n-icon>
             </n-button>
-            <n-button :bordered="false" :type="switchSearchIndex == -1 ? 'primary' : 'default'" size="tiny"
-                @click="switchSearchIndex = -1">
+            <n-button :bordered="false" :type="switchSearchIndex == -1 ? 'primary' : 'default'" size="tiny" @click="switchSearchIndex = -1">
                 <n-icon v-html="linkIcon"> </n-icon>
             </n-button>
             <n-button :bordered="false" type="info" size="tiny" @click="toShow">
@@ -28,8 +25,8 @@
         <template #header>
             <div>搜索设置</div>
         </template>
-        <n-button size="small" type="primary">
-            <n-icon v-html="addIcon" @click="toAddEngine(0)"></n-icon>
+        <n-button size="small" type="primary" @click="toAddEngine(0)">
+            <n-icon v-html="addIcon"></n-icon>
         </n-button>
         <x-divider></x-divider>
         <n-flex v-if="cacheEngineList.length > 0" vertical>
@@ -40,8 +37,7 @@
                 <n-flex align="center" style="flex-wrap: nowrap">
                     <n-input v-model:value="item.icon" placeholder="接受图片url和base64"></n-input>
                     <n-icon style="width: 32px" size="20" v-if="item.icon">
-                        <img :src="UrlUtils.checkImgUrl(item.icon, `./api/files/users/${dataStore.pathid}`)"
-                            class="icon" />
+                        <img :src="UrlUtils.checkImgUrl(item.icon, `./api/files/users/${dataStore.pathid}`)" class="icon" />
                     </n-icon>
                 </n-flex>
 
@@ -58,11 +54,11 @@
                         <n-switch v-model:value="item.isDefault" />
                     </n-flex>
                     <n-flex>
-                        <n-button type="error">
-                            <n-icon v-html="subIcon" @click="toSubEngine(index)"></n-icon>
+                        <n-button type="error" @click="toSubEngine(index)">
+                            <n-icon v-html="subIcon"></n-icon>
                         </n-button>
-                        <n-button type="primary">
-                            <n-icon v-html="addIcon" @click="toAddEngine(index + 1)"></n-icon>
+                        <n-button type="primary" @click="toAddEngine(index + 1)">
+                            <n-icon v-html="addIcon"></n-icon>
                         </n-button>
                     </n-flex>
                 </n-flex>

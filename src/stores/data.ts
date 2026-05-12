@@ -13,14 +13,29 @@ export const useDataStore = defineStore("data", () => {
     const switchPageUUID = ref("");
     const isMobile = ref(window.innerWidth < 768);
     const themeOverrides = ref(<GlobalThemeOverrides>{});
+    const floatBtnX = ref(1000);
+    const floatBtnY = ref(0);
+    const fullLoading = ref(false);
 
     const saveKey = "data";
 
     const returnData = {
-        pathid, password, switchPageUUID
+        pathid, password, switchPageUUID, floatBtnX, floatBtnY
     };
 
-    const save = () => {
+    const getLocalData = () => {
+        const str = localStorage.getItem(saveKey);
+        if (!str) {
+            return {};
+        }
+        return JSON.parse(str);
+    };
+
+    const save = (newObj?: any) => {
+        if (newObj) {
+            localStorage.setItem(saveKey, newObj);
+            return;
+        }
         const obj: any = {};
         for (let key in returnData) {
             obj[key] = returnData[key].value;
@@ -95,5 +110,5 @@ export const useDataStore = defineStore("data", () => {
 
     load();
 
-    return { ...returnData, user, pageList, load, save, clear, initUser, initPages, isMobile, resize, themeOverrides };
+    return { ...returnData, user, pageList, load, save, clear, initUser, initPages, isMobile, resize, themeOverrides, getLocalData, fullLoading };
 });

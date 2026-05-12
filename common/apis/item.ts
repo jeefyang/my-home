@@ -8,7 +8,7 @@ export const ItemApiUrl = apiUrlsTrans("item/", {
     deleteItem: { method: "POST", from: {} as { pageUUID: string; uuid: string; } },
     addItemGroup: { method: "POST", from: {} as { insertIndex?: number, pageUUID: string, obj: Partial<ItemGroupType>; }, to: {} as ItemGroupType },
     updateItemGroup: { method: "POST", from: {} as { pageUUID: string; obj: Partial<ItemGroupType>; }, to: {} as ItemGroupType },
-    deleteItemGroup: { method: "POST", from: {} as { pageUUID: string; uuid: string; }, to: {} as ItemGroupType[] },
+    deleteItemGroup: { method: "POST", from: {} as { pageUUID: string; uuid: string; } },
     getItemData: {
         method: "POST",
         from: {} as { itemType: string, itemUUID: string, filename: string; }, to: {} as string
@@ -19,9 +19,9 @@ export const ItemApiUrl = apiUrlsTrans("item/", {
     },
     clearItemData: {
         method: "POST",
-        from: {} as { itemType: string, itemUUID: string }
+        from: {} as { itemType: string, itemUUID: string; }
     },
-    deleteItemData:{
+    deleteItemData: {
         method: "POST",
         from: {} as { itemType: string, itemUUID: string, filename: string; }
     }

@@ -9,6 +9,7 @@ export const ItemRouterList: { [key: string]: ItemRouterType; } = {
         title: "www",
         style: {},
         component: "WWWItem",
+        desc:"自定义搜索"
     }
 
 };

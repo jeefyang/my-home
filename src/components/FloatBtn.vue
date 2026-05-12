@@ -84,29 +84,34 @@ const props = withDefaults(
     }
 );
 
-const modelBoxWidth = computed(() => {
+const getModelBoxWidth = () => {
     return props.boxWidth || props.parentBox?.clientWidth || window.innerWidth;
-});
+};
 
-const modelBoxHeight = computed(() => {
+const getModelBoxHeight = () => {
     return props.boxHeight || props.parentBox?.clientHeight || window.innerHeight;
-});
+};
 
+/** 是否缩放 */
 const isScale = ref(false);
+/** 是否透明 */
 const isOpacity = ref(true);
 
 const mainRef = ref<HTMLElement>();
-let divRect: { width: number; height: number } = undefined;
+/** 悬浮按钮尺寸 */
+let floatBtnRect: { width: number; height: number } = undefined;
 
+/** 当前透明度 */
 const curOpacity = computed(() => {
     return isOpacity.value ? props.opacity : 1;
 });
 
+/** 当前缩放 */
 const curScale = computed(() => {
     return isScale.value ? props.scale : 1;
 });
 
-const emits = defineEmits(["swipe", "swipe.left", "swipe.right", "swipe.top", "swipe.bottom", "update:x", "update:y", "longtap", "tap", "dblclick", "longPress"]);
+const emits = defineEmits(["swipe", "swipe.left", "swipe.right", "swipe.top", "swipe.bottom", "update:x", "update:y", "longtap", "tap", "dblclick", "longPress", "moveEnd"]);
 
 const modelX = computed({
     get() {
@@ -202,6 +207,7 @@ const setMove = () => {
         clientY = undefined;
         setNoOpacity();
         isScale.value = false;
+        emits("moveEnd");
         document.body.removeEventListener("mousemove", moveFn);
         document.body.removeEventListener("touchmove", moveFn);
         document.body.removeEventListener("mouseup", endFn);
@@ -223,7 +229,7 @@ const setLongPress = (e: any) => {
             return;
         }
         const div = mainRef.value;
-        divRect = div.getBoundingClientRect();
+        floatBtnRect = div.getBoundingClientRect();
         isScale.value = true;
         setNoOpacity(true);
         console.log("longPress");
@@ -233,8 +239,8 @@ const setLongPress = (e: any) => {
 };
 
 const updateRealX = (v: number) => {
-    if (divRect == undefined) {
-        divRect = mainRef?.value?.getBoundingClientRect?.() || { width: 0, height: 0 };
+    if (floatBtnRect == undefined) {
+        floatBtnRect = mainRef?.value?.getBoundingClientRect?.() || { width: 0, height: 0 };
     }
     if (!props.isAdsorb) {
         realX.value = v;
@@ -244,33 +250,31 @@ const updateRealX = (v: number) => {
         realX.value = v;
         return;
     }
+    const boxWidth = getModelBoxWidth();
     // 转为中心点
-    let centerX = v + divRect.width / 2;
+    let centerX = v + floatBtnRect.width / 2;
     // 转为左上角
     if (props.isRight) {
-        centerX = modelBoxWidth.value - centerX;
+        centerX = boxWidth - centerX;
     }
-    const list = [
-        props.adsorbLeft == undefined ? undefined : Math.abs(centerX - props.adsorbPadding),
-        props.adsorbRight == undefined ? undefined : Math.abs(modelBoxWidth.value - centerX - props.adsorbPadding)
-    ];
+    const list = [props.adsorbLeft == undefined ? undefined : Math.abs(centerX - props.adsorbPadding), props.adsorbRight == undefined ? undefined : Math.abs(boxWidth - centerX - props.adsorbPadding)];
     // 左边
     if (list[0] != undefined && (list[1] == undefined || list[0] <= list[1])) {
-        if (props.forceAdsorb || list[0] <= props.adsorbDistance + divRect.width / 2 + props.adsorbPadding) {
-            centerX = props.adsorbPadding + divRect.width / 2 + props.adsorbLeft;
+        if (props.forceAdsorb || list[0] <= props.adsorbDistance + floatBtnRect.width / 2 + props.adsorbPadding) {
+            centerX = props.adsorbPadding + floatBtnRect.width / 2 + props.adsorbLeft;
         }
     }
     // 右边
     else if (list[1] != undefined && (list[0] == undefined || list[1] < list[0])) {
-        if (props.forceAdsorb || list[1] <= props.adsorbDistance + divRect.width / 2 + props.adsorbPadding) {
-            centerX = modelBoxWidth.value - props.adsorbPadding - divRect.width / 2 - props.adsorbRight;
+        if (props.forceAdsorb || list[1] <= props.adsorbDistance + floatBtnRect.width / 2 + props.adsorbPadding) {
+            centerX = boxWidth - props.adsorbPadding - floatBtnRect.width / 2 - props.adsorbRight;
         }
     }
     //恢复坐标位置
     if (props.isRight) {
-        realX.value = modelBoxWidth.value - centerX - divRect.width / 2;
+        realX.value = boxWidth - centerX - floatBtnRect.width / 2;
     } else {
-        realX.value = centerX - divRect.width / 2;
+        realX.value = centerX - floatBtnRect.width / 2;
     }
 };
 
@@ -283,60 +287,85 @@ const updateRealY = (v: number) => {
         realY.value = v;
         return;
     }
+    const boxHeight = getModelBoxHeight();
     // 转为中心点
-    let centerY = v + divRect.height / 2;
+    let centerY = v + floatBtnRect.height / 2;
     // 转为左上角
     if (props.isBottom) {
-        centerY = modelBoxHeight.value - centerY;
+        centerY = boxHeight - centerY;
     }
     const list = [
         props.adsorbTop == undefined ? undefined : Math.abs(centerY - props.adsorbPadding),
-        props.adsorbBottom == undefined ? undefined : Math.abs(modelBoxHeight.value - centerY - props.adsorbPadding)
+        props.adsorbBottom == undefined ? undefined : Math.abs(boxHeight - centerY - props.adsorbPadding)
     ];
     // 上边
     if (list[0] != undefined && (list[1] == undefined || list[0] <= list[1])) {
-        if (props.forceAdsorb || list[0] <= props.adsorbDistance + divRect.height / 2 + props.adsorbPadding) {
-            centerY = props.adsorbPadding + divRect.height / 2 + props.adsorbTop;
+        if (props.forceAdsorb || list[0] <= props.adsorbDistance + floatBtnRect.height / 2 + props.adsorbPadding) {
+            centerY = props.adsorbPadding + floatBtnRect.height / 2 + props.adsorbTop;
         }
     }
     // 下边
     else if (list[1] != undefined && (list[0] == undefined || list[1] < list[0])) {
-        if (props.forceAdsorb || list[1] <= props.adsorbDistance + divRect.height / 2 + props.adsorbPadding) {
-            centerY = modelBoxHeight.value - props.adsorbPadding - divRect.height / 2 - props.adsorbBottom;
+        if (props.forceAdsorb || list[1] <= props.adsorbDistance + floatBtnRect.height / 2 + props.adsorbPadding) {
+            centerY = boxHeight - props.adsorbPadding - floatBtnRect.height / 2 - props.adsorbBottom;
         }
     }
 
     //恢复坐标位置
     if (props.isBottom) {
-        realY.value = modelBoxHeight.value - centerY - divRect.height / 2;
+        realY.value = boxHeight - centerY - floatBtnRect.height / 2;
     } else {
-        realY.value = centerY - divRect.height / 2;
+        realY.value = centerY - floatBtnRect.height / 2;
     }
+};
+
+const setPos = (x: number, y: number) => {
+    updateRealX(x);
+    updateRealY(y);
+    if (props.isAdsorb) {
+        const boxWidth = getModelBoxWidth();
+        const boxHeight = getModelBoxHeight();
+        if (props.forceAdsorb) {
+            const deltaX = Math.abs(x - realX.value);
+            const deltaY = Math.abs(y - realY.value);
+
+            if (deltaX > deltaY) {
+                realX.value = Math.max(props.adsorbPadding, Math.min(boxWidth - props.adsorbPadding - (floatBtnRect?.width || 0), x));
+            } else {
+                realY.value = Math.max(props.adsorbPadding, Math.min(boxHeight - props.adsorbPadding - (floatBtnRect?.height || 0), y));
+            }
+        } else {
+            realX.value = Math.max(props.adsorbPadding, Math.min(boxWidth - props.adsorbPadding - (floatBtnRect?.width || 0), realX.value));
+            realY.value = Math.max(props.adsorbPadding, Math.min(boxHeight - props.adsorbPadding - (floatBtnRect?.height || 0), realY.value));
+        }
+    }
+};
+
+const initPos = () => {
+    setPos(modelX.value, modelY.value);
+    modelX.value = realX.value;
+    modelY.value = realY.value;
 };
 
 onMounted(() => {
     watch(
         () => [modelX.value, modelY.value],
         ([x, y]) => {
-            updateRealX(x);
-            updateRealY(y);
-            if (props.isAdsorb) {
-                if (props.forceAdsorb) {
-                    const deltaX = Math.abs(x - realX.value);
-                    const deltaY = Math.abs(y - realY.value);
-                    if (deltaX > deltaY) {
-                        realX.value = Math.max(props.adsorbPadding, Math.min(modelBoxWidth.value - props.adsorbPadding - (divRect?.width || 0), x));
-                    } else {
-                        realY.value = Math.max(props.adsorbPadding, Math.min(modelBoxHeight.value - props.adsorbPadding - (divRect?.height || 0), y));
-                    }
-                } else {
-                    realX.value = Math.max(props.adsorbPadding, Math.min(modelBoxWidth.value - props.adsorbPadding - (divRect?.width || 0), realX.value));
-                    realY.value = Math.max(props.adsorbPadding, Math.min(modelBoxHeight.value - props.adsorbPadding - (divRect?.height || 0), realY.value));
-                }
-            }
+            setPos(x, y);
         },
         { immediate: true }
     );
+    // 等待父组件初始化先
+    setTimeout(() => {
+        initPos();
+    }, 100);
+    window.addEventListener("resize", () => {
+        console.log("resize");
+        // 等待父组件初始化先
+        setTimeout(() => {
+            initPos();
+        }, 100);
+    });
 });
 </script>
 <style scoped>

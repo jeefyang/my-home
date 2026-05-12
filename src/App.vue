@@ -15,8 +15,9 @@ import { darkTheme, darkTheme as darkThemePreset } from "naive-ui";
 import { onMounted, ref } from "vue";
 import { itemFetch, pageFetch, toolsImgFetch, userFetch } from "./utils/jFetch";
 import { useDataStore } from "./stores/data";
-import loading from "./layout/loading.vue";
 import home from "./layout/home.vue";
+import Loading from "./components/Loading.vue";
+
 const dataStore = useDataStore();
 const isLoading = ref(true);
 

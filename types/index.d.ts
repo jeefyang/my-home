@@ -24,7 +24,7 @@ type UserType = {
     password?: string;
 };
 
-type ItemDisplayType = "btn" | "icon" | 'fullScreen' | "box" | "widthBox" | "modal";
+type ItemDisplayType = "btn" | "icon" | 'fullPage' | "box" | "widthBox";
 
 type ItemGroupOptionType = {
 };
@@ -43,6 +43,7 @@ type ItemGroupType = {
 };
 
 type PageOptionType = {
+
 };
 
 type PageType = {
@@ -94,4 +95,7 @@ type ItemRouterType<T extends string = string> = {
     component: string;
     /** 初始样式 */
     style: MyStyleType;
+    /** 是否隐藏,用于调试和一些高级功能暂时不想显示 */
+    isHide?: boolean;
+    desc?: string;
 };

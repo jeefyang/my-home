@@ -206,6 +206,7 @@ export function deletePageItemGroup(pageUUID: string, itemGroupUUID: string): [s
                 fs.rmSync(p, { recursive: true });
             }
         });
+        writePage(page);
         return [itemGroupUUID, undefined];
     }
     catch (e) {
