@@ -9,11 +9,14 @@
         </div>
 
         <!-- 项目组列表 -->
-        <n-card v-for="(group, gindex) in curPage.itemGroupList" :key="group.uuid" :style="{ borderColor: themeVars.primaryColor }" class="mb-2">
+        <n-card v-for="(group, gindex) in curPage.itemGroupList" :key="group.uuid"
+            :style="{ borderColor: themeVars.primaryColor }" class="mb-2">
             <n-flex vertical class="mb-2">
                 <div>分组名称:</div>
                 <div class="line">
-                    <n-input :value="cacheGroup.title[group.uuid] == undefined ? group.title : cacheGroup.title[group.uuid]" @update:value="(v) => (cacheGroup.title[group.uuid] = v)"></n-input>
+                    <n-input
+                        :value="cacheGroup.title[group.uuid] == undefined ? group.title : cacheGroup.title[group.uuid]"
+                        @update:value="(v) => (cacheGroup.title[group.uuid] = v)"></n-input>
                     <n-button size="tiny" @click="updateGroupTitle(group)">更新</n-button>
                 </div>
                 <div>分组显示类型:</div>
@@ -21,25 +24,31 @@
                     <n-select
                         :value="cacheGroup.display[group.uuid] == undefined ? group.display : cacheGroup.display[group.uuid]"
                         :options="displayTypeList"
-                        @update:value="(v) => (cacheGroup.display[group.uuid] = v)"
-                    ></n-select>
+                        @update:value="(v) => (cacheGroup.display[group.uuid] = v)"></n-select>
                     <n-button size="tiny" @click="updateGroupDisplay(group)">更新</n-button>
                 </div>
                 <div class="line">
-                    <n-select v-model:value="cacheGroup.insertItemType[group.uuid]" :options="selectTypeList"></n-select>
-                    <n-button size="tiny" type="info" @click="addItem(group, cacheGroup.insertItemType[group.uuid], 0)"> 插入项目 </n-button>
+                    <n-select v-model:value="cacheGroup.insertItemType[group.uuid]"
+                        :options="selectTypeList"></n-select>
+                    <n-button size="tiny" type="info" @click="addItem(group, cacheGroup.insertItemType[group.uuid], 0)">
+                        插入项目
+                    </n-button>
                 </div>
             </n-flex>
             <!-- 项目列表 -->
             <template v-if="group.list && group.list.length > 0">
-                <n-card v-for="(item, index) in group.list" :key="item.uuid" :style="{ borderColor: themeVars.infoColor }" class="mb-2">
-                    <div>类型:{{ ItemRouterList[item.type].title }}{{ ItemRouterList[item.type].desc ? `(${ItemRouterList[item.type].desc})` : "" }}</div>
+                <n-card v-for="(item, index) in group.list" :key="item.uuid"
+                    :style="{ borderColor: themeVars.infoColor }" class="mb-2">
+                    <div>类型:{{ ItemRouterList[item.type].title }}{{ ItemRouterList[item.type].desc ?
+                        `(${ItemRouterList[item.type].desc})` : "" }}</div>
 
                     <div class="line">
-                        <n-select v-model:value="cacheItem.insertItemType[item.uuid]" :options="selectTypeList"></n-select>
-                        <n-button type="info" size="tiny" @click="addItem(group, cacheItem.insertItemType[item.uuid], index + 1)">追加项目</n-button>
+                        <n-select v-model:value="cacheItem.insertItemType[item.uuid]"
+                            :options="selectTypeList"></n-select>
+                        <n-button type="info" size="tiny"
+                            @click="addItem(group, cacheItem.insertItemType[item.uuid], index + 1)">追加项目</n-button>
                     </div>
-                    <n-button type="error" size="tiny">删除项目</n-button>
+                    <n-button type="error" size="tiny" @click="deleteItem(group.uuid, item)">删除项目</n-button>
                 </n-card>
             </template>
             <template v-else>
@@ -47,7 +56,8 @@
             </template>
             <div class="line">
                 <n-select v-model:value="cacheGroup.display[group.uuid]" :options="displayTypeList"></n-select>
-                <n-button type="primary" size="tiny" @click="addItemGroup(cacheGroup.display[group.uuid], gindex + 1)">追加分组</n-button>
+                <n-button type="primary" size="tiny"
+                    @click="addItemGroup(cacheGroup.display[group.uuid], gindex + 1)">追加分组</n-button>
             </div>
             <n-button type="error" size="tiny" @click="deleteGroup(group)">删除分组</n-button>
         </n-card>
@@ -152,6 +162,39 @@ const deleteGroup = async (group: ItemGroupType) => {
     msg.success(res.msg);
 };
 
+const deleteItem = async (groupUUID: string, item: ItemType) => {
+    await new Promise((res, rej) => {
+        dialog.warning({
+            title: "删除项目",
+            content: "确定删除当前项目吗?",
+            positiveText: "确定",
+            negativeText: "取消",
+            onPositiveClick: () => {
+                res(undefined);
+            },
+            onNegativeClick: () => {
+                rej();
+            }
+        });
+    });
+    dataStore.fullLoading = true
+    const res = await itemFetch.request("deleteItem", { pageUUID: props.pageUUID, uuid: item.uuid })
+    dataStore.fullLoading = false
+    if (res.code != 200) {
+        return msg.error(res.msg)
+    }
+    const gindex = curPage.value.itemGroupList.findIndex((group) => group.uuid == groupUUID)
+    if (gindex == -1) {
+        return
+    }
+    const index = curPage.value.itemGroupList[gindex].list.findIndex((item) => item.uuid == item.uuid)
+    if (index == -1) {
+        return
+    }
+    curPage.value.itemGroupList[gindex].list.splice(index, 1)
+    msg.success(res.msg)
+}
+
 const updateGroupTitle = async (group: ItemGroupType) => {
     if (!cacheGroup.title[group.uuid]) {
         return msg.error("请输入分组名称");
@@ -255,7 +298,6 @@ watch(
     gap: 10px;
     margin-bottom: 5px;
 }
-// .pageConfigModal{
 
-// }
+// .pageConfigModal {}
 </style>

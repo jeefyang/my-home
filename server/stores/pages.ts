@@ -130,7 +130,7 @@ function getPageItemIndex(page: PageType, itemUUID: string) {
             groupIndex = cindex;
             itemIndex = ccindex;
             return true;
-        });
+        }) != -1;
     });
     return { groupIndex, itemIndex };
 

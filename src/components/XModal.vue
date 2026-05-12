@@ -1,7 +1,7 @@
 <template>
     <n-modal v-model:show="modelShow" :loading="props.loading">
         <div class="modalBox">
-            <n-card>
+            <n-card style="min-height: 300px;">
                 <div class="card" :style="{ maxHeight: props.contentMaxHeight }">
                     <slot></slot>
                 </div>

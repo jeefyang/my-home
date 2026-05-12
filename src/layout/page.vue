@@ -3,16 +3,24 @@
     <n-config-provider :theme-overrides="themeOverrides" style="width: 100%; height: 100%">
         <div class="parent" ref="parentRef">
             <template v-if="curPage">
-                <div v-for="group in curPage.itemGroupList" :key="group.uuid">
+                <div v-for="group in curPage.itemGroupList" :key="group.uuid" :class="{'group_full':group.display=='fullPage'}">
                     <!-- 按钮分组  -->
-                    <n-card v-if="group.display == 'btn'" class="btnGroup group_btn mb-2">
-                        <n-button type="primary" v-for="item in group.list" :key="item.uuid">{{ getItemTitle(item) }}</n-button>
-                    </n-card>
+                    <div v-if="group.display == 'btn'">
+                        <n-card class="btnGroup group_btn mb-2">
+                            <n-button type="primary" v-for="item in group.list" :key="item.uuid">{{ getItemTitle(item)
+                            }}</n-button>
+                        </n-card>
+                    </div>
+
                     <!-- 图标分组 -->
-                    <n-card v-else-if="group.display == 'icon'" class="group_btn mb-2">
-                        <n-button type="primary" v-for="item in group.list" :key="item.uuid">{{ getItemTitle(item) }}</n-button>
-                    </n-card>
-                    <!-- 自适应盒子 -->
+                    <div v-else-if="group.display == 'icon'" style="display: flex;flex-wrap: wrap;">
+                        <n-card class="group_btn mb-2">
+                            <n-button type="primary" v-for="item in group.list" :key="item.uuid">{{ getItemTitle(item)
+                                }}</n-button>
+                        </n-card>
+                    </div>
+
+                    <!-- 自适应盒子分组 -->
                     <div v-else-if="group.display == 'box'" class="mb-2 flex flex-gap-2 flex-wrap">
                         <n-card class="group_box" v-for="item in group.list" :key="item.uuid">
                             <item-view :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid"></item-view>
@@ -20,22 +28,20 @@
                     </div>
 
                     <!-- 宽度盒子分组(占满屏幕宽度) -->
-                    <n-card v-else-if="group.display == 'widthBox'" class="group_widthBox mb-2">
-                        <item-view v-for="item in group.list" :key="item.uuid" :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid"></item-view>
-                    </n-card>
-                    <!-- 全屏 -->
-                    <div v-else-if="group.display == 'fullPage'">full</div>
+                    <div v-else-if="group.display == 'widthBox'" class="group_widthBox">
+                        <n-card v-for="item in group.list" :key="item.uuid" class="mb-2">
+                            <item-view :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid"></item-view>
+                        </n-card>
+                    </div>
+                    <!-- 全屏分组 -->
+                    <div v-else-if="group.display == 'fullPage'" class="group_full">
+                        <n-card style="flex:1" v-for="item in group.list" :key="item.uuid" class="mb-2">
+                            <item-view :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid"></item-view>
+                        </n-card>
+                    </div>
                 </div>
-                <float-btn
-                    v-model:x="dataStore.floatBtnX"
-                    v-model:y="dataStore.floatBtnY"
-                    is-bottom
-                    is-right
-                    display-type="absolute"
-                    :parentBox="parentRef"
-                    @move-end="dataStore.save()"
-                    @tap="openOption"
-                >
+                <float-btn v-model:x="dataStore.floatBtnX" v-model:y="dataStore.floatBtnY" is-bottom is-right
+                    display-type="absolute" :parentBox="parentRef" @move-end="dataStore.save()" @tap="openOption">
                     <n-button type="primary" circle size="small">
                         <n-icon size="20" v-html="optionIcon"> </n-icon>
                     </n-button>
@@ -108,6 +114,6 @@ onMounted(async () => {
     overflow: auto;
     scrollbar-width: none;
     /* position: relative; */
-    padding-bottom: 20px;
+    /* padding-bottom: 20px; */
 }
 </style>
