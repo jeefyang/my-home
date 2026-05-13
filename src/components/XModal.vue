@@ -1,7 +1,7 @@
 <template>
-    <n-modal v-model:show="modelShow" :loading="props.loading">
+    <n-modal v-model:show="modelShow"  :mask-closable="props.maskClosable">
         <div class="modalBox">
-            <n-card style="min-height: 300px;">
+            <n-card style="min-height: 300px">
                 <div class="card" :style="{ maxHeight: props.contentMaxHeight }">
                     <slot></slot>
                 </div>
@@ -27,9 +27,9 @@ const props = defineProps({
         type: String,
         default: undefined
     },
-    loading: {
+    maskClosable: {
         type: Boolean,
-        default: false
+        default: true
     }
 });
 

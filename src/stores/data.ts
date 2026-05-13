@@ -7,7 +7,7 @@ import type { GlobalThemeOverrides } from "naive-ui";
 
 export const useDataStore = defineStore("data", () => {
     const pathid = ref("");
-    const password = ref("");
+    const secondcode = ref("");
     const user = ref(<UserType>null);
     const pageList = ref(<PageType[]>[]);
     const switchPageUUID = ref("");
@@ -20,7 +20,7 @@ export const useDataStore = defineStore("data", () => {
     const saveKey = "data";
 
     const returnData = {
-        pathid, password, switchPageUUID, floatBtnX, floatBtnY
+        pathid, secondcode, switchPageUUID, floatBtnX, floatBtnY
     };
 
     const getLocalData = () => {
@@ -57,7 +57,7 @@ export const useDataStore = defineStore("data", () => {
         const params = (new URL(location.href)).searchParams;
         for (let key in returnData) {
             const param = params.get(key);
-            if (param == null) {
+            if (param == null || param == "") {
                 continue;
             }
             returnData[key].value = param;
@@ -75,7 +75,7 @@ export const useDataStore = defineStore("data", () => {
         }
         user.value = userRes.data!;
         pathid.value = user.value.pathID;
-        password.value = userRes.data!.password;
+        secondcode.value = userRes.data!.secondCode;
         const themeRes = await userFetch.request("getUserData", { filename: "themeOverrides.json" });
         if (themeRes.code == 200) {
             const data = themeRes.data ? JSON.parse(themeRes.data) : {};

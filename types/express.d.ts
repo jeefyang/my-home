@@ -7,7 +7,7 @@ declare module 'express' {
     interface Request {
         headers: {
             pathid: string;
-            password?: string;
+            secondcode?: string;
         };
     }
 }

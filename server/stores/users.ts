@@ -80,28 +80,41 @@ export function getUser(pathID: string, autoInit?: boolean): [UserType | undefin
 }
 
 /** 修改用户路径id */
-export function editUserPathID(fromPathID: string, toPathID: string): [UserType | undefined, any] {
+export function editUserPathID(fromPathID: string, toPathID?: string, secondCode?: string): [UserType | undefined, any] {
     const p = path.join(DATA_DIR, UsersFolder, fromPathID);
     if (!fs.existsSync(p)) {
         return [undefined, "用户不存在"];
     }
-    const toP = path.join(DATA_DIR, UsersFolder, toPathID);
-    if (fs.existsSync(toP)) {
-        return [undefined, "用户已存在"];
-    }
-    if (!/^[a-zA-Z0-9_-]{8,20}$/.test(toPathID)) {
-        return [undefined, "路径id只能包含数字、字母、下划线、中划线、且8-20位"];
-    }
     try {
-        fs.renameSync(p, toP);
-        const data = getUser(toPathID);
+        const data = getUser(fromPathID);
+        let newP = p;
         if (data[1]) {
             return [undefined, data[1]];
         }
-        data[0]!.pathID = toPathID;
-        data[0]!.modifyTime = Date.now();
-        fs.writeFileSync(path.join(toP, UserFileName), JSON.stringify(data[0]!, null, '\t'));
-        return [data[0]!, undefined];
+        const user = data[0]!;
+        if (toPathID) {
+            newP = path.join(DATA_DIR, UsersFolder, toPathID);
+            if (fs.existsSync(newP)) {
+                return [undefined, "用户已存在"];
+            }
+            if (!/^[a-zA-Z0-9_-]{8,20}$/.test(toPathID)) {
+                return [undefined, "路径id只能包含数字、字母、下划线、中划线、且8-20位"];
+            }
+            fs.renameSync(p, newP);
+            const data = getUser(toPathID);
+            if (data[1]) {
+                return [undefined, data[1]];
+            }
+            user.pathID = toPathID;
+            user.modifyTime = Date.now();
+        }
+        if (secondCode != undefined) {
+            user.secondCode = secondCode;
+            user.modifyTime = Date.now();
+        }
+        fs.writeFileSync(path.join(newP, UserFileName), JSON.stringify(user, null, '\t'));
+
+        return [user, undefined];
     }
     catch (e) {
         console.error(e);
@@ -167,10 +180,11 @@ export function updateUser(pathID: string, obj: Partial<UserType>): [UserType | 
         return [undefined, data[1]];
     }
     try {
-        data[0] = { ...data[0]!, ...obj, uuid: data[0]!.uuid, pathID: data[0]!.pathID, type: data[0]!.type };
-        data[0]!.modifyTime = Date.now();
-        fs.writeFileSync(path.join(DATA_DIR, UsersFolder, pathID, UserFileName), JSON.stringify(data[0]!, null, '\t'));
-        return [data[0]!, undefined];
+        let user = data[0]!;
+        // 不允许修改pathID,type,secondCode
+        user = { ...user!, ...obj, uuid: user.uuid, pathID: user.pathID, type: user.type, secondCode: user.secondCode, modifyTime: Date.now() };
+        fs.writeFileSync(path.join(DATA_DIR, UsersFolder, pathID, UserFileName), JSON.stringify(user, null, '\t'));
+        return [user, undefined];
     }
     catch (e) {
         console.error(e);
@@ -211,7 +225,7 @@ export function getUserList(): [Partial<UserType>[] | undefined, any] {
 }
 
 /** 验证用户 */
-export function verifyUser(pathID: string, password?: string): [UserType | undefined, any] {
+export function verifyUser(pathID: string, secondCode?: string): [UserType | undefined, any] {
     // 空用户,双undefined判断
     if (dataOptions.isEmptyUser) {
         return [undefined, undefined];
@@ -224,14 +238,14 @@ export function verifyUser(pathID: string, password?: string): [UserType | undef
         return [undefined, data[1]];
     }
     const user = data[0]!;
-    if (user.password && user.password != password) {
+    if (user.secondCode && user.secondCode != secondCode) {
         return [undefined, "密码错误"];
     }
     return [user, undefined];
 }
 
 export async function verifyUserFromReq(req: Request): Promise<ResSendType<any> | undefined> {
-    const data = verifyUser(req.headers.pathid, req.headers.password);
+    const data = verifyUser(req.headers.pathid, req.headers.secondcode);
     if (data[1]) {
         return { code: 401, msg: data[1], err: 'Unauthorized' };
     }

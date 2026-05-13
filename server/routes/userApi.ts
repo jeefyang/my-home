@@ -7,7 +7,7 @@ export function useUserApi(router: Router) {
     const userRouter = new TransExpressRouter(UserApiUrl, router);
 
     userRouter.setRouter("getUser", async (from, req, res) => {
-        const [user, err] = verifyUser(req.headers.pathid, req.headers.password);
+        const [user, err] = verifyUser(req.headers.pathid, req.headers.secondcode);
         if (err) {
             return { err: err };
         }
@@ -53,7 +53,7 @@ export function useUserApi(router: Router) {
     });
 
     userRouter.setRouter("deleteUser", async (from, req, res) => {
-        const [adminUser, adminError] = verifyUser(req.headers.pathid, req.headers.password);
+        const [adminUser, adminError] = verifyUser(req.headers.pathid, req.headers.secondcode);
         if (adminError || !adminUser || adminUser.type !== "admin") {
             return { code: 401, msg: "管理员验证失败" };
         }
@@ -86,7 +86,7 @@ export function useUserApi(router: Router) {
 
     userRouter.setRouter("userList", async (_from, req, res) => {
 
-        const [adminUser, adminError] = verifyUser(req.headers.pathid, req.headers.password);
+        const [adminUser, adminError] = verifyUser(req.headers.pathid, req.headers.secondcode);
         if (adminError || !adminUser || adminUser.type !== "admin") {
             return { code: 401, msg: "管理员验证失败" };
         }
@@ -116,11 +116,16 @@ export function useUserApi(router: Router) {
     });
 
     userRouter.setRouter("editUserPathID", async (from, req, res) => {
-        const check = await verifyUserFromReq(req);
-        if (check) {
-            return check;
+
+        const [adminUser, adminError] = verifyUser(req.headers.pathid, req.headers.secondcode);
+        // 暂时只能管理员可以修改自己的pathID,普通用户暂不开放
+        if (from.newPathID && (adminError || !adminUser || adminUser.type !== "admin")) {
+            return { code: 401, msg: "管理员验证失败" };
         }
-        const [user, err] = editUserPathID(req.headers.pathid, from.newPathID);
+        if (!from.newPathID && from.newSecondCode == undefined) {
+            return { code: 500, msg: "请输入参数" };
+        }
+        const [user, err] = editUserPathID(req.headers.pathid, from.newPathID, from.newSecondCode);
         if (err) {
             return {
                 err: err,

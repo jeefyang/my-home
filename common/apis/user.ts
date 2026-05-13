@@ -50,7 +50,7 @@ export const UserApiUrl = apiUrlsTrans("user/", {
     },
     editUserPathID: {
         method: "POST",
-        from: {} as { newPathID: string; },
+        from: {} as { newPathID?: string; newSecondCode?: string; },
         to: {} as UserType
     }
 });

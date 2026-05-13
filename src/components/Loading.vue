@@ -11,10 +11,6 @@
 .fullLoading {
     width: 100vw;
     height: 100vh;
-    position: fixed;
-    top: 0;
-    left: 0;
-    z-index: 999999;
     backdrop-filter: blur(2px); /* 轻微自身模糊让底层渐变透出，增加氛围，但不是主要磨砂 */
     background: rgba(0, 0, 0, 0.4);
 }

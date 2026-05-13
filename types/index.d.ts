@@ -21,7 +21,8 @@ type UserType = {
     /** 自定义数据,可用于跨页面跨项目交互,请谨慎使用 */
     customData?: Record<string, any>;
     style?: MyStyleType;
-    password?: string;
+    /** 二次码,加强验证 */
+    secondCode?: string;
 };
 
 type ItemDisplayType = "btn" | "icon" | 'fullPage' | "box" | "widthBox";

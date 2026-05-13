@@ -9,7 +9,7 @@ export function usePageApi(router: Router) {
     const pageRouter = new TransExpressRouter(PageApiUrl, router);
 
     pageRouter.setRouter("initPages", async (from, req, res) => {
-        const [user, err] = verifyUser(req.headers.pathid, req.headers.password);
+        const [user, err] = verifyUser(req.headers.pathid, req.headers.secondcode);
         if (err) {
             return { err: err };
         }
