@@ -1,12 +1,16 @@
 <template>
-    <n-flex class="fullLoading" justify="center" align="center" vertical>
+    <n-flex class="fullLoading" justify="center" align="center" vertical :style="props.froceTop ? { position: 'fixed', top: 0, 'z-indx': 999999 } : {}">
         <n-flex vertical>
             <n-spin size="large" />
             <n-text>正在加载...</n-text>
         </n-flex>
     </n-flex>
 </template>
-<script setup lang="ts"></script>
+<script setup lang="ts">
+const props = defineProps<{
+    froceTop?: boolean;
+}>();
+</script>
 <style lang="css" scoped>
 .fullLoading {
     width: 100vw;

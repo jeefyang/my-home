@@ -1,5 +1,5 @@
 <template>
-    <n-flex style="gap: 0; width: 100%; height: 100%;" vertical>
+    <n-flex style="gap: 0; width: 100%; height: 100%" vertical>
         <div class="content">
             <keep-alive>
                 <page v-if="currentPage" :key="dataStore.switchPageUUID" :pageUUID="dataStore.switchPageUUID"></page>
@@ -36,6 +36,7 @@ const currentPage = computed(() => {
 
 const switchPage = (item: PageType) => {
     dataStore.switchPageUUID = item.uuid;
+    dataStore.save();
 };
 
 onMounted(() => {});
