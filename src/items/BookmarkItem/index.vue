@@ -48,8 +48,20 @@ const filename = "bookmarkList.json";
 
 const msg = useMessage();
 
-const toAdd = () => {
-    dataList.value.push({ title: "新建收藏夹", uuid: nanoid(10), sortid: 0 });
+const toAdd = async () => {
+    const list = [...dataList.value, { title: "新建收藏夹", uuid: nanoid(10), sortid: 0 }];
+
+    const res = await itemFetch.request("updateItemData", {
+        itemType: props.item.type,
+        itemUUID: props.item.uuid,
+        filename: filename,
+        content: JSON.stringify(list)
+    });
+    if (res.code != 200) {
+        return msg.error(res.msg);
+    }
+    dataList.value = list;
+    return msg.success(res.msg);
 };
 
 const init = async () => {
