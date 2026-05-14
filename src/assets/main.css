@@ -64,6 +64,14 @@ a,
     max-height: 400px;
 }
 
+.line {
+    display: flex;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 5px;
+}
+
 /* 分组-全屏 */
 .group_full {
     width: 100%;

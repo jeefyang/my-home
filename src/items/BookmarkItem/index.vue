@@ -1,6 +1,6 @@
 <template>
     <div v-if="dataList && dataList.length > 0">
-        <n-tabs :bar-width="28" type="line" class="custom-tabs">
+        <n-tabs :bar-width="28" type="line" class="custom-tabs" v-model:value="switchTab">
             <template #prefix>
                 <n-button size="tiny" quaternary type="primary">
                     <n-icon :component="IosRefresh"></n-icon>
@@ -22,7 +22,7 @@
         <n-empty style>
             <n-flex vertical>
                 <div>快添加新的收藏夹吧</div>
-                <n-button type="primary">添加收藏夹</n-button>
+                <n-button type="primary" @click="toAddBookmark">添加收藏夹</n-button>
             </n-flex>
         </n-empty>
     </n-flex>
@@ -49,11 +49,23 @@ const props = defineProps<{
 
 const dataList = ref(<BookmarkType[]>[]);
 const filename = "bookmarkList.json";
+const switchTab = ref("");
 
 const msg = useMessage();
 
-const toAdd = async () => {
-    const list = [...dataList.value, { title: "新建收藏夹", uuid: nanoid(10), sortid: 0 }];
+const getMaxSortid = () => {
+    let id = 0;
+    dataList.value.forEach((item) => {
+        if (id <= item.sortid) {
+            id = item.sortid + 1;
+        }
+    });
+    return id;
+};
+
+const toAddBookmark = async () => {
+    const uuid = nanoid(10);
+    const list: BookmarkType[] = [{ title: "新建收藏夹", uuid: uuid, sortid: getMaxSortid(), creatTime: Date.now(), modifyTime: Date.now() }, ...dataList.value];
 
     const res = await itemFetch.request("updateItemData", {
         itemType: props.item.type,
@@ -64,7 +76,8 @@ const toAdd = async () => {
     if (res.code != 200) {
         return msg.error(res.msg);
     }
-    
+    dataList.value = list;
+    switchTab.value = uuid;
     return msg.success(res.msg);
 };
 
@@ -78,6 +91,12 @@ const init = async () => {
         return msg.error(res.msg);
     }
     dataList.value = res.data ? JSON.parse(res.data) : [];
+    const index = dataList.value.findIndex((item) => item.isDefault);
+    if (index != -1) {
+        switchTab.value = dataList.value[index].uuid;
+    } else {
+        switchTab.value = dataList.value[0]?.uuid || "";
+    }
 };
 
 onMounted(() => {

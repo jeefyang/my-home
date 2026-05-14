@@ -280,13 +280,7 @@ watch(
 );
 </script>
 <style lang="scss" scoped>
-.line {
-    display: flex;
-    flex-wrap: nowrap;
-    align-items: center;
-    gap: 10px;
-    margin-bottom: 5px;
-}
+
 
 // .pageConfigModal {}
 </style>
