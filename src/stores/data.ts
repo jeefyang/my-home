@@ -16,6 +16,7 @@ export const useDataStore = defineStore("data", () => {
     const floatBtnX = ref(1000);
     const floatBtnY = ref(0);
     const fullLoading = ref(false);
+    const fullLoadingTitle = ref("");
 
     const saveKey = "data";
 
@@ -107,8 +108,15 @@ export const useDataStore = defineStore("data", () => {
         isMobile.value = window.innerWidth < 768;
     };
 
+    const turnLoading = (v: boolean, title?: string) => {
+        fullLoading.value = v;
+        fullLoadingTitle.value = v ? title || "" : "";
+    };
+
+
+
 
     load();
 
-    return { ...returnData, user, pageList, load, save, clear, initUser, initPages, isMobile, resize, themeOverrides, getLocalData, fullLoading };
+    return { ...returnData, user, pageList, load, save, clear, initUser, initPages, isMobile, resize, themeOverrides, getLocalData, fullLoading, fullLoadingTitle, turnLoading };
 });

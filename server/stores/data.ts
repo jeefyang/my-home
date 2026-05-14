@@ -17,7 +17,9 @@ console.log(`数据目录:${DATA_DIR}`);
 export const UsersFolder = "users";
 export const PagesFolder = "pages";
 export const itemsFolder = "items";
+/** files文件夹的文件一般用随机数存储(如图片等,一般用随机数命名,要么存在,要么删除,一般不做二次修改的),要做缓存,建议不要存实时变化数据 */
 export const filesFolder = "files";
+/** data文件夹的文件数据是实时变化,一般存字符串(或者json字符串),不做缓存,要有实时性 */
 export const dataFolder = "data";
 
 export const dataOptions = {

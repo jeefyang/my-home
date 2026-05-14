@@ -15,7 +15,7 @@
             </div>
         </div>
     </n-flex>
-    <loading v-if="dataStore.fullLoading"></loading>
+    <loading v-if="dataStore.fullLoading" :title="dataStore.fullLoadingTitle"></loading>
 </template>
 <script setup lang="ts">
 import { useDataStore } from "@/stores/data";

@@ -36,6 +36,10 @@ import SingleBookmarkItem from "./components/SingleBookmarkItem.vue";
 import { itemFetch } from "@/utils/jFetch";
 import { useMessage } from "naive-ui";
 import { nanoid } from "nanoid";
+import { useDataStore } from "@/stores/data";
+import { myUploadLoop, myUploads } from "@/utils/upload";
+
+const dataStore = useDataStore();
 
 const props = defineProps<{
     item: ItemType;
@@ -60,7 +64,7 @@ const toAdd = async () => {
     if (res.code != 200) {
         return msg.error(res.msg);
     }
-    dataList.value = list;
+    
     return msg.success(res.msg);
 };
 
