@@ -6,7 +6,7 @@ import http from 'http';
 import path from 'path';
 import helmet from 'helmet';
 import router from './routes/api';
-import { dataInit } from './stores/data';
+import { dataInit, isDev } from './stores/data';
 
 
 
@@ -26,9 +26,6 @@ app.get('/health', (_req, res) => {
     res.json({ status: 'OK' });
 });
 
-
-
-const isDev = process.env.NODE_ENV === 'development';
 
 if (isDev) {
     (async () => {

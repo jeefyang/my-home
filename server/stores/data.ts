@@ -22,6 +22,8 @@ export const filesFolder = "files";
 /** data文件夹的文件数据是实时变化,一般存字符串(或者json字符串),不做缓存,要有实时性 */
 export const dataFolder = "data";
 
+export const isDev = process.env.NODE_ENV === 'development';
+
 export const dataOptions = {
     /** 是否为空用户 */
     isEmptyUser: true

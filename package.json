@@ -19,6 +19,8 @@
         "logs": "pm2 logs ecosystem.config.cjs"
     },
     "dependencies": {
+        "axios": "^1.16.1",
+        "cheerio": "^1.2.0",
         "cors": "^2.8.6",
         "dotenv": "^17.4.2",
         "dotnet": "^1.1.4",

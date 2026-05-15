@@ -10,6 +10,7 @@ import { UrlsUtils } from '../utils/urls';
 import { nanoid } from 'nanoid';
 import multer from 'multer';
 import { verifyUserFromReq } from '../stores/users';
+import { useToolsUrlApi } from './tools/urlApi';
 
 const router: Router = Router();
 
@@ -19,6 +20,7 @@ useItemApi(router);
 
 // 工具集
 useToolsImgApi(router);
+useToolsUrlApi(router);
 
 // 读取文件
 router.get("/files/:objType/:uuid/:filename", async (req, res, next) => {

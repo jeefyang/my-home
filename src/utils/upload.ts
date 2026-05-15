@@ -114,10 +114,16 @@ let cacheMyUploadList: {
     uuid: string, data: {
         myFile: MyUploadFileType; o: MyUploadOptions;
     }, resolve: (value: MyUploadResultType) => void;
+    reject: (reason?: any) => void;
 }[] = [];
 /** 当前运行的线程 */
 let curLoopLine = 0;
-export async function myUploadLoop(myFile: MyUploadFileType, o: MyUploadOptions): Promise<MyUploadResultType> {
+export async function myUploadLoop(myFile: MyUploadFileType, o: MyUploadOptions, maxLine?: number): Promise<MyUploadResultType> {
+
+    if (!maxLine) {
+        maxLine = myUploadLoopMaxLine;
+    }
+
     const workFn = async () => {
         // 缓存已经没有等待上传数据,关闭线程退出
         if (cacheMyUploadList.length == 0) {
@@ -126,15 +132,20 @@ export async function myUploadLoop(myFile: MyUploadFileType, o: MyUploadOptions)
         }
         // 缓存有等待上传数据,继续上传,线程继续工作
         const item = cacheMyUploadList.shift()!;
-        const res = await myUpload(item.data.myFile, item.data.o);
-        item.resolve(res);
+        try {
+            const res = await myUpload(item.data.myFile, item.data.o);
+            item.resolve(res);
+        }
+        catch (err) {
+            item.reject(err);
+        }
         workFn();
         return;
     };
     return new Promise(async (resolve, reject) => {
         // 线程数已经达到最大,缓存数据,等待线程空闲
         if (curLoopLine >= myUploadLoopMaxLine) {
-            cacheMyUploadList.push({ uuid: nanoid(16), data: { myFile, o }, resolve });
+            cacheMyUploadList.push({ uuid: nanoid(16), data: { myFile, o }, resolve, reject });
             return;
         }
         // 还有线程可用,占用新的线程

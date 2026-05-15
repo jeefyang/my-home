@@ -21,7 +21,7 @@
         <div>url:</div>
         <div class="line">
             <n-input v-model:value="addForm.url" placeholder="请输入url"></n-input>
-            <n-button type="info" size="small">检测</n-button>
+            <n-button type="info" size="small" @click="verifyUrl">检测</n-button>
         </div>
         <div>标题:</div>
         <n-input v-model:value="addForm.title" placeholder="请输入网页标题"></n-input>
@@ -32,10 +32,12 @@
                 <img :src="UrlUtils.checkImgUrl(addForm.icon, `./api/files/items/${props.item.type}-${props.item.uuid}/${dataStore.pathid}`)" class="icon" />
             </n-icon>
         </div>
-        <div class="line mt-2">
-            <div>是否文件夹:</div>
-            <n-switch v-model:value="addForm.isFolder"></n-switch>
-        </div>
+
+        <n-switch v-model:value="addForm.isFolder" class="mt-2">
+            <template #checked> 文件夹 </template>
+            <template #unchecked> 路径 </template>
+        </n-switch>
+
         <template #footer>
             <n-flex>
                 <n-button @click="showAdd = false">取消</n-button>
@@ -49,7 +51,7 @@ import { computed, onMounted, reactive, ref } from "vue";
 import type { BookmarkCollectionType, BookmarkType } from "..";
 import { Edit, Refresh } from "@vicons/tabler";
 import { AddComment, Settings, DocumentImport } from "@vicons/carbon";
-import { itemFetch } from "@/utils/jFetch";
+import { itemFetch, toolsUrlFetch } from "@/utils/jFetch";
 import { useDataStore } from "@/stores/data";
 import { useMessage } from "naive-ui";
 import XModal from "@/components/XModal.vue";
@@ -70,6 +72,7 @@ const searchKey = ref("");
 const filterData = ref(<BookmarkCollectionType[]>[]);
 const dataList = ref(<BookmarkCollectionType[]>[]);
 const showAdd = ref(false);
+const pathList = ref(<string[]>[]);
 
 const modelBookmark = computed({
     get() {
@@ -86,6 +89,14 @@ const addForm = reactive({
     icon: "",
     isFolder: false
 });
+
+const verifyUrl = async () => {
+    if (!addForm.url) {
+        return msg.error("请输入url");
+    }
+    const res = await toolsUrlFetch.request("titleUrl", { url: addForm.url });
+    console.log(res);
+};
 
 const toAdd = () => {
     Object.keys(addForm).forEach((key) => {

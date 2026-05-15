@@ -17,7 +17,7 @@ export default defineConfig({
     },
     plugins: [
         vue(),
-        vueDevTools(),
+        // vueDevTools(),
         UnoCSS(),
         AutoImport({
             imports: [

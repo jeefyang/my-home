@@ -16,7 +16,7 @@ export class TransExpressRouter<T extends ReturnType<typeof apiUrlsTrans>> {
                     res.status(code).json({
                         code: code,
                         msg: data.msg || "操作错误",
-                        err: data.err
+                        err: process.env.NODE_ENV === 'development' ? (data.err?.stack || data.err) : (data.err?.message || typeof data.err === "string" ? data.err : "")
                     });
                     return;
                 }
@@ -38,7 +38,7 @@ export class TransExpressRouter<T extends ReturnType<typeof apiUrlsTrans>> {
             }
         };
         if (item?.method == "GET") {
-            this.router.get("/"+item.url, async (req, res) => {
+            this.router.get("/" + item.url, async (req, res) => {
 
                 const from = req.query as T[keyof T]["from"];
                 await fn(from, req, res);
@@ -46,7 +46,7 @@ export class TransExpressRouter<T extends ReturnType<typeof apiUrlsTrans>> {
             });
         }
         else if (item?.method == "POST") {
-            this.router.post("/"+item.url, async (req, res) => {
+            this.router.post("/" + item.url, async (req, res) => {
                 const from = req.body as T[keyof T]["from"];
                 await fn(from, req, res);
                 return;
