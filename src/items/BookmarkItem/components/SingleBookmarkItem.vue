@@ -1,7 +1,7 @@
 <template>
     <n-flex vertical style="width: 100%">
         <!-- 工具栏：仅图标按钮 -->
-        <n-flex justify="center" align="center" style="gap: 12px; flex-wrap: wrap" class="mb-1">
+        <n-flex justify="center" align="center" style="gap: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none" class="mb-1">
             <n-button quaternary type="info" size="small" @click="initData">
                 <template #icon><n-icon :component="Refresh" /></template>
             </n-button>
@@ -11,12 +11,17 @@
             <n-button quaternary type="primary" size="small" :disabled="!!searchKey" @click="openAddForm(true)">
                 <template #icon><n-icon :component="FolderAdd" /></template>
             </n-button>
-            <n-divider vertical style="height: 20px" />
             <n-button quaternary type="info" size="small" :disabled="!!searchKey" @click="toImport">
                 <template #icon><n-icon :component="IosCloudDownload" /></template>
             </n-button>
             <n-button quaternary type="info" size="small" :disabled="!!searchKey" @click="toExport">
                 <template #icon><n-icon :component="IosCloudUpload" /></template>
+            </n-button>
+            <n-button quaternary type="info" size="small" :disabled="!!searchKey" @click="copyScript">
+                <template #icon><n-icon :component="Code" /></template>
+            </n-button>
+            <n-button quaternary type="info" size="small" :disabled="!!searchKey" @click="exportTabInfo">
+                <template #icon><n-icon :component="Information" /></template>
             </n-button>
             <!-- 上层按钮（非根目录时可用） -->
             <n-button
@@ -272,7 +277,7 @@
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import type { BookmarkCollectionType, BookmarkType } from "..";
 import { Refresh, Edit, Trash, Folder, File } from "@vicons/tabler";
-import { BookmarkAdd, FolderAdd, Search, Launch, ArrowLeft, ArrowRight, Link as LinkIcon, Copy, QrCode } from "@vicons/carbon";
+import { BookmarkAdd, FolderAdd, Search, Launch, ArrowLeft, ArrowRight, Link as LinkIcon, Copy, QrCode, Code, Information } from "@vicons/carbon";
 import { IosArrowForward, MdGlobe, IosCloudUpload, IosCloudDownload } from "@vicons/ionicons4";
 import { itemFetch, toolsImgFetch, toolsUrlFetch } from "@/utils/jFetch";
 import { useMessage } from "naive-ui";
@@ -489,6 +494,40 @@ const openUrl = (url: string) => {
 const gotoUrl = (url: string) => {
     if (!url) return;
     window.location.href = url;
+};
+
+const copyScript = async () => {
+    try {
+        const res = await fetch('/items/BookmarkItem/addMark.js');
+        const text = await res.text();
+        const ta = document.createElement('textarea');
+        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+        document.body.appendChild(ta); ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+        msg.success('油猴脚本已复制，粘贴到 Tampermonkey 新建脚本即可');
+    } catch {
+        msg.error('复制失败');
+    }
+};
+
+const exportTabInfo = () => {
+    const info = {
+        serverUrl: window.location.origin,
+        pathid: dataStore.pathid,
+        secondcode: dataStore.secondcode,
+        itemUUID: props.item.uuid,
+        itemType: props.item.type,
+        bookmarkUUID: props.bookmark.uuid,
+        filename: 'collection-' + props.bookmark.uuid + '.json'
+    };
+    const json = JSON.stringify(info, null, 2);
+    const ta = document.createElement('textarea');
+    ta.value = json; ta.style.position = 'fixed'; ta.style.opacity = '0';
+    document.body.appendChild(ta); ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    msg.success('连接信息已复制');
 };
 
 const copyLink = (url: string) => {
