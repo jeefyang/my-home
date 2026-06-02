@@ -17,5 +17,12 @@ export const ItemRouterList: { [key: string]: ItemRouterType; } = {
         component: "BookmarkItem",
         style: {},
         desc: "书签"
+    },
+    'memo': {
+        type: "memo",
+        title: "备忘录",
+        component: "MemoItem",
+        style: {},
+        desc: "记事"
     }
 };
