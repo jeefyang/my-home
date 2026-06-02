@@ -78,7 +78,7 @@
                 >
                     <!-- 文件夹图标 -->
                     <span v-if="node.item.isFolder" style="width: 20px; display: inline-flex; justify-content: center">
-                        <n-icon :component="Folder" size="16" />
+                        <n-icon :component="Folder" size="20" />
                     </span>
                     <!-- 书签图标 -->
                     <span v-else class="icon-box">
@@ -863,7 +863,7 @@ onMounted(() => initData());
     border-radius: 4px;
     flex-shrink: 0;
     /* 暗色背景 + 深色图标 = 看不见，垫一层浅底 */
-    background: rgba(245, 245, 245, 0.55);
+    background: rgba(245, 245, 245, 0.15);
     box-shadow: 0 0 0 1px rgba(128, 128, 128, 0.08);
 }
 
