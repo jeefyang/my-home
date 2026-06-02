@@ -64,6 +64,11 @@ a,
     max-height: 400px;
 }
 
+.group_box_content {
+    height: 100%;
+    position: relative;
+}
+
 .line {
     display: flex;
     flex-wrap: nowrap;
@@ -79,8 +84,8 @@ a,
     display: flex;
     flex-direction: column;
     position: relative;
-    top:0;
-    gap:1;
+    top: 0;
+    gap: 1;
 }
 
 .modalBox {

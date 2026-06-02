@@ -20,21 +20,21 @@
 
                     <!-- 自适应盒子分组 -->
                     <div v-else-if="group.display == 'box'" class="mb-2 flex flex-gap-2 flex-wrap">
-                        <n-card class="group_box" v-for="item in group.list" :key="item.uuid">
-                            <item-view :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid"></item-view>
+                        <n-card class="group_box" v-for="item in group.list" :key="item.uuid" content-class="group_box_content">
+                            <item-view :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid" :display="group.display"></item-view>
                         </n-card>
                     </div>
 
                     <!-- 宽度盒子分组(占满屏幕宽度) -->
                     <div v-else-if="group.display == 'widthBox'" class="group_widthBox">
                         <n-card v-for="item in group.list" :key="item.uuid" class="mb-2">
-                            <item-view :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid"></item-view>
+                            <item-view :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid" :display="group.display"></item-view>
                         </n-card>
                     </div>
                     <!-- 全屏分组 -->
                     <div v-else-if="group.display == 'fullPage'" class="group_full">
                         <n-card style="flex: 1" v-for="item in group.list" :key="item.uuid">
-                            <item-view :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid"></item-view>
+                            <item-view :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid" :display="group.display"></item-view>
                         </n-card>
                     </div>
                 </div>
@@ -118,4 +118,5 @@ onMounted(async () => {
     /* position: relative; */
     /* padding-bottom: 20px; */
 }
+
 </style>

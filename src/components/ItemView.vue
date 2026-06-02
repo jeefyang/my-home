@@ -1,7 +1,6 @@
 <template>
-    <div>
-        <lazyComponent :item="props.item" :pageUUID="props.pageUUID" :itemGroupUUID="props.itemGroupUUID">
-        </lazyComponent>
+    <div :class="`view-${props.display}`">
+        <lazyComponent :item="props.item" :pageUUID="props.pageUUID" :itemGroupUUID="props.itemGroupUUID"> </lazyComponent>
     </div>
 </template>
 <script setup lang="ts">
@@ -15,8 +14,14 @@ const props = defineProps<{
     item: ItemType;
     pageUUID: string;
     itemGroupUUID: string;
+    display: ItemDisplayType;
 }>();
 
 const lazyComponent = defineAsyncComponent(() => import(`@/items/${ItemRouterList[props.item.type].component}/index.vue`));
 </script>
-<style lang="css" scoped></style>
+<style lang="css" scoped>
+.view-box {
+    height: 100%;
+    position: relative;
+}
+</style>
