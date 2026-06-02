@@ -23,15 +23,6 @@
             <n-button quaternary type="info" size="small" :disabled="!!searchKey" @click="exportTabInfo">
                 <template #icon><n-icon :component="Information" /></template>
             </n-button>
-            <!-- 上层按钮（非根目录时可用） -->
-            <n-button
-                v-if="!searchKey && curPath.length > 0"
-                quaternary type="warning"
-                size="small"
-                @click="goToParent"
-            >
-                <template #icon><n-icon :component="ArrowLeft" /></template>
-            </n-button>
         </n-flex>
 
         <!-- 搜索框 -->
@@ -47,21 +38,31 @@
             </template>
         </n-input>
 
-        <!-- 面包屑路径（搜索时隐藏） -->
-        <n-flex v-if="!searchKey && breadcrumbList.length > 0" style="margin-top: 6px; gap: 2px; align-items: center; flex-wrap: wrap">
-            <template v-for="(crumb, idx) in breadcrumbList" :key="crumb.uuid">
-                <n-button
-                    v-if="idx < breadcrumbList.length - 1"
-                    text
-                    size="tiny"
-                    style="font-size: 12px; color: #888"
-                    @click="navigateTo(idx)"
-                >
-                    {{ crumb.title }}
-                </n-button>
-                <span v-else style="font-size: 12px; font-weight: 500; color: inherit">{{ crumb.title }}</span>
-                <n-icon v-if="idx < breadcrumbList.length - 1" :component="IosArrowForward" size="12" style="color: #aaa" />
-            </template>
+        <!-- 面包屑路径（搜索时隐藏），返回按钮在右侧 -->
+        <n-flex v-if="!searchKey && breadcrumbList.length > 0" style="margin-top: 6px; gap: 2px; align-items: center; min-width: 0; width: 100%" :wrap="false">
+            <n-flex style="gap: 2px; align-items: center; overflow: hidden; min-width: 0; flex: 1">
+                <template v-for="(crumb, idx) in breadcrumbList" :key="crumb.uuid">
+                    <n-button
+                        v-if="idx < breadcrumbList.length - 1"
+                        text
+                        size="tiny"
+                        style="font-size: 12px; color: #888; flex-shrink: 0"
+                        @click="navigateTo(idx)"
+                    >
+                        {{ crumb.title }}
+                    </n-button>
+                    <span v-else style="font-size: 12px; font-weight: 500; color: inherit; overflow: hidden; text-overflow: ellipsis; white-space: nowrap">{{ crumb.title }}</span>
+                    <n-icon v-if="idx < breadcrumbList.length - 1" :component="IosArrowForward" size="12" style="color: #aaa; flex-shrink: 0" />
+                </template>
+            </n-flex>
+            <n-button
+                v-if="curPath.length > 0"
+                quaternary type="warning" size="tiny"
+                style="flex-shrink: 0"
+                @click="goToParent"
+            >
+                <template #icon><n-icon :component="ArrowLeft" /></template>
+            </n-button>
         </n-flex>
 
         <!-- 书签列表（当前目录，可滚动） -->

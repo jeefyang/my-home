@@ -15,13 +15,6 @@
                         </span>
                     </n-dropdown>
                 </template>
-                <SingleBookmarkItem
-                    :item="props.item"
-                    :pageUUID="props.pageUUID"
-                    :itemGroupUUID="props.itemGroupUUID"
-                    v-model:bookmark="dataList[index]"
-                    :refresh-key="refreshKey"
-                />
             </n-tab-pane>
 
             <template #suffix>
@@ -30,6 +23,18 @@
                 </n-button>
             </template>
         </n-tabs>
+
+        <!-- 书签内容：用 v-show 保持组件挂载，切换页签不刷新 -->
+        <template v-for="(bookmark, index) in dataList" :key="bookmark.uuid">
+            <SingleBookmarkItem
+                v-show="switchTab === bookmark.uuid"
+                :item="props.item"
+                :pageUUID="props.pageUUID"
+                :itemGroupUUID="props.itemGroupUUID"
+                v-model:bookmark="dataList[index]"
+                :refresh-key="refreshKey"
+            />
+        </template>
     </div>
 
     <n-flex v-else style="width: 100%; height: 100%; position: absolute; top: 0" align="center" justify="center">
@@ -122,8 +127,8 @@ const toAddBookmark = async () => {
     const uuid = nanoid(10);
     const now = Date.now();
     const list: BookmarkType[] = [
-        { title: "新建收藏夹", uuid, sortid: getMaxSortid(), creatTime: now, modifyTime: now },
-        ...dataList.value
+        ...dataList.value,
+        { title: "新建收藏夹", uuid, sortid: getMaxSortid(), creatTime: now, modifyTime: now }
     ];
 
     const res = await itemFetch.request("updateItemData", {
