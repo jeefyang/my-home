@@ -1,5 +1,8 @@
 <template>
     <div class="memo-wrap">
+        <n-divider style="margin-top: 0; margin-bottom: 2px" dashed>
+            <div style="font-size: 12px">{{ props.item.title || "备忘录" }}</div>
+        </n-divider>
         <!-- 对话历史 -->
         <div ref="historyRef" class="memo-history" @scroll="onHistoryScroll">
             <div v-for="(msg, idx) in messageList" :key="msg.uuid" class="memo-item">
@@ -168,12 +171,15 @@ const send = async () => {
 
 // ====== 编辑 ======
 const copyMsg = (text: string) => {
-    const ta = document.createElement('textarea');
-    ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta); ta.select();
-    document.execCommand('copy');
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
     document.body.removeChild(ta);
-    msg.success('已复制');
+    msg.success("已复制");
 };
 
 const openEdit = (idx: number) => {
@@ -227,7 +233,7 @@ onMounted(() => initData());
     flex-direction: column;
     overflow: hidden;
     position: relative;
-    top:0;
+    top: 0;
 }
 
 .memo-history {

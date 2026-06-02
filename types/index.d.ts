@@ -38,6 +38,7 @@ type ItemGroupType = {
     /** 一般存放可以快速重置的数据(直接清空) */
     option?: Partial<ItemGroupOptionType>;
     uuid?: string;
+    /** 标题 */
     title?: string;
     /** 自定义数据,可用于跨页面跨项目交互,请谨慎使用 */
     customData?: Record<string, any>;
@@ -75,6 +76,8 @@ type ItemType = {
     /** 自定义数据,可用于跨页面跨项目交互,请谨慎使用 */
     customData?: Record<string, any>;
     style?: MyStyleType;
+    /** 标题 */
+    title?: string;
     createTime?: number;
     modifyTime?: number;
 };

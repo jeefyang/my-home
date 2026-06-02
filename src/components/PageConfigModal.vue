@@ -33,7 +33,11 @@
             <template v-if="group.list && group.list.length > 0">
                 <n-card v-for="(item, index) in group.list" :key="item.uuid" :style="{ borderColor: themeVars.infoColor }" class="mb-2">
                     <div>类型:{{ ItemRouterList[item.type].title }}{{ ItemRouterList[item.type].desc ? `(${ItemRouterList[item.type].desc})` : "" }}</div>
-
+                    <div>元件标题:</div>
+                    <div class="line mb-2">
+                        <n-input :value="cacheItem.title[item.uuid] == undefined ? item.title : cacheItem.title[item.uuid]" @update:value="(v) => (cacheItem.title[item.uuid] = v)"></n-input>
+                        <n-button size="tiny" @click="updateItemTitle(group, item)">更新</n-button>
+                    </div>
                     <div class="line">
                         <n-select v-model:value="cacheItem.insertItemType[item.uuid]" :options="selectTypeList"></n-select>
                         <n-button type="info" size="tiny" @click="addItem(group, cacheItem.insertItemType[item.uuid], index + 1)">追加项目</n-button>
@@ -62,9 +66,6 @@ import { useDataStore } from "@/stores/data";
 import { ItemRouterList } from "@common/utils/itemRouterouterList";
 import { itemFetch } from "@/utils/jFetch";
 import { useDialog, useMessage, useThemeVars } from "naive-ui";
-
-const addIcon = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z" fill="currentColor"></path></svg>`;
-const subIcon = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 28 28"><g fill="none"><path d="M3 14a1 1 0 0 1 1-1h20a1 1 0 1 1 0 2H4a1 1 0 0 1-1-1z" fill="currentColor"></path></g></svg>`;
 
 const dataStore = useDataStore();
 const themeVars = useThemeVars();
@@ -176,11 +177,36 @@ const deleteItem = async (groupUUID: string, item: ItemType) => {
     if (gindex == -1) {
         return;
     }
-    const index = curPage.value.itemGroupList[gindex].list.findIndex((item) => item.uuid == item.uuid);
+    const index = curPage.value.itemGroupList[gindex].list.findIndex((c) => item.uuid == c.uuid);
     if (index == -1) {
         return;
     }
     curPage.value.itemGroupList[gindex].list.splice(index, 1);
+    msg.success(res.msg);
+};
+
+const updateItemTitle = async (group: ItemGroupType, item: ItemType) => {
+    if (!cacheItem.title[item.uuid]) {
+        return msg.error("请输入元件标题");
+    }
+    if (cacheItem.title[item.uuid] == item.title) {
+        return msg.error("元件标题未修改");
+    }
+    dataStore.fullLoading = true;
+    const res = await itemFetch.request("updateItem", { pageUUID: props.pageUUID, obj: { ...item, title: cacheItem.title[item.uuid] } });
+    dataStore.fullLoading = false;
+    if (res.code != 200) {
+        return msg.error(res.msg);
+    }
+    const gindex = curPage.value.itemGroupList.findIndex((c) => c.uuid == group.uuid);
+    if (gindex == -1) {
+        return;
+    }
+    const index = curPage.value.itemGroupList[gindex].list.findIndex((c) => c.uuid == item.uuid);
+    if (index == -1) {
+        return;
+    }
+    curPage.value.itemGroupList[gindex].list[index] = res.data;
     msg.success(res.msg);
 };
 
@@ -198,7 +224,7 @@ const updateGroupTitle = async (group: ItemGroupType) => {
         return msg.error(res.msg);
     }
 
-    const index = curPage.value.itemGroupList.findIndex((item) => item.uuid == group.uuid);
+    const index = curPage.value.itemGroupList.findIndex((c) => c.uuid == group.uuid);
     if (index == -1) {
         return;
     }
@@ -280,7 +306,5 @@ watch(
 );
 </script>
 <style lang="scss" scoped>
-
-
 // .pageConfigModal {}
 </style>
