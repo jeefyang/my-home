@@ -33,10 +33,14 @@
             <template v-if="group.list && group.list.length > 0">
                 <n-card v-for="(item, index) in group.list" :key="item.uuid" :style="{ borderColor: themeVars.infoColor }" class="mb-2">
                     <div>类型:{{ ItemRouterList[item.type].title }}{{ ItemRouterList[item.type].desc ? `(${ItemRouterList[item.type].desc})` : "" }}</div>
-                    <div>元件标题:</div>
-                    <div class="line mb-2">
-                        <n-input :value="cacheItem.title[item.uuid] == undefined ? item.title : cacheItem.title[item.uuid]" @update:value="(v) => (cacheItem.title[item.uuid] = v)"></n-input>
-                        <n-button size="tiny" @click="updateItemTitle(group, item)">更新</n-button>
+                    <div>元件配置:</div>
+                    <div class="line mb-2" v-for="(option, index) in cacheItem.options" :key="option.name">
+                        <n-input
+                            :placeholder="option.name"
+                            :value="cacheItem.options[index].obj[item.uuid] == undefined ? item?.options?.[option.name] : cacheItem.options[index].obj[item.uuid]"
+                            @update:value="(v) => (cacheItem.options[index].obj[item.uuid] = v)"
+                        ></n-input>
+                        <n-button size="tiny" @click="updateItemOption(group, item, option.name, index)">更新</n-button>
                     </div>
                     <div class="line">
                         <n-select v-model:value="cacheItem.insertItemType[item.uuid]" :options="selectTypeList"></n-select>
@@ -109,7 +113,11 @@ const cacheGroup = reactive({
 });
 
 const cacheItem = reactive({
-    title: {} as { [x in string]: string },
+    options: [
+        { name: "title", obj: {} },
+        { name: "icon", obj: {} }
+    ] as { name: keyof ItemOptionType; obj: { [x in string]: string } }[],
+
     insertItemType: {} as { [x in string]: ItemDisplayType }
 });
 
@@ -185,15 +193,14 @@ const deleteItem = async (groupUUID: string, item: ItemType) => {
     msg.success(res.msg);
 };
 
-const updateItemTitle = async (group: ItemGroupType, item: ItemType) => {
-    if (!cacheItem.title[item.uuid]) {
-        return msg.error("请输入元件标题");
-    }
-    if (cacheItem.title[item.uuid] == item.title) {
-        return msg.error("元件标题未修改");
+const updateItemOption = async (group: ItemGroupType, item: ItemType, key: keyof ItemOptionType, i: number) => {
+    if (item?.options?.[key] && cacheItem.options[i].obj[item.uuid] == item.options[key]) {
+        return msg.error(`元件配置 ${key} 未修改`);
     }
     dataStore.fullLoading = true;
-    const res = await itemFetch.request("updateItem", { pageUUID: props.pageUUID, obj: { ...item, title: cacheItem.title[item.uuid] } });
+    const options = { ...(item.options || {}) };
+    options[key] = cacheItem.options[i].obj[item.uuid];
+    const res = await itemFetch.request("updateItem", { pageUUID: props.pageUUID, obj: { ...item, options: { ...options } } });
     dataStore.fullLoading = false;
     if (res.code != 200) {
         return msg.error(res.msg);

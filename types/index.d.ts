@@ -17,7 +17,7 @@ type UserType = {
     createTime: number;
     modifyTime: number;
     /** 一般存放可以快速重置的数据(直接清空) */
-    option?: Partial<UserOptionType>;
+    options?: Partial<UserOptionType>;
     /** 自定义数据,可用于跨页面跨项目交互,请谨慎使用 */
     customData?: Record<string, any>;
     style?: MyStyleType;
@@ -36,7 +36,7 @@ type ItemGroupType = {
     list: ItemType[];
     style?: MyStyleType;
     /** 一般存放可以快速重置的数据(直接清空) */
-    option?: Partial<ItemGroupOptionType>;
+    options?: Partial<ItemGroupOptionType>;
     uuid?: string;
     /** 标题 */
     title?: string;
@@ -59,7 +59,7 @@ type PageType = {
     itemGroupList: ItemGroupType[];
     style: MyStyleType;
     /** 一般存放可以快速重置的数据(直接清空) */
-    option?: Partial<PageOptionType>;
+    options?: Partial<PageOptionType>;
     /** 自定义数据,可用于跨页面跨项目交互,请谨慎使用 */
     customData?: Record<string, any>;
     createTime: number;
@@ -72,12 +72,10 @@ type ItemType = {
     type: string;
     uuid?: string;
     /** 一般存放可以快速重置的数据(直接清空) */
-    option?: Partial<ItemOptionType>;
+    options?: Partial<ItemOptionType>;
     /** 自定义数据,可用于跨页面跨项目交互,请谨慎使用 */
     customData?: Record<string, any>;
     style?: MyStyleType;
-    /** 标题 */
-    title?: string;
     createTime?: number;
     modifyTime?: number;
 };
@@ -85,6 +83,7 @@ type ItemType = {
 type ItemOptionType = {
     /** 标题,会覆盖原始标题 */
     title: string;
+    icon: string;
 };
 
 

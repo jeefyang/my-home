@@ -1,7 +1,7 @@
 <template>
     <div class="memo-wrap">
         <n-divider style="margin-top: 0; margin-bottom: 2px" dashed>
-            <div style="font-size: 12px">{{ props.item.title || "备忘录" }}</div>
+            <div style="font-size: 12px">{{ props.item?.options?.title || "备忘录" }}</div>
         </n-divider>
         <!-- 对话历史 -->
         <div ref="historyRef" class="memo-history" @scroll="onHistoryScroll">
