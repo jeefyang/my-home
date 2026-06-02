@@ -25,6 +25,12 @@
             </n-button>
         </n-flex>
 
+        <!-- 导入进度条 -->
+        <div v-if="importing" style="margin: 4px 0">
+            <n-progress type="line" :percentage="importProgress" :height="6" :border-radius="3" />
+            <div style="font-size: 11px; color: #888; margin-top: 2px; text-align: center">{{ importStatusText }}</div>
+        </div>
+
         <!-- 搜索框 -->
         <n-input
             placeholder="搜索书签…"
@@ -314,6 +320,9 @@ const props = defineProps<{
 
 // ========== 状态 ==========
 const loading = ref(false);
+const importProgress = ref(0);
+const importing = ref(false);
+const importStatusText = ref("");
 const dataList = ref(<BookmarkCollectionType[]>[]);       // 完整树
 const curPath = ref(<string[]>[]);                        // 当前目录 UUID 路径
 const searchKey = ref("");
@@ -710,16 +719,29 @@ const handleFileImport = async (e: Event) => {
     const file = input.files?.[0];
     if (!file) return;
 
+    importing.value = true;
+    importProgress.value = 5;
+    importStatusText.value = "正在读取文件…";
+
     try {
         const html = await file.text();
+        importProgress.value = 10;
+        importStatusText.value = "正在解析书签…";
+
         const items = parseHtmlBookmarks(html);
-        if (items.length === 0) return msg.warning("未解析到有效书签数据");
+        if (items.length === 0) { importProgress.value = 0; importing.value = false; return msg.warning("未解析到有效书签数据"); }
+
+        importProgress.value = 15;
+
+        // 统计需要上传的 icon 数量
+        const totalIcons = countIcons(items);
+        let doneIcons = 0;
+        importStatusText.value = totalIcons > 0 ? `正在上传图标 0/${totalIcons}…` : "正在处理书签…";
 
         // 将 base64/URL 图标上传到服务器
         const uploadIcon = async (iconStr: string): Promise<string> => {
             try {
-                // 只有 data:base64 才上传
-                if (!iconStr.startsWith('data:')) return iconStr;
+                if (!iconStr.startsWith('data:')) { doneIcons++; return iconStr; }
                 const { base64ToFile, myUpload } = await import("@/utils/upload");
                 const fileObj = base64ToFile(iconStr);
                 const [res] = await myUpload(
@@ -734,6 +756,11 @@ const handleFileImport = async (e: Event) => {
                         }
                     }
                 );
+                doneIcons++;
+                if (totalIcons > 0) {
+                    importProgress.value = 15 + Math.round((doneIcons / totalIcons) * 55);
+                    importStatusText.value = `正在上传图标 ${doneIcons}/${totalIcons}…`;
+                }
                 if (res?.code === 200 && res?.data?.filename) {
                     return res.data.filename;
                 }
@@ -742,12 +769,20 @@ const handleFileImport = async (e: Event) => {
         };
         await resolveImportIcons(items, uploadIcon);
 
+        importProgress.value = 75;
+        importStatusText.value = "正在写入书签…";
+
         // 逐个导入到当前目录
         for (const item of items) {
             dataList.value = addItemAtPath(dataList.value, curPath.value, item);
         }
 
+        importProgress.value = 90;
+        importStatusText.value = "正在保存到服务器…";
+
         const ok = await saveData();
+        importProgress.value = 100;
+        importStatusText.value = "导入完成 ✓";
         if (ok) {
             msg.success(`成功导入 ${countBookmarks(items)} 个书签`);
         }
@@ -755,8 +790,19 @@ const handleFileImport = async (e: Event) => {
     } catch (err) {
         msg.error("文件解析失败");
         console.error(err);
+    } finally {
+        setTimeout(() => { importing.value = false; importProgress.value = 0; }, 800);
     }
 };
+
+function countIcons(items: BookmarkCollectionType[]): number {
+    let c = 0;
+    for (const it of items) {
+        if (it.icon && it.icon.startsWith('data:')) c++;
+        if (it.children) c += countIcons(it.children);
+    }
+    return c;
+}
 
 function countBookmarks(items: BookmarkCollectionType[]): number {
     let c = 0;
