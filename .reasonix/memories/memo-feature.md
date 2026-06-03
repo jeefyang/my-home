@@ -23,3 +23,4 @@ type MemoType = {
 - textarea 输入框，Enter 发送，Ctrl+Enter 换行
 - 工具栏（刷新）
 - `overflow: hidden` 防溢出，历史区 flex 自适应
+- 顶部显示标题（取自 `props.item?.options?.title`，默认"备忘录"）

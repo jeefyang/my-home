@@ -307,7 +307,13 @@ watch(
             cacheGroup[key] = {};
         }
         for (let key in cacheItem) {
-            cacheItem[key] = {};
+            if (key == "options") {
+                for (let i in cacheItem.options) {
+                    cacheItem.options[i].obj = {};
+                }
+            } else {
+                cacheItem[key] = {};
+            }
         }
     }
 );
