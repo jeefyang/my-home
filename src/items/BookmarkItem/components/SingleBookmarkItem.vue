@@ -52,8 +52,12 @@
                         v-if="idx < breadcrumbList.length - 1"
                         text
                         size="tiny"
+                        :class="{ 'crumb-drop': breadcrumbDropUuid === crumb.uuid }"
                         style="font-size: 12px; color: #888; flex-shrink: 0"
                         @click="navigateTo(idx)"
+                        @dragover.prevent="breadcrumbDropUuid = crumb.uuid"
+                        @dragleave="breadcrumbDropUuid = ''"
+                        @drop.prevent="dropToBreadcrumb(crumb.uuid, crumb.title)"
                     >
                         {{ crumb.title }}
                     </n-button>
@@ -79,11 +83,24 @@
                     v-for="node in displayList"
                     :key="node.item.uuid"
                     class="bookmark-row"
+                    :class="{ 'drag-over': dragOverUuid === node.item.uuid, 'dragging': dragUuid === node.item.uuid }"
+                    draggable="true"
                     @click="onItemClick(node.item)"
                     @contextmenu.prevent="openContextMenu($event, node.item)"
+                    @dragstart="onDragStart($event, node.item)"
+                    @dragover.prevent="onDragOver($event, node.item)"
+                    @dragleave="onDragLeave(node.item)"
+                    @drop.prevent="onDrop($event, node.item)"
+                    @dragend="onDragEnd"
                 >
-                    <!-- 文件夹图标 -->
-                    <span v-if="node.item.isFolder" style="width: 20px; display: inline-flex; justify-content: center">
+                    <!-- 文件夹图标（拖到图标上=移入文件夹） -->
+                    <span v-if="node.item.isFolder"
+                        class="folder-icon"
+                        :class="{ 'drag-over-icon': dragOverIconUuid === node.item.uuid }"
+                        @dragover.prevent="onIconDragOver(node.item)"
+                        @dragleave="onIconDragLeave(node.item)"
+                        @drop.prevent="onDrop($event, node.item, true)"
+                    >
                         <n-icon :component="Folder" size="20" />
                     </span>
                     <!-- 书签图标 -->
@@ -367,6 +384,120 @@ const formData = reactive<BookmarkForm>({
     _iconInput: "",
     _iconServerFile: ""
 });
+
+// ========== 拖拽 ==========
+const dragUuid = ref("");
+const dragOverUuid = ref("");
+
+const onDragStart = (e: DragEvent, item: BookmarkCollectionType) => {
+    dragUuid.value = item.uuid;
+    if (e.dataTransfer) {
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', item.uuid);
+    }
+};
+
+const onDragOver = (e: DragEvent, item: BookmarkCollectionType) => {
+    if (item.uuid !== dragUuid.value) dragOverUuid.value = item.uuid;
+};
+
+const onDragLeave = (item: BookmarkCollectionType) => {
+    if (dragOverUuid.value === item.uuid) dragOverUuid.value = '';
+};
+
+const onDrop = (e: DragEvent, targetItem: BookmarkCollectionType, isIcon?: boolean) => {
+    dragOverUuid.value = '';
+    const sourceUuid = dragUuid.value;
+    if (!sourceUuid || sourceUuid === targetItem.uuid) { dragUuid.value = ''; return; }
+    const sourcePath = findNodePath(dataList.value, sourceUuid);
+    const targetPath = findNodePath(dataList.value, targetItem.uuid);
+    if (!sourcePath || !targetPath) { dragUuid.value = ''; return; }
+    // 不能拖到自己内部
+    if (targetPath.join(',') === sourcePath.join(',')) { dragUuid.value = ''; return; }
+    // 如果目标在源内部（子节点）也禁止
+    const targetStr = targetPath.join(',');
+    const sourceStr = sourcePath.join(',');
+    if (targetStr.startsWith(sourceStr + ',')) { msg.warning('不能拖到自身内部'); dragUuid.value = ''; return; }
+
+    const sourceNode = extractNode(dataList.value, sourceUuid);
+    if (!sourceNode) { dragUuid.value = ''; return; }
+
+    if (targetItem.isFolder && isIcon) {
+        // 拖到文件夹图标上 → 移入文件夹
+        dataList.value = addItemAtPath(dataList.value, targetPath, sourceNode);
+    } else {
+        // 插入到目标书签之前（同层级）
+        dataList.value = insertBefore(dataList.value, targetItem.uuid, sourceNode);
+    }
+    saveData();
+    dragUuid.value = '';
+    msg.success('已移动');
+};
+
+const onDragEnd = () => { dragUuid.value = ''; dragOverUuid.value = ''; dragOverIconUuid.value = ''; breadcrumbDropUuid.value = ''; };
+
+function findNodePath(items: BookmarkCollectionType[], uuid: string, path: string[] = []): string[] | null {
+    for (let i = 0; i < items.length; i++) {
+        const cur = [...path, items[i].uuid];
+        if (items[i].uuid === uuid) return cur;
+        if (items[i].children && items[i].children.length > 0) {
+            const found = findNodePath(items[i].children, uuid, cur);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
+function extractNode(items: BookmarkCollectionType[], uuid: string): BookmarkCollectionType | null {
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].uuid === uuid) return items.splice(i, 1)[0];
+        if (items[i].children && items[i].children.length > 0) {
+            const found = extractNode(items[i].children, uuid);
+            if (found) return found;
+        }
+    }
+    return null;
+}
+
+function insertBefore(items: BookmarkCollectionType[], targetUuid: string, newNode: BookmarkCollectionType): BookmarkCollectionType[] {
+    for (let i = 0; i < items.length; i++) {
+        if (items[i].uuid === targetUuid) { items.splice(i, 0, newNode); return items; }
+        if (items[i].children && items[i].children.length > 0) insertBefore(items[i].children, targetUuid, newNode);
+    }
+    return items;
+}
+
+const dragOverIconUuid = ref("");
+const breadcrumbDropUuid = ref("");
+
+const dropToBreadcrumb = (folderUuid: string, title: string) => {
+    breadcrumbDropUuid.value = '';
+    const sourceUuid = dragUuid.value;
+    if (!sourceUuid) return;
+    const sourceNode = extractNode(dataList.value, sourceUuid);
+    if (!sourceNode) { dragUuid.value = ''; return; }
+    // 如果 drop 到根目录
+    if (folderUuid === '__root__') {
+        dataList.value = [...dataList.value, sourceNode];
+    } else {
+        const targetPath = findNodePath(dataList.value, folderUuid);
+        if (targetPath) {
+            dataList.value = addItemAtPath(dataList.value, targetPath, sourceNode);
+        } else {
+            dragUuid.value = ''; return;
+        }
+    }
+    saveData();
+    dragUuid.value = '';
+    msg.success('已移动到 ' + title);
+};
+
+const onIconDragOver = (item: BookmarkCollectionType) => {
+    if (item.uuid !== dragUuid.value) dragOverIconUuid.value = item.uuid;
+};
+const onIconDragLeave = (item: BookmarkCollectionType) => {
+    if (dragOverIconUuid.value === item.uuid) dragOverIconUuid.value = '';
+};
 
 // 长按 / 右键菜单
 const contextShow = ref(false);
@@ -940,6 +1071,33 @@ onMounted(() => initData());
     cursor: pointer;
     transition: background-color 0.15s;
     min-height: 52px;
+}
+
+.bookmark-row.dragging {
+    opacity: 0.4;
+}
+
+.bookmark-row.drag-over {
+    background-color: rgba(64, 158, 255, 0.15) !important;
+    box-shadow: inset 0 0 0 2px rgba(64, 158, 255, 0.4);
+}
+
+.folder-icon {
+    width: 20px;
+    display: inline-flex;
+    justify-content: center;
+    transition: transform 0.15s;
+}
+
+.folder-icon.drag-over-icon {
+    transform: scale(1.3);
+    filter: drop-shadow(0 0 4px rgba(64, 158, 255, 0.6));
+}
+
+.crumb-drop {
+    transform: scale(1.15);
+    color: #409eff !important;
+    font-weight: 600;
 }
 
 .bookmark-row {
