@@ -988,8 +988,6 @@ function countBookmarks(items: BookmarkCollectionType[]): number {
 
 const toExport = async () => {
     if (searchKey.value) return;
-
-    // 按当前路径取文件夹内容，同时拿文件夹名
     let folder = dataList.value;
     let title = props.bookmark.title;
     for (const uuid of curPath.value) {
@@ -1001,35 +999,48 @@ const toExport = async () => {
     const exportItems = [...folder];
     if (exportItems.length === 0) return msg.warning("当前目录为空，无内容可导出");
 
-    // 导出前将服务器图标转为 base64
-    const cloned = JSON.parse(JSON.stringify(exportItems));
-    await resolveIconsToBase64(cloned);
+    let totalIcons = 0;
+    countIconsNeeded(exportItems, () => totalIcons++);
+    let doneIcons = 0;
+    importing.value = true;
+    importProgress.value = 0;
+    importStatusText.value = totalIcons > 0 ? `正在读取图标 0/${totalIcons}…` : "正在生成 HTML…";
 
+    const cloned = JSON.parse(JSON.stringify(exportItems));
+    const resolveWithProgress = async (items) => {
+        for (const item of items) {
+            if (item.icon && !item.icon.startsWith("data:") && !item.icon.startsWith("http")) {
+                try { const b64 = await iconFileToBase64(item.icon, iconBaseUrl.value); if (b64) item.icon = b64; } catch {}
+                doneIcons++;
+                if (totalIcons > 0) {
+                    importProgress.value = Math.round((doneIcons / totalIcons) * 90);
+                    importStatusText.value = `正在读取图标 ${doneIcons}/${totalIcons}…`;
+                }
+            }
+            if (item.children) await resolveWithProgress(item.children);
+        }
+    };
+    await resolveWithProgress(cloned);
+
+    importProgress.value = 95;
+    importStatusText.value = "正在生成 HTML…";
     const html = generateHtmlBookmarks(cloned, title);
     const blob = new Blob([html], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url;
-    a.download = `${title}.html`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+    a.href = url; a.download = `${title}.html`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
     URL.revokeObjectURL(url);
+    importProgress.value = 100;
+    importStatusText.value = "导出完成 ✓";
+    setTimeout(() => { importing.value = false; importProgress.value = 0; }, 800);
     msg.success("导出成功");
 };
 
-/** 递归将树中所有图标转为 base64（用于导出） */
-async function resolveIconsToBase64(items: BookmarkCollectionType[]) {
+function countIconsNeeded(items, cb) {
     for (const item of items) {
-        if (item.icon && !item.icon.startsWith("data:") && !item.icon.startsWith("http")) {
-            try {
-                const b64 = await iconFileToBase64(item.icon, iconBaseUrl.value);
-                if (b64) item.icon = b64;
-            } catch {
-                // 保留原值
-            }
-        }
-        if (item.children) await resolveIconsToBase64(item.children);
+        if (item.icon && !item.icon.startsWith("data:") && !item.icon.startsWith("http")) cb();
+        if (item.children) countIconsNeeded(item.children, cb);
     }
 }
 
