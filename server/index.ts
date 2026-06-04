@@ -14,7 +14,39 @@ import { dataInit, isDev } from './stores/data';
 dataInit();
 
 const app: Express = express();
+console.log('当前是否为开发模式', isDev);
 
+// 正是环境
+if (!isDev) {
+    // ⚠️ 关键设置：如果你的 Node 服务在生产环境中是用 Nginx 反向代理的，必须加这一句！
+    // 这样 Express 才能通过 req.headers['x-forwarded-proto'] 知道真实用户用的是不是 HTTPS
+    app.set('trust proxy', 1);
+
+    app.use((req, res, next) => {
+        // 判断当前请求是否是 HTTPS 
+        // req.secure 适用于直接用 Node 启 HTTPS； x-forwarded-proto 适用于 Nginx 代理 HTTPS
+        const isHttps = req.secure || req.headers['x-forwarded-proto'] === 'https';
+
+        if (isHttps) {
+            // 🔒 线上 HTTPS 环境：直接使用默认的最严安全策略
+            helmet()(req, res, next);
+        } else {
+            // 🔓 局域网 HTTP 环境：放宽限制，干掉升级 HTTPS 的强硬指令
+            helmet({
+                hsts: false,
+                contentSecurityPolicy: {
+                    directives: {
+                        "default-src": ["'self'"],
+                        "script-src": ["'self'", "'unsafe-inline'"],
+                        "style-src": ["'self'", "'unsafe-inline'"],
+                        "img-src": ["'self'", "data:"],
+                        "upgrade-insecure-requests": null, // 核心修复
+                    },
+                },
+            })(req, res, next);
+        }
+    });
+}
 
 
 app.use(cors());
@@ -62,7 +94,8 @@ if (isDev) {
 }
 else {
 
-    app.use(helmet());
+
+
 
     const clientPath = path.resolve("./dist/client");
     // 默认index.html
