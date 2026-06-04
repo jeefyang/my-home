@@ -225,10 +225,13 @@ export async function fetchFaviconToServer(
     url: string,
     toolsImgFetch: { request: (key: string, data: any) => Promise<any> }
 ): Promise<string> {
-    try {
-        const res = await toolsImgFetch.request("favicon", { url, platform: "favicon", toUrl: "url" });
-        if (res.code === 200 && res.data) return res.data as string;
-    } catch { /* fallback */ }
+    const platforms = ["google", "duckduckgo", "favicon"];
+    for (const platform of platforms) {
+        try {
+            const res = await toolsImgFetch.request("favicon", { url, platform, toUrl: "url" });
+            if (res.code === 200 && res.data) return res.data as string;
+        } catch { /* try next */ }
+    }
     return "";
 }
 

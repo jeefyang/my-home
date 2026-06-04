@@ -8,7 +8,7 @@ export async function favicon(data: ToolsImgFaviconFromType, userPathID: string)
     let origin: string = "";
     try {
         const urlObj = new URL(data.url);
-        origin = urlObj.origin;
+        origin = urlObj.hostname;
     }
     catch (e) {
         origin = data.url;
@@ -63,7 +63,8 @@ export async function favicon(data: ToolsImgFaviconFromType, userPathID: string)
                 "image/gif": "gif",
                 "image/webp": "webp",
                 "image/svg+xml": "svg",
-                "image/x-icon":"ico"
+                "image/x-icon":"ico",
+                "image/vnd.microsoft.icon":"ico"
             };
             if (!imgList[mimeType]) {
                 return [undefined, "不支持的图片格式"];
