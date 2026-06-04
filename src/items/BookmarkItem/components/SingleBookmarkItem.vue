@@ -1,6 +1,5 @@
 <template>
     <n-flex vertical style="width: 100%">
-        {{ contextShow }}是不是手机{{ dataStore.isMobile }}
         <!-- 工具栏：仅图标按钮 -->
         <n-flex justify="center" align="center" style="gap: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none" class="mb-1">
             <n-button quaternary type="info" size="small" @click="initData">
