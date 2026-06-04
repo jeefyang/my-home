@@ -3,7 +3,7 @@
     <n-config-provider :theme-overrides="themeOverrides" style="width: 100%; height: 100%">
         <div class="parent" ref="parentRef">
             <template v-if="curPage">
-                <div v-for="group in curPage.itemGroupList" :key="group.uuid" :class="{ group_full: group.display == 'fullPage' }">
+                <div v-for="group in curPage.itemGroupList" :key="group.uuid" :class="{ group_full_parent: group.display == 'fullPage' }">
                     <!-- 按钮分组  -->
                     <div v-if="group.display == 'btn'">
                         <n-card class="btnGroup group_btn mb-2">
@@ -26,15 +26,27 @@
                     </div>
 
                     <!-- 宽度盒子分组(占满屏幕宽度) -->
-                    <div v-else-if="group.display == 'widthBox'" class="group_widthBox">
-                        <n-card v-for="item in group.list" :key="item.uuid" class="mb-2">
-                            <item-view :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid" :display="group.display"></item-view>
+                    <div v-else-if="group.display == 'widthBox'" class="group_widthBox" style="height: 100%; display: flex; flex-direction: column">
+                        <n-card v-for="item in group.list" :key="item.uuid" class="mb-2" style="height: 100%; display: flex; flex-direction: column; overflow: hidden">
+                            <item-view
+                                :item="item"
+                                :pageUUID="curPage.uuid"
+                                :itemGroupUUID="group.uuid"
+                                :display="group.display"
+                                style="height: 100%; display: flex; flex-direction: column"
+                            ></item-view>
                         </n-card>
                     </div>
                     <!-- 全屏分组 -->
                     <div v-else-if="group.display == 'fullPage'" class="group_full">
-                        <n-card style="flex: 1" v-for="item in group.list" :key="item.uuid">
-                            <item-view :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid" :display="group.display"></item-view>
+                        <n-card style="flex: 1; display: flex; flex-direction: column; overflow: auto" v-for="item in group.list" :key="item.uuid" content-class="group_full_content">
+                            <item-view
+                                :item="item"
+                                :pageUUID="curPage.uuid"
+                                :itemGroupUUID="group.uuid"
+                                :display="group.display"
+                                style="height: 100%; display: flex; flex-direction: column"
+                            ></item-view>
                         </n-card>
                     </div>
                 </div>
@@ -88,8 +100,8 @@ const curPage = computed(() => {
 });
 
 const getItemTitle = (item: ItemType): string => {
-    if (item?.option?.title) {
-        return item.option.title;
+    if (item?.options?.title) {
+        return item.options.title;
     }
     const data = ItemRouterList[item.type]!;
     return data?.title || "unknown";
@@ -115,8 +127,8 @@ onMounted(async () => {
     height: 100%;
     overflow: auto;
     scrollbar-width: none;
-    /* position: relative; */
+    position: relative;
+    top: 0;
     /* padding-bottom: 20px; */
 }
-
 </style>

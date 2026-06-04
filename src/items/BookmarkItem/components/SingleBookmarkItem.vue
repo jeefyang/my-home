@@ -32,13 +32,7 @@
         </div>
 
         <!-- 搜索框 -->
-        <n-input
-            placeholder="搜索书签…"
-            clearable
-            :debounce="300"
-            @update:value="onSearchChange"
-            @clear="onSearchClear"
-        >
+        <n-input placeholder="搜索书签…" clearable :debounce="300" @update:value="onSearchChange" @clear="onSearchClear">
             <template #prefix>
                 <n-icon :component="Search" />
             </template>
@@ -65,12 +59,7 @@
                     <n-icon v-if="idx < breadcrumbList.length - 1" :component="IosArrowForward" size="12" style="color: #aaa; flex-shrink: 0" />
                 </template>
             </n-flex>
-            <n-button
-                v-if="curPath.length > 0"
-                quaternary type="warning" size="tiny"
-                style="flex-shrink: 0"
-                @click="goToParent"
-            >
+            <n-button v-if="curPath.length > 0" quaternary type="warning" size="tiny" style="flex-shrink: 0" @click="goToParent">
                 <template #icon><n-icon :component="ArrowLeft" /></template>
             </n-button>
         </n-flex>
@@ -78,82 +67,78 @@
         <!-- 书签列表（当前目录，可滚动） -->
         <template v-if="displayList.length > 0">
             <div class="bookmark-list">
-            <n-flex vertical style="margin-top: 6px; gap: 6px">
-                <div
-                    v-for="node in displayList"
-                    :key="node.item.uuid"
-                    class="bookmark-row"
-                    :class="{ 'drag-over': dragOverUuid === node.item.uuid, 'dragging': dragUuid === node.item.uuid }"
-                    draggable="true"
-                    @click="onItemClick(node.item)"
-                    @contextmenu.prevent="openContextMenu($event, node.item)"
-                    @dragstart="onDragStart($event, node.item)"
-                    @dragover.prevent="onDragOver($event, node.item)"
-                    @dragleave="onDragLeave(node.item)"
-                    @drop.prevent="onDrop($event, node.item)"
-                    @dragend="onDragEnd"
-                >
-                    <!-- 文件夹图标（拖到图标上=移入文件夹） -->
-                    <span v-if="node.item.isFolder"
-                        class="folder-icon"
-                        :class="{ 'drag-over-icon': dragOverIconUuid === node.item.uuid }"
-                        @dragover.prevent="onIconDragOver(node.item)"
-                        @dragleave="onIconDragLeave(node.item)"
-                        @drop.prevent="onDrop($event, node.item, true)"
+                <n-flex vertical style="margin-top: 6px; gap: 6px">
+                    <div
+                        v-for="node in displayList"
+                        :key="node.item.uuid"
+                        class="bookmark-row"
+                        :class="{ 'drag-over': dragOverUuid === node.item.uuid, dragging: dragUuid === node.item.uuid }"
+                        draggable="true"
+                        @click="onItemClick(node.item)"
+                        @contextmenu.prevent="openContextMenu($event, node.item)"
+                        @dragstart="onDragStart($event, node.item)"
+                        @dragover.prevent="onDragOver($event, node.item)"
+                        @dragleave="onDragLeave(node.item)"
+                        @drop.prevent="onDrop($event, node.item)"
+                        @dragend="onDragEnd"
                     >
-                        <n-icon :component="Folder" size="20" />
-                    </span>
-                    <!-- 书签图标 -->
-                    <span v-else class="icon-box">
-                        <img
-                            v-if="node.item.icon"
-                            :src="iconDisplayUrl(node.item.icon)"
-                            class="icon-img"
-                            @error="($event.target as HTMLImageElement).style.display='none'"
-                        />
-                        <n-icon v-else-if="node.item.url" :component="MdGlobe" size="14" />
-                        <n-icon v-else :component="File" size="14" />
-                    </span>
+                        <!-- 文件夹图标（拖到图标上=移入文件夹） -->
+                        <span
+                            v-if="node.item.isFolder"
+                            class="folder-icon"
+                            :class="{ 'drag-over-icon': dragOverIconUuid === node.item.uuid }"
+                            @dragover.prevent="onIconDragOver(node.item)"
+                            @dragleave="onIconDragLeave(node.item)"
+                            @drop.prevent="onDrop($event, node.item, true)"
+                        >
+                            <n-icon :component="Folder" size="20" />
+                        </span>
+                        <!-- 书签图标 -->
+                        <span v-else class="icon-box">
+                            <img v-if="node.item.icon" :src="iconDisplayUrl(node.item.icon)" class="icon-img" @error="($event.target as HTMLImageElement).style.display = 'none'" />
+                            <n-icon v-else-if="node.item.url" :component="MdGlobe" size="14" />
+                            <n-icon v-else :component="File" size="14" />
+                        </span>
 
-                    <!-- 标题 -->
-                    <span class="bookmark-title">{{ node.item.title }}</span>
+                        <!-- 标题 -->
+                        <span class="bookmark-title">{{ node.item.title }}</span>
 
-                    <!-- URL（非文件夹&非搜索模式） -->
-                    <span v-if="!node.item.isFolder && !searchKey" class="bookmark-url">{{ getDisplayUrl(node.item.url) }}</span>
+                        <!-- URL（非文件夹&非搜索模式） -->
+                        <span v-if="!node.item.isFolder && !searchKey" class="bookmark-url">{{ getDisplayUrl(node.item.url) }}</span>
 
-                    <!-- 悬停操作 -->
-                    <span class="bookmark-actions" @click.stop>
-                        <n-flex vertical style="gap: 2px">
-                            <n-flex style="gap: 2px">
-                                <n-button quaternary size="tiny" type="warning" @click.stop="openEditForm(node.item)">
-                                    <n-icon :component="Edit" size="13" />
-                                </n-button>
-                                <n-button quaternary size="tiny" type="error" @click.stop="openDeleteDialog(node.item)">
-                                    <n-icon :component="Trash" size="13" />
-                                </n-button>
-                                <n-button v-if="node.item.isFolder" quaternary size="tiny" type="default" @click.stop="expandFolder(node.item)">
-                                    <n-icon :component="Move" size="13" />
-                                </n-button>
-                                <n-button v-if="!node.item.isFolder" quaternary size="tiny" type="info" @click.stop="openUrl(node.item.url)">
-                                    <n-icon :component="Launch" size="13" />
-                                </n-button>
+                        <!-- 悬停操作 -->
+                        <span class="bookmark-actions" @click.stop>
+                            <n-flex vertical style="gap: 2px">
+                                <n-flex style="gap: 2px">
+                                    <n-button quaternary size="tiny" type="warning" @click.stop="openEditForm(node.item)">
+                                        <n-icon :component="Edit" size="13" />
+                                    </n-button>
+                                    <n-button quaternary size="tiny" type="error" @click.stop="openDeleteDialog(node.item)">
+                                        <n-icon :component="Trash" size="13" />
+                                    </n-button>
+                                    <n-button v-if="node.item.isFolder" quaternary size="tiny" type="default" @click.stop="expandFolder(node.item)">
+                                        <n-icon :component="Move" size="13" />
+                                    </n-button>
+                                    <n-button v-if="!node.item.isFolder" quaternary size="tiny" type="info" @click.stop="openUrl(node.item.url)">
+                                        <n-icon :component="Launch" size="13" />
+                                    </n-button>
+                                </n-flex>
+                                <n-flex v-if="!node.item.isFolder" style="gap: 2px">
+                                    <n-button quaternary size="tiny" type="default" @click.stop="gotoUrl(node.item.url)">
+                                        <n-icon :component="ArrowRight" size="13" />
+                                    </n-button>
+                                    <n-button quaternary size="tiny" type="default" @click.stop="copyLink(node.item.url)">
+                                        <n-icon :component="Copy" size="13" />
+                                    </n-button>
+                                    <n-button quaternary size="tiny" type="default" @click.stop="showQrCode(node.item.url, node.item.title)">
+                                        <n-icon :component="QrCode" size="13" />
+                                    </n-button>
+                                </n-flex>
                             </n-flex>
-                            <n-flex v-if="!node.item.isFolder" style="gap: 2px">
-                                <n-button quaternary size="tiny" type="default" @click.stop="gotoUrl(node.item.url)">
-                                    <n-icon :component="ArrowRight" size="13" />
-                                </n-button>
-                                <n-button quaternary size="tiny" type="default" @click.stop="copyLink(node.item.url)">
-                                    <n-icon :component="Copy" size="13" />
-                                </n-button>
-                                <n-button quaternary size="tiny" type="default" @click.stop="showQrCode(node.item.url, node.item.title)">
-                                    <n-icon :component="QrCode" size="13" />
-                                </n-button>
-                            </n-flex>
-                        </n-flex>
-                    </span>
-                </div>
-            </n-flex>
-        </div>
+                        </span>
+                    </div>
+                </n-flex>
+            </div>
         </template>
 
         <n-empty v-else-if="!loading" class="mt-30" description="此目录为空" />
@@ -161,71 +146,31 @@
         <!-- 移动端长按菜单 -->
         <x-modal v-model:show="contextShow" title="" :content-max-height="'auto'">
             <n-flex vertical>
-                <n-button
-                    v-if="contextItem && !contextItem.isFolder"
-                    quaternary
-                    size="large"
-                    style="justify-content: flex-start"
-                    @click="contextAction('open')"
-                >
+                <n-button v-if="contextItem && !contextItem.isFolder" quaternary size="large" style="justify-content: flex-start" @click="contextAction('open')">
                     <template #icon><n-icon :component="Launch" /></template>
                     新标签打开
                 </n-button>
-                <n-button
-                    v-if="contextItem && !contextItem.isFolder"
-                    quaternary
-                    size="large"
-                    style="justify-content: flex-start"
-                    @click="contextAction('goto')"
-                >
+                <n-button v-if="contextItem && !contextItem.isFolder" quaternary size="large" style="justify-content: flex-start" @click="contextAction('goto')">
                     <template #icon><n-icon :component="ArrowRight" /></template>
                     当前页面跳转
                 </n-button>
-                <n-button
-                    v-if="contextItem && !contextItem.isFolder"
-                    quaternary
-                    size="large"
-                    style="justify-content: flex-start"
-                    @click="contextAction('copyLink')"
-                >
+                <n-button v-if="contextItem && !contextItem.isFolder" quaternary size="large" style="justify-content: flex-start" @click="contextAction('copyLink')">
                     <template #icon><n-icon :component="Copy" /></template>
                     复制链接
                 </n-button>
-                <n-button
-                    v-if="contextItem && !contextItem.isFolder"
-                    quaternary
-                    size="large"
-                    style="justify-content: flex-start"
-                    @click="contextAction('qrCode')"
-                >
+                <n-button v-if="contextItem && !contextItem.isFolder" quaternary size="large" style="justify-content: flex-start" @click="contextAction('qrCode')">
                     <template #icon><n-icon :component="QrCode" /></template>
                     转二维码
                 </n-button>
-                <n-button
-                    v-if="contextItem && contextItem.isFolder"
-                    quaternary
-                    size="large"
-                    style="justify-content: flex-start"
-                    @click="contextAction('expand')"
-                >
+                <n-button v-if="contextItem && contextItem.isFolder" quaternary size="large" style="justify-content: flex-start" @click="contextAction('expand')">
                     <template #icon><n-icon :component="Move" /></template>
                     展开
                 </n-button>
-                <n-button
-                    quaternary
-                    size="large"
-                    style="justify-content: flex-start"
-                    @click="contextAction('edit')"
-                >
+                <n-button quaternary size="large" style="justify-content: flex-start" @click="contextAction('edit')">
                     <template #icon><n-icon :component="Edit" /></template>
                     编辑
                 </n-button>
-                <n-button
-                    quaternary
-                    size="large"
-                    style="justify-content: flex-start; color: #e88080"
-                    @click="contextAction('delete')"
-                >
+                <n-button quaternary size="large" style="justify-content: flex-start; color: #e88080" @click="contextAction('delete')">
                     <template #icon><n-icon :component="Trash" /></template>
                     删除
                 </n-button>
@@ -274,7 +219,7 @@
                             v-if="formIconPreview"
                             :src="formIconPreview"
                             style="width: 28px; height: 28px; border-radius: 4px; object-fit: contain; flex-shrink: 0"
-                            @error="($event.target as HTMLImageElement).style.display='none'"
+                            @error="($event.target as HTMLImageElement).style.display = 'none'"
                         />
                     </div>
                 </n-form-item>
@@ -297,9 +242,7 @@
         <!-- 删除确认 -->
         <x-modal v-model:show="deleteShow" title="确认删除">
             <p>确定删除「{{ deleteTarget?.title }}」吗？</p>
-            <p v-if="deleteTarget?.isFolder && deleteTarget.children?.length" style="color: #e88080; font-size: 13px">
-                ⚠ 该文件夹内所有内容也将被删除。
-            </p>
+            <p v-if="deleteTarget?.isFolder && deleteTarget.children?.length" style="color: #e88080; font-size: 13px">⚠ 该文件夹内所有内容也将被删除。</p>
             <template #footer>
                 <n-flex justify="end">
                     <n-button @click="deleteShow = false">取消</n-button>
@@ -353,8 +296,8 @@ const loading = ref(false);
 const importProgress = ref(0);
 const importing = ref(false);
 const importStatusText = ref("");
-const dataList = ref(<BookmarkCollectionType[]>[]);       // 完整树
-const curPath = ref(<string[]>[]);                        // 当前目录 UUID 路径
+const dataList = ref(<BookmarkCollectionType[]>[]); // 完整树
+const curPath = ref(<string[]>[]); // 当前目录 UUID 路径
 const searchKey = ref("");
 
 // 导入
@@ -392,8 +335,8 @@ const dragOverUuid = ref("");
 const onDragStart = (e: DragEvent, item: BookmarkCollectionType) => {
     dragUuid.value = item.uuid;
     if (e.dataTransfer) {
-        e.dataTransfer.effectAllowed = 'move';
-        e.dataTransfer.setData('text/plain', item.uuid);
+        e.dataTransfer.effectAllowed = "move";
+        e.dataTransfer.setData("text/plain", item.uuid);
     }
 };
 
@@ -402,25 +345,41 @@ const onDragOver = (e: DragEvent, item: BookmarkCollectionType) => {
 };
 
 const onDragLeave = (item: BookmarkCollectionType) => {
-    if (dragOverUuid.value === item.uuid) dragOverUuid.value = '';
+    if (dragOverUuid.value === item.uuid) dragOverUuid.value = "";
 };
 
 const onDrop = (e: DragEvent, targetItem: BookmarkCollectionType, isIcon?: boolean) => {
-    dragOverUuid.value = '';
+    dragOverUuid.value = "";
     const sourceUuid = dragUuid.value;
-    if (!sourceUuid || sourceUuid === targetItem.uuid) { dragUuid.value = ''; return; }
+    if (!sourceUuid || sourceUuid === targetItem.uuid) {
+        dragUuid.value = "";
+        return;
+    }
     const sourcePath = findNodePath(dataList.value, sourceUuid);
     const targetPath = findNodePath(dataList.value, targetItem.uuid);
-    if (!sourcePath || !targetPath) { dragUuid.value = ''; return; }
+    if (!sourcePath || !targetPath) {
+        dragUuid.value = "";
+        return;
+    }
     // 不能拖到自己内部
-    if (targetPath.join(',') === sourcePath.join(',')) { dragUuid.value = ''; return; }
+    if (targetPath.join(",") === sourcePath.join(",")) {
+        dragUuid.value = "";
+        return;
+    }
     // 如果目标在源内部（子节点）也禁止
-    const targetStr = targetPath.join(',');
-    const sourceStr = sourcePath.join(',');
-    if (targetStr.startsWith(sourceStr + ',')) { msg.warning('不能拖到自身内部'); dragUuid.value = ''; return; }
+    const targetStr = targetPath.join(",");
+    const sourceStr = sourcePath.join(",");
+    if (targetStr.startsWith(sourceStr + ",")) {
+        msg.warning("不能拖到自身内部");
+        dragUuid.value = "";
+        return;
+    }
 
     const sourceNode = extractNode(dataList.value, sourceUuid);
-    if (!sourceNode) { dragUuid.value = ''; return; }
+    if (!sourceNode) {
+        dragUuid.value = "";
+        return;
+    }
 
     if (targetItem.isFolder && isIcon) {
         // 拖到文件夹图标上 → 移入文件夹
@@ -430,11 +389,16 @@ const onDrop = (e: DragEvent, targetItem: BookmarkCollectionType, isIcon?: boole
         dataList.value = insertBefore(dataList.value, targetItem.uuid, sourceNode);
     }
     saveData();
-    dragUuid.value = '';
-    msg.success('已移动');
+    dragUuid.value = "";
+    msg.success("已移动");
 };
 
-const onDragEnd = () => { dragUuid.value = ''; dragOverUuid.value = ''; dragOverIconUuid.value = ''; breadcrumbDropUuid.value = ''; };
+const onDragEnd = () => {
+    dragUuid.value = "";
+    dragOverUuid.value = "";
+    dragOverIconUuid.value = "";
+    breadcrumbDropUuid.value = "";
+};
 
 function findNodePath(items: BookmarkCollectionType[], uuid: string, path: string[] = []): string[] | null {
     for (let i = 0; i < items.length; i++) {
@@ -461,7 +425,10 @@ function extractNode(items: BookmarkCollectionType[], uuid: string): BookmarkCol
 
 function insertBefore(items: BookmarkCollectionType[], targetUuid: string, newNode: BookmarkCollectionType): BookmarkCollectionType[] {
     for (let i = 0; i < items.length; i++) {
-        if (items[i].uuid === targetUuid) { items.splice(i, 0, newNode); return items; }
+        if (items[i].uuid === targetUuid) {
+            items.splice(i, 0, newNode);
+            return items;
+        }
         if (items[i].children && items[i].children.length > 0) insertBefore(items[i].children, targetUuid, newNode);
     }
     return items;
@@ -471,32 +438,36 @@ const dragOverIconUuid = ref("");
 const breadcrumbDropUuid = ref("");
 
 const dropToBreadcrumb = (folderUuid: string, title: string) => {
-    breadcrumbDropUuid.value = '';
+    breadcrumbDropUuid.value = "";
     const sourceUuid = dragUuid.value;
     if (!sourceUuid) return;
     const sourceNode = extractNode(dataList.value, sourceUuid);
-    if (!sourceNode) { dragUuid.value = ''; return; }
+    if (!sourceNode) {
+        dragUuid.value = "";
+        return;
+    }
     // 如果 drop 到根目录
-    if (folderUuid === '__root__') {
+    if (folderUuid === "__root__") {
         dataList.value = [...dataList.value, sourceNode];
     } else {
         const targetPath = findNodePath(dataList.value, folderUuid);
         if (targetPath) {
             dataList.value = addItemAtPath(dataList.value, targetPath, sourceNode);
         } else {
-            dragUuid.value = ''; return;
+            dragUuid.value = "";
+            return;
         }
     }
     saveData();
-    dragUuid.value = '';
-    msg.success('已移动到 ' + title);
+    dragUuid.value = "";
+    msg.success("已移动到 " + title);
 };
 
 const onIconDragOver = (item: BookmarkCollectionType) => {
     if (item.uuid !== dragUuid.value) dragOverIconUuid.value = item.uuid;
 };
 const onIconDragLeave = (item: BookmarkCollectionType) => {
-    if (dragOverIconUuid.value === item.uuid) dragOverIconUuid.value = '';
+    if (dragOverIconUuid.value === item.uuid) dragOverIconUuid.value = "";
 };
 
 // 长按 / 右键菜单
@@ -512,13 +483,14 @@ const contextAction = (action: string) => {
     if (!contextItem.value) return;
     contextShow.value = false;
     const item = contextItem.value;
-    if (action === 'open' && item.url) openUrl(item.url);
-    else if (action === 'goto' && item.url) { window.location.href = item.url; }
-    else if (action === 'copyLink' && item.url) copyLink(item.url);
-    else if (action === 'qrCode' && item.url) showQrCode(item.url, item.title);
-    else if (action === 'expand' && item.isFolder) expandFolder(item);
-    else if (action === 'edit') openEditForm(item);
-    else if (action === 'delete') openDeleteDialog(item);
+    if (action === "open" && item.url) openUrl(item.url);
+    else if (action === "goto" && item.url) {
+        window.location.href = item.url;
+    } else if (action === "copyLink" && item.url) copyLink(item.url);
+    else if (action === "qrCode" && item.url) showQrCode(item.url, item.title);
+    else if (action === "expand" && item.isFolder) expandFolder(item);
+    else if (action === "edit") openEditForm(item);
+    else if (action === "delete") openDeleteDialog(item);
     contextItem.value = null;
 };
 
@@ -530,22 +502,22 @@ const expandFolder = (folder: BookmarkCollectionType) => {
     if (children.length === 0) {
         dataList.value = removeItemFromTree(dataList.value, folder.uuid);
         saveData();
-        msg.success('已展开（空文件夹已删除）');
+        msg.success("已展开（空文件夹已删除）");
         return;
     }
     const expanded = doExpandItem(dataList.value, folder.uuid);
     if (expanded) {
         dataList.value = expanded;
         saveData();
-        msg.success('已展开 ' + children.length + ' 个项目');
+        msg.success("已展开 " + children.length + " 个项目");
     } else {
-        msg.error('展开失败');
+        msg.error("展开失败");
     }
 };
 
 function doExpandItem(items: BookmarkCollectionType[], uuid: string): BookmarkCollectionType[] | null {
     let found = false;
-    const result = items.flatMap(item => {
+    const result = items.flatMap((item) => {
         if (item.uuid === uuid) {
             found = true;
             return item.children || [];
@@ -586,16 +558,13 @@ const displayList = computed<DisplayNode[]>(() => {
         return searchInTree(dataList.value, searchKey.value, 0);
     }
     // 文件浏览器模式：只显示当前目录
-    return currentContent.value.map(item => ({ item, depth: 0 }));
+    return currentContent.value.map((item) => ({ item, depth: 0 }));
 });
 
 /** 图标预览 URL */
 const formIconPreview = computed(() => {
     if (formData._iconServerFile) {
-        return UrlUtils.checkImgUrl(
-            formData._iconServerFile,
-            `./api/files/users/${dataStore.pathid}`
-        );
+        return UrlUtils.checkImgUrl(formData._iconServerFile, `./api/files/users/${dataStore.pathid}`);
     }
     if (formData._iconInput) {
         return formData._iconInput;
@@ -691,16 +660,19 @@ const gotoUrl = (url: string) => {
 
 const copyScript = async () => {
     try {
-        const res = await fetch('/items/BookmarkItem/addMark.js');
+        const res = await fetch("/items/BookmarkItem/addMark.js");
         const text = await res.text();
-        const ta = document.createElement('textarea');
-        ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
-        document.body.appendChild(ta); ta.select();
-        document.execCommand('copy');
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
         document.body.removeChild(ta);
-        msg.success('油猴脚本已复制，粘贴到 Tampermonkey 新建脚本即可');
+        msg.success("油猴脚本已复制，粘贴到 Tampermonkey 新建脚本即可");
     } catch {
-        msg.error('复制失败');
+        msg.error("复制失败");
     }
 };
 
@@ -712,27 +684,30 @@ const exportTabInfo = () => {
         itemUUID: props.item.uuid,
         itemType: props.item.type,
         bookmarkUUID: props.bookmark.uuid,
-        filename: 'collection-' + props.bookmark.uuid + '.json'
+        filename: "collection-" + props.bookmark.uuid + ".json"
     };
     const json = JSON.stringify(info, null, 2);
-    const ta = document.createElement('textarea');
-    ta.value = json; ta.style.position = 'fixed'; ta.style.opacity = '0';
-    document.body.appendChild(ta); ta.select();
-    document.execCommand('copy');
+    const ta = document.createElement("textarea");
+    ta.value = json;
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand("copy");
     document.body.removeChild(ta);
-    msg.success('连接信息已复制');
+    msg.success("连接信息已复制");
 };
 
 const copyLink = (url: string) => {
     if (!url) return;
     try {
-        const ta = document.createElement('textarea');
+        const ta = document.createElement("textarea");
         ta.value = url;
-        ta.style.position = 'fixed';
-        ta.style.opacity = '0';
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
         document.body.appendChild(ta);
         ta.select();
-        document.execCommand('copy');
+        document.execCommand("copy");
         document.body.removeChild(ta);
         msg.success("链接已复制");
     } catch {
@@ -912,7 +887,11 @@ const handleFileImport = async (e: Event) => {
         importStatusText.value = "正在解析书签…";
 
         const items = parseHtmlBookmarks(html);
-        if (items.length === 0) { importProgress.value = 0; importing.value = false; return msg.warning("未解析到有效书签数据"); }
+        if (items.length === 0) {
+            importProgress.value = 0;
+            importing.value = false;
+            return msg.warning("未解析到有效书签数据");
+        }
 
         importProgress.value = 15;
 
@@ -924,7 +903,10 @@ const handleFileImport = async (e: Event) => {
         // 将 base64/URL 图标上传到服务器
         const uploadIcon = async (iconStr: string): Promise<string> => {
             try {
-                if (!iconStr.startsWith('data:')) { doneIcons++; return iconStr; }
+                if (!iconStr.startsWith("data:")) {
+                    doneIcons++;
+                    return iconStr;
+                }
                 const { base64ToFile, myUpload } = await import("@/utils/upload");
                 const fileObj = base64ToFile(iconStr);
                 const [res] = await myUpload(
@@ -947,7 +929,9 @@ const handleFileImport = async (e: Event) => {
                 if (res?.code === 200 && res?.data?.filename) {
                     return res.data.filename;
                 }
-            } catch { /* keep original */ }
+            } catch {
+                /* keep original */
+            }
             return iconStr;
         };
         await resolveImportIcons(items, uploadIcon);
@@ -974,14 +958,17 @@ const handleFileImport = async (e: Event) => {
         msg.error("文件解析失败");
         console.error(err);
     } finally {
-        setTimeout(() => { importing.value = false; importProgress.value = 0; }, 800);
+        setTimeout(() => {
+            importing.value = false;
+            importProgress.value = 0;
+        }, 800);
     }
 };
 
 function countIcons(items: BookmarkCollectionType[]): number {
     let c = 0;
     for (const it of items) {
-        if (it.icon && it.icon.startsWith('data:')) c++;
+        if (it.icon && it.icon.startsWith("data:")) c++;
         if (it.children) c += countIcons(it.children);
     }
     return c;
@@ -1005,7 +992,7 @@ const toExport = async () => {
     let folder = dataList.value;
     let title = props.bookmark.title;
     for (const uuid of curPath.value) {
-        const f = folder.find(item => item.uuid === uuid && item.isFolder);
+        const f = folder.find((item) => item.uuid === uuid && item.isFolder);
         if (!f || !f.children) return msg.warning("当前目录不存在");
         title = f.title;
         folder = f.children;
@@ -1046,7 +1033,10 @@ async function resolveIconsToBase64(items: BookmarkCollectionType[]) {
 }
 
 // ========== 刷新信号 ==========
-watch(() => props.refreshKey, () => initData());
+watch(
+    () => props.refreshKey,
+    () => initData()
+);
 
 onMounted(() => initData());
 </script>
@@ -1054,7 +1044,8 @@ onMounted(() => initData());
 <style scoped>
 .bookmark-list {
     overflow-y: auto;
-    max-height: calc(100vh - 220px);
+    flex: 1;
+    min-height: 0;
     scrollbar-width: none;
 }
 

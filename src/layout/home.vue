@@ -50,13 +50,14 @@ onMounted(() => {});
 }
 
 .bottom {
-    height: 40px;
+    height: 50px;
     flex-flow: nowrap;
     overflow-x: auto;
     gap: 0;
     display: flex;
     scrollbar-width: none;
     margin-top: 5px;
+    padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 6px);
 }
 
 .bottomBtn {

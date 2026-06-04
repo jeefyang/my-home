@@ -3,9 +3,14 @@
 #app {
     width: 100%;
     height: 100%;
-    /* margin: 0 auto; */
-    padding: 10px;
+    padding: 0;
     font-weight: normal;
+}
+
+@media (width >= 768px) {
+    #app {
+        padding: 10px;
+    }
 }
 
 a,
@@ -19,13 +24,6 @@ a,
 @media (hover: hover) {
     a:hover {
         background-color: hsla(160, 100%, 37%, 0.2);
-    }
-}
-
-@media (min-width: 1024px) {
-    body {
-        display: flex;
-        place-items: center;
     }
 }
 
@@ -77,6 +75,15 @@ a,
     margin-bottom: 5px;
 }
 
+.group_full_parent {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    top: 0;
+}
+
 /* 分组-全屏 */
 .group_full {
     width: 100%;
@@ -85,7 +92,16 @@ a,
     flex-direction: column;
     position: relative;
     top: 0;
-    gap: 1;
+    min-height: 0;
+    /* gap: 1; */
+    /* overflow: auto; */
+}
+
+.group_full_content {
+    position: relative;
+    min-height: 0;
+    flex: 1;
+    /* overflow: auto; */
 }
 
 .modalBox {

@@ -58,8 +58,12 @@
   font-weight: normal;
 }
 
+html {
+  height: 100%;
+}
+
 body {
-  height: 100vh;
+  height: 100%;
   overflow: hidden;
   color: var(--color-text);
   background: var(--color-background);

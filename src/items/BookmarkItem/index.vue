@@ -1,5 +1,5 @@
 <template>
-    <div v-if="dataList && dataList.length > 0">
+    <div v-if="dataList && dataList.length > 0" class="flex flex-col xx" style="min-height: 0;">
         <n-tabs :bar-width="28" type="line" class="custom-tabs" v-model:value="switchTab">
             <template #prefix>
                 <n-button size="tiny" quaternary type="primary" @click="refreshCurrent">
@@ -9,7 +9,22 @@
 
             <n-tab-pane v-for="(bookmark, index) in dataList" :key="bookmark.uuid" :name="bookmark.uuid">
                 <template #tab>
-                    <n-dropdown trigger="click" :options="getTabMenu(bookmark)" :show="dropdownOpen === bookmark.uuid" @update:show="v => { if(!v) dropdownOpen = '' }" @select="(key) => { onTabMenuSelect(key, bookmark, index); dropdownOpen = '' }">
+                    <n-dropdown
+                        trigger="click"
+                        :options="getTabMenu(bookmark)"
+                        :show="dropdownOpen === bookmark.uuid"
+                        @update:show="
+                            (v) => {
+                                if (!v) dropdownOpen = '';
+                            }
+                        "
+                        @select="
+                            (key) => {
+                                onTabMenuSelect(key, bookmark, index);
+                                dropdownOpen = '';
+                            }
+                        "
+                    >
                         <span style="cursor: context-menu; user-select: none; display: inline-block; padding: 0 4px" @contextmenu.prevent="dropdownOpen = bookmark.uuid">
                             {{ bookmark.title }}
                         </span>
@@ -33,6 +48,7 @@
                 :itemGroupUUID="props.itemGroupUUID"
                 v-model:bookmark="dataList[index]"
                 :refresh-key="refreshKey"
+                style="flex: 1;min-height: 0;"
             />
         </template>
     </div>
@@ -59,7 +75,7 @@
 
     <!-- 删除确认弹窗 -->
     <x-modal v-model:show="showDelete" title="删除收藏夹">
-        <p>确定要删除收藏夹「{{ deleteTarget?.title }}」吗？<br>其中的所有书签数据将被永久删除。</p>
+        <p>确定要删除收藏夹「{{ deleteTarget?.title }}」吗？<br />其中的所有书签数据将被永久删除。</p>
         <template #footer>
             <n-flex justify="end">
                 <n-button @click="showDelete = false">取消</n-button>
@@ -126,10 +142,7 @@ const refreshCurrent = () => {
 const toAddBookmark = async () => {
     const uuid = nanoid(10);
     const now = Date.now();
-    const list: BookmarkType[] = [
-        ...dataList.value,
-        { title: "新建收藏夹", uuid, sortid: getMaxSortid(), creatTime: now, modifyTime: now }
-    ];
+    const list: BookmarkType[] = [...dataList.value, { title: "新建收藏夹", uuid, sortid: getMaxSortid(), creatTime: now, modifyTime: now }];
 
     const res = await itemFetch.request("updateItemData", {
         itemType: props.item.type,
@@ -174,8 +187,8 @@ const onTabMenuSelect = (key: string, bookmark: BookmarkType, index: number) => 
         showDelete.value = true;
     } else if (key === "moveFirst") {
         // 移到第一位并设为默认
-        dataList.value = dataList.value.filter(item => item.uuid !== bookmark.uuid);
-        dataList.value.forEach(item => item.isDefault = false);
+        dataList.value = dataList.value.filter((item) => item.uuid !== bookmark.uuid);
+        dataList.value.forEach((item) => (item.isDefault = false));
         bookmark.isDefault = true;
         dataList.value.unshift(bookmark);
         saveDataList();
@@ -202,13 +215,15 @@ const confirmDelete = async () => {
     const uuid = deleteTarget.value.uuid;
 
     // 删除对应的书签数据文件
-    await itemFetch.request("deleteItemData", {
-        itemType: props.item.type,
-        itemUUID: props.item.uuid,
-        filename: `collection-${uuid}.json`
-    }).catch(() => {});
+    await itemFetch
+        .request("deleteItemData", {
+            itemType: props.item.type,
+            itemUUID: props.item.uuid,
+            filename: `collection-${uuid}.json`
+        })
+        .catch(() => {});
 
-    dataList.value = dataList.value.filter(item => item.uuid !== uuid);
+    dataList.value = dataList.value.filter((item) => item.uuid !== uuid);
     const ok = await saveDataList();
     if (!ok) return msg.error("保存失败");
 
@@ -229,7 +244,7 @@ const init = async () => {
     if (res.code != 200) return msg.error(res.msg);
     dataList.value = res.data ? JSON.parse(res.data) : [];
     const index = dataList.value.findIndex((item) => item.isDefault);
-    switchTab.value = index != -1 ? dataList.value[index].uuid : (dataList.value[0]?.uuid || "");
+    switchTab.value = index != -1 ? dataList.value[index].uuid : dataList.value[0]?.uuid || "";
 };
 
 onMounted(() => {
