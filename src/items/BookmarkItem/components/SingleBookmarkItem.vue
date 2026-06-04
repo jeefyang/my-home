@@ -1,5 +1,6 @@
 <template>
     <n-flex vertical style="width: 100%">
+        {{ contextShow }}是不是手机{{ dataStore.isMobile }}
         <!-- 工具栏：仅图标按钮 -->
         <n-flex justify="center" align="center" style="gap: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none" class="mb-1">
             <n-button quaternary type="info" size="small" @click="initData">
@@ -66,14 +67,14 @@
 
         <!-- 书签列表（当前目录，可滚动） -->
         <template v-if="displayList.length > 0">
-            <div class="bookmark-list">
+            <div class="bookmark-list" @contextmenu.prevent>
                 <n-flex vertical style="margin-top: 6px; gap: 6px">
                     <div
                         v-for="node in displayList"
                         :key="node.item.uuid"
                         class="bookmark-row"
                         :class="{ 'drag-over': dragOverUuid === node.item.uuid, dragging: dragUuid === node.item.uuid }"
-                        draggable="true"
+                        :draggable="!dataStore.isMobile"
                         @click="onItemClick(node.item)"
                         @contextmenu.prevent="openContextMenu($event, node.item)"
                         @dragstart="onDragStart($event, node.item)"
@@ -254,7 +255,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, reactive, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import type { BookmarkCollectionType, BookmarkType } from "..";
 import { Refresh, Edit, Trash, Folder, File } from "@vicons/tabler";
 import { BookmarkAdd, FolderAdd, Search, Launch, ArrowLeft, ArrowRight, Link as LinkIcon, Copy, QrCode, Code, Information, Move } from "@vicons/carbon";
@@ -279,6 +280,7 @@ import {
     iconFileToBase64,
     resolveImportIcons
 } from "./bookmarkUtils";
+import { vTouch } from "@/directives/touch";
 
 const msg = useMessage();
 const dataStore = useDataStore();
@@ -1047,6 +1049,11 @@ onMounted(() => initData());
     flex: 1;
     min-height: 0;
     scrollbar-width: none;
+
+    -webkit-touch-callout: none; /* 禁用系统默认菜单 */
+    -webkit-user-select: none; /* 禁用文本选择 */
+    user-select: none;
+    -webkit-tap-highlight-color: transparent; /* 去除点击高亮 */
 }
 
 .bookmark-list::-webkit-scrollbar {

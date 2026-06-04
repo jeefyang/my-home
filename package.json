@@ -19,6 +19,7 @@
         "logs": "pm2 logs ecosystem.config.cjs"
     },
     "dependencies": {
+        "@vueuse/core": "^14.3.0",
         "axios": "^1.16.1",
         "cheerio": "^1.2.0",
         "cors": "^2.8.6",
