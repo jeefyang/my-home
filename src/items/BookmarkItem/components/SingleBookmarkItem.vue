@@ -114,6 +114,9 @@
                                 <n-button quaternary size="tiny" type="error" @click.stop="openDeleteDialog(node.item)">
                                     <n-icon :component="Trash" size="13" />
                                 </n-button>
+                                <n-button v-if="node.item.isFolder" quaternary size="tiny" type="default" @click.stop="expandFolder(node.item)">
+                                    <n-icon :component="Move" size="13" />
+                                </n-button>
                                 <n-button v-if="!node.item.isFolder" quaternary size="tiny" type="info" @click.stop="openUrl(node.item.url)">
                                     <n-icon :component="Launch" size="13" />
                                 </n-button>
@@ -180,6 +183,16 @@
                 >
                     <template #icon><n-icon :component="QrCode" /></template>
                     转二维码
+                </n-button>
+                <n-button
+                    v-if="contextItem && contextItem.isFolder"
+                    quaternary
+                    size="large"
+                    style="justify-content: flex-start"
+                    @click="contextAction('expand')"
+                >
+                    <template #icon><n-icon :component="Move" /></template>
+                    展开
                 </n-button>
                 <n-button
                     quaternary
@@ -284,7 +297,7 @@
 import { computed, onMounted, reactive, ref, watch } from "vue";
 import type { BookmarkCollectionType, BookmarkType } from "..";
 import { Refresh, Edit, Trash, Folder, File } from "@vicons/tabler";
-import { BookmarkAdd, FolderAdd, Search, Launch, ArrowLeft, ArrowRight, Link as LinkIcon, Copy, QrCode, Code, Information } from "@vicons/carbon";
+import { BookmarkAdd, FolderAdd, Search, Launch, ArrowLeft, ArrowRight, Link as LinkIcon, Copy, QrCode, Code, Information, Move } from "@vicons/carbon";
 import { IosArrowForward, MdGlobe, IosCloudUpload, IosCloudDownload } from "@vicons/ionicons4";
 import { itemFetch, toolsImgFetch, toolsUrlFetch } from "@/utils/jFetch";
 import { useMessage } from "naive-ui";
@@ -372,12 +385,51 @@ const contextAction = (action: string) => {
     else if (action === 'goto' && item.url) { window.location.href = item.url; }
     else if (action === 'copyLink' && item.url) copyLink(item.url);
     else if (action === 'qrCode' && item.url) showQrCode(item.url, item.title);
+    else if (action === 'expand' && item.isFolder) expandFolder(item);
     else if (action === 'edit') openEditForm(item);
     else if (action === 'delete') openDeleteDialog(item);
     contextItem.value = null;
 };
 
 // 删除
+// ========== 展开文件夹 ==========
+
+const expandFolder = (folder: BookmarkCollectionType) => {
+    const children = folder.children || [];
+    if (children.length === 0) {
+        dataList.value = removeItemFromTree(dataList.value, folder.uuid);
+        saveData();
+        msg.success('已展开（空文件夹已删除）');
+        return;
+    }
+    const expanded = doExpandItem(dataList.value, folder.uuid);
+    if (expanded) {
+        dataList.value = expanded;
+        saveData();
+        msg.success('已展开 ' + children.length + ' 个项目');
+    } else {
+        msg.error('展开失败');
+    }
+};
+
+function doExpandItem(items: BookmarkCollectionType[], uuid: string): BookmarkCollectionType[] | null {
+    let found = false;
+    const result = items.flatMap(item => {
+        if (item.uuid === uuid) {
+            found = true;
+            return item.children || [];
+        }
+        if (item.children && item.children.length > 0) {
+            const sub = doExpandItem(item.children, uuid);
+            if (sub) {
+                return { ...item, children: sub };
+            }
+        }
+        return item;
+    });
+    return found ? result : null;
+}
+
 const deleteShow = ref(false);
 const deleteTarget = ref<BookmarkCollectionType | null>(null);
 
