@@ -17,7 +17,7 @@ export function useToolsUrlApi(router: Router) {
         }
         const data = await getUrlTitle(from.url);
         if (data[1]) {
-            return { err: data[1] };
+            return { msg: data[1], err: data[1] };
         }
         return { data: data[0] };
 

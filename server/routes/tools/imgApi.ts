@@ -13,7 +13,7 @@ export function useToolsImgApi(router: Router) {
         if (check) {
             return check;
         }
-        const data = await favicon(from, req.headers.pathid);
+        const data = await favicon(from);
         if (data[1]) {
             return { err: data[1] };
         }

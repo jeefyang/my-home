@@ -212,7 +212,7 @@
                 <n-form-item label="URL" v-if="!formData.isFolder">
                     <div class="form-line">
                         <n-input v-model:value="formData.url" placeholder="https://example.com" />
-                        <n-button size="small" type="info" :loading="detecting" @click="detectUrl">检测</n-button>
+                        <n-button size="small" type="info" :loading="detecting" @click="detectUrl()">检测</n-button>
                     </div>
                 </n-form-item>
                 <n-form-item label="标题">
@@ -224,9 +224,9 @@
                         <n-button size="small" :loading="iconLoading" @click="fetchIcon">获取</n-button>
                         <img
                             v-if="formIconPreview"
+                            :key="formIconPreview"
                             :src="formIconPreview"
                             style="width: 28px; height: 28px; border-radius: 4px; object-fit: contain; flex-shrink: 0"
-                            @error="($event.target as HTMLImageElement).style.display = 'none'"
                         />
                     </div>
                 </n-form-item>
@@ -287,6 +287,14 @@ import {
     resolveImportIcons
 } from "./bookmarkUtils";
 import { vTouch } from "@/directives/touch";
+
+/** 补全 URL 协议头 */
+function normalizeUrl(url: string): string {
+    const t = url.trim();
+    if (!t) return t;
+    if (/^https?:\/\//i.test(t)) return t;
+    return 'https://' + t;
+}
 
 const msg = useMessage();
 const dataStore = useDataStore();
@@ -615,7 +623,7 @@ const displayList = computed<DisplayNode[]>(() => {
 /** 图标预览 URL */
 const formIconPreview = computed(() => {
     if (formData._iconServerFile) {
-        return UrlUtils.checkImgUrl(formData._iconServerFile, `./api/files/users/${dataStore.pathid}`);
+        return UrlUtils.checkImgUrl(formData._iconServerFile, `./api/files/items/${props.item.type}/${props.item.uuid}`);
     }
     if (formData._iconInput) {
         return formData._iconInput;
@@ -628,7 +636,7 @@ const formIconPreview = computed(() => {
 
 /** 图标文件的基础 URL */
 const iconBaseUrl = computed(() => {
-    return `./api/files/users/${dataStore.pathid}`;
+    return `./api/files/items/${props.item.type}/${props.item.uuid}`;
 });
 
 // ========== 生命周期 ==========
@@ -790,7 +798,7 @@ const getDisplayUrl = (url: string): string => {
 
 /** 图标显示 URL（从服务器路径转完整 URL） */
 const iconDisplayUrl = (icon: string): string => {
-    return UrlUtils.checkImgUrl(icon, `./api/files/users/${dataStore.pathid}`);
+    return UrlUtils.checkImgUrl(icon, `./api/files/items/${props.item.type}/${props.item.uuid}`);
 };
 
 /** 获取并保存图标到服务器 */
@@ -798,10 +806,10 @@ const fetchIcon = async () => {
     if (!formData.url && !formData._iconInput) {
         return msg.warning("请先输入 URL");
     }
-    const targetUrl = formData._iconInput || formData.url;
+    const targetUrl = normalizeUrl(formData._iconInput || formData.url);
     iconLoading.value = true;
     try {
-        const filename = await fetchFaviconToServer(targetUrl, toolsImgFetch);
+        const filename = await fetchFaviconToServer(targetUrl, toolsImgFetch, props.item.type, props.item.uuid);
         iconLoading.value = false;
         if (filename) {
             formData._iconServerFile = filename;
@@ -817,21 +825,32 @@ const fetchIcon = async () => {
 };
 
 /** 检测 URL 标题 */
-const detectUrl = async () => {
-    if (!formData.url) return msg.warning("请先输入 URL");
+const detectUrl = async (rawUrl?: string) => {
+    const url = rawUrl || formData.url;
+    if (!url) return msg.warning("请先输入 URL");
+    const safeUrl = normalizeUrl(url);
     detecting.value = true;
     try {
-        const res = await toolsUrlFetch.request("titleUrl", { url: formData.url });
+        const res = await toolsUrlFetch.request("titleUrl", { url: safeUrl });
         detecting.value = false;
         if (res.code === 200 && res.data) {
             formData.title = formData.title || res.data;
+        } else {
+            msg.warning(res.msg || "无法获取标题");
         }
-        // 自动获取图标
+        // 自动获取图标：先用 Google 直链预览，再尝试保存到服务器
         if (!formData._iconInput && !formData._iconServerFile) {
-            const filename = await fetchFaviconToServer(formData.url, toolsImgFetch);
+            const previewUrl = getFaviconUrl(safeUrl);
+            if (previewUrl) {
+                formData._iconInput = previewUrl;
+            }
+            // 后台尝试保存到服务器，成功后替换为服务器文件
+            const filename = await fetchFaviconToServer(safeUrl, toolsImgFetch, props.item.type, props.item.uuid);
             if (filename) {
                 formData._iconServerFile = filename;
                 formData._iconInput = filename;
+            } else {
+                msg.warning("图标获取失败，已使用在线预览");
             }
         }
     } catch {
@@ -875,7 +894,7 @@ const confirmForm = async () => {
     if (formIsEdit.value && editingItem.value) {
         // 编辑
         editingItem.value.title = formData.title.trim();
-        editingItem.value.url = formData.url.trim();
+        editingItem.value.url = normalizeUrl(formData.url);
         editingItem.value.icon = finalIcon;
         if (!editingItem.value.children) editingItem.value.children = [];
     } else {
@@ -883,7 +902,7 @@ const confirmForm = async () => {
         const newItem: BookmarkCollectionType = {
             uuid: nanoid(10),
             title: formData.title.trim(),
-            url: formData.url.trim(),
+            url: normalizeUrl(formData.url),
             icon: finalIcon,
             isFolder: formData.isFolder,
             creatTime: Date.now(),
@@ -963,7 +982,7 @@ const handleFileImport = async (e: Event) => {
                 const [res] = await myUpload(
                     { data: fileObj, type: "file" },
                     {
-                        url: `./api/upload/file/users/${dataStore.pathid}`,
+                        url: `./api/upload/file/items/${props.item.type}/${props.item.uuid}`,
                         other: {
                             headers: {
                                 pathid: dataStore.pathid,
@@ -1098,6 +1117,17 @@ function countIconsNeeded(items, cb) {
 watch(
     () => props.refreshKey,
     () => initData()
+);
+
+// URL 输入变化时自动检测（粘贴/输入）
+let detectTimer: any = null;
+watch(
+    () => formData.url,
+    (newVal) => {
+        if (detectTimer) clearTimeout(detectTimer);
+        if (!newVal || newVal.length < 4) return;
+        detectTimer = setTimeout(() => detectUrl(newVal), 800);
+    }
 );
 
 onMounted(() => initData());

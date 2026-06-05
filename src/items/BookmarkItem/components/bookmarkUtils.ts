@@ -216,19 +216,22 @@ function escapeHtml(str: string): string {
 // ========================================================================
 
 export function getFaviconUrl(url: string): string {
-    try { const p = new URL(url); return `https://www.google.com/s2/favicons?domain=${p.hostname}&sz=64`; }
+    try { const p = new URL(url); return `https://favicon.im/${p.hostname}`; }
     catch { return ""; }
 }
 
-/** 通过后端 favicon 服务获取图标并存储到用户目录 */
+/** 通过后端 favicon 服务获取图标并存储到元件目录 */
 export async function fetchFaviconToServer(
     url: string,
-    toolsImgFetch: { request: (key: string, data: any) => Promise<any> }
+    toolsImgFetch: { request: (key: string, data: any) => Promise<any> },
+    itemType: string,
+    itemUUID: string
 ): Promise<string> {
-    const platforms = ["google", "duckduckgo", "favicon"];
+    // favicon.im 最可靠放第一,direct 很多站点返回空占位符放最后
+    const platforms = ["favicon", "google", "duckduckgo", "direct"];
     for (const platform of platforms) {
         try {
-            const res = await toolsImgFetch.request("favicon", { url, platform, toUrl: "url" });
+            const res = await toolsImgFetch.request("favicon", { url, platform, toUrl: "url", itemType, itemUUID });
             if (res.code === 200 && res.data) return res.data as string;
         } catch { /* try next */ }
     }

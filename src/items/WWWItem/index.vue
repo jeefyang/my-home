@@ -5,7 +5,7 @@
             <n-button v-for="(item, index) in engineList" :key="item.uuid" size="tiny" @click="switchSearchIndex = index" :type="switchSearchIndex == index ? 'primary' : 'default'">
                 <div v-if="!item.icon">{{ item.name[0] }}</div>
                 <n-icon size="15" v-else>
-                    <img :src="UrlUtils.checkImgUrl(item.icon, `./api/files/users/${dataStore.pathid}`)" class="icon" />
+                    <img :src="UrlUtils.checkImgUrl(item.icon, `./api/files/items/${props.item.type}/${props.item.uuid}`)" class="icon" />
                 </n-icon>
             </n-button>
             <n-button :bordered="false" :type="switchSearchIndex == -1 ? 'primary' : 'default'" size="tiny" @click="switchSearchIndex = -1">
@@ -37,7 +37,7 @@
                 <n-flex align="center" style="flex-wrap: nowrap">
                     <n-input v-model:value="item.icon" placeholder="接受图片url和base64"></n-input>
                     <n-icon style="width: 32px" size="20" v-if="item.icon">
-                        <img :src="UrlUtils.checkImgUrl(item.icon, `./api/files/users/${dataStore.pathid}`)" class="icon" />
+                        <img :src="UrlUtils.checkImgUrl(item.icon, `./api/files/items/${props.item.type}/${props.item.uuid}`)" class="icon" />
                     </n-icon>
                 </n-flex>
 
@@ -180,7 +180,7 @@ const toCreateIcon = async (item: EngineType) => {
     if (!item._iconUrl) {
         return msg.error("无效网址");
     }
-    const res = await toolsImgFetch.request("favicon", { url: item._iconUrl, platform: "favicon", toUrl: "url" });
+    const res = await toolsImgFetch.request("favicon", { url: item._iconUrl, platform: "favicon", toUrl: "url", itemType: props.item.type, itemUUID: props.item.uuid });
     if (res.code != 200) {
         return msg.error(res.msg || res.err);
     }

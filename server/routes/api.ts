@@ -22,11 +22,25 @@ useItemApi(router);
 useToolsImgApi(router);
 useToolsUrlApi(router);
 
-// 读取文件
+// == 元件文件读取（目录名为 {type}-{uuid}）==
+router.get("/files/items/:itemType/:itemUUID/:filename", async (req, res) => {
+    const { itemType, itemUUID, filename } = req.params;
+    if (!UrlsUtils.checkSinglePath(itemType, itemUUID, filename)) {
+        return res.status(404).send(404);
+    }
+    const p = path.resolve(path.join(DATA_DIR, itemsFolder, `${itemType}-${itemUUID}`, filesFolder, filename));
+    if (!fs.existsSync(p)) {
+        return res.status(404).send(404);
+    }
+    res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    return res.sendFile(p);
+});
+
+// 读取文件（用户/页面）
 router.get("/files/:objType/:uuid/:filename", async (req, res, next) => {
 
     const { objType, uuid, filename } = req.params;
-    const validTypes = ["users", "pages", "items"] as const;
+    const validTypes = ["users", "pages"] as const;
 
     if (!validTypes.includes(objType as any)) {
         // 发现是非法的 objType，主动交出控制权，告诉 Express 继续往下匹配！
@@ -42,9 +56,6 @@ router.get("/files/:objType/:uuid/:filename", async (req, res, next) => {
     else if (objType == 'pages') {
         p = path.resolve(path.join(DATA_DIR, PagesFolder, uuid, filesFolder, filename));
     }
-    else if (objType == 'items') {
-        path.resolve(path.join(DATA_DIR, itemsFolder, uuid, filesFolder, filename));
-    }
     if (!p || !fs.existsSync(p)) {
         return res.status(404).send(404);
     }
@@ -56,9 +67,16 @@ router.get("/files/:objType/:uuid/:filename", async (req, res, next) => {
 // 1. 配置存储引擎
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        const { objType, uuid } = req.params as Record<string, string>;
-        const p = path.join(DATA_DIR, objType, uuid, filesFolder);
-        cb(null, p); // 文件保存路径
+        const params = req.params as Record<string, string>;
+        // 元件上传路由参数为 itemType/itemUUID，其他为 objType/uuid
+        if (params.itemType && params.itemUUID) {
+            const p = path.join(DATA_DIR, itemsFolder, `${params.itemType}-${params.itemUUID}`, filesFolder);
+            cb(null, p);
+        } else {
+            const { objType, uuid } = params;
+            const p = path.join(DATA_DIR, objType, uuid, filesFolder);
+            cb(null, p);
+        }
     },
     filename: (req, file, cb) => {
         let filename = req.query.filename as string || "";
@@ -97,25 +115,43 @@ const upload = multer({
     }
 });
 
-// 上传文件
+// == 元件文件上传（目录名为 {type}-{uuid}）==
+router.post('/upload/file/items/:itemType/:itemUUID', async (req, res, next) => {
+    const check = await verifyUserFromReq(req as any);
+    if (check) {
+        return res.status(401).json(check);
+    }
+    const { itemType, itemUUID } = req.params as Record<string, string>;
+    if (!UrlsUtils.checkSinglePath(itemType, itemUUID)) {
+        return res.status(404).send(`404 ${itemType} ${itemUUID}`);
+    }
+    const p = path.join(DATA_DIR, itemsFolder, `${itemType}-${itemUUID}`, filesFolder);
+    if (!fs.existsSync(p)) {
+        return res.status(404).send(`404 ${p}`);
+    }
+    next();
+
+}, upload.single("file"), (req, res) => {
+    res.status(200).json({
+        code: 200,
+        msg: '文件上传成功',
+        data: {
+            filename: req.file!.filename
+        }
+    });
+
+});
+
+// 上传文件（用户/页面）
 router.post('/upload/file/:objType/:uuid', async (req, res, next) => {
-    // if (!req.file) {
-    //     return res.status(400).json({
-    //         code: 400,
-    //         msg: "请选择文件！"
-    //     });
-    // }
     const check = await verifyUserFromReq(req as any);
     if (check) {
         return res.status(401).json(check);
     }
     const { objType, uuid } = req.params as Record<string, string>;
 
-    // --- A. 校验 objType ---
-    const validTypes = ["users", "pages", "items"];
+    const validTypes = ["users", "pages"];
     if (!validTypes.includes(objType)) {
-        // 如果类型不对，直接阻断，响应 400
-        // 注意：这里被阻断后，根本不会进入到后面的 Multer 中间件，文件也不会被保存！
         return res.status(404).send(404);
     }
     if (!UrlsUtils.checkSinglePath(objType, uuid)) {

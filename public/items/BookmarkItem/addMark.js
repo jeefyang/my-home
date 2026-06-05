@@ -37,7 +37,7 @@
     function apiPost(p, b) { return gmFetch(apiUrl(loadC(), p), { method: 'POST', data: JSON.stringify(b) }); }
 
     function uploadIcon(b64) {
-        const c = loadC(); const url = apiUrl(c, 'api/upload/file/users/' + c.pathid);
+        const c = loadC(); const itemType = c.itemType || 'bookmark'; const url = apiUrl(c, 'api/upload/file/items/' + itemType + '/' + c.itemUUID);
         const a = b64.split(','), mime = a[0].match(/:(.*?);/)[1], bin = atob(a[1]);
         const ext = (mime.split('/')[1] || 'png').replace(/[^a-z0-9]/g, '');
         const bd = '----nab' + Date.now(); const enc = new TextEncoder();
@@ -237,6 +237,8 @@ label{font-size:12px;color:#666;display:block;margin-bottom:2px}
                 const ur = await uploadIcon(ic);
                 if (ur.code === 200 && ur.data && ur.data.filename) iconF = ur.data.filename;
                 else { el.st.textContent = '图标上传失败: ' + (ur.msg || ''); el.ab.disabled = false; return; }
+            } else if (ic && (ic.startsWith('http:') || ic.startsWith('https:'))) {
+                iconF = ic;
             }
             const t = await fetchTree();
             if (!t) { el.st.textContent = '获取书签树失败'; el.ab.disabled = false; return; }
@@ -261,10 +263,33 @@ label{font-size:12px;color:#666;display:block;margin-bottom:2px}
             const icon = document.querySelector('link[rel*="icon"]') || document.querySelector('link[rel="shortcut icon"]');
             const url = icon ? icon.href : (location.origin + '/favicon.ico');
             if (!url || url.startsWith('data:')) { resolve(url || ''); return; }
-            const img = new Image();
-            img.crossOrigin = 'anonymous';
-            img.onload = () => { const c = document.createElement('canvas'); c.width = img.naturalWidth || 32; c.height = img.naturalHeight || 32; c.getContext('2d').drawImage(img, 0, 0); resolve(c.toDataURL('image/png')); };
-            img.onerror = () => resolve(''); img.src = url;
+            // 先试带 CORS（能转 base64 上传到服务器）
+            const tryLoad = (useCors) => {
+                const img = new Image();
+                if (useCors) img.crossOrigin = 'anonymous';
+                img.onload = () => {
+                    try {
+                        const c = document.createElement('canvas');
+                        c.width = img.naturalWidth || 32;
+                        c.height = img.naturalHeight || 32;
+                        c.getContext('2d').drawImage(img, 0, 0);
+                        resolve(c.toDataURL('image/png'));
+                    } catch {
+                        // CORS 失败也能显示图片，直接返回 URL
+                        resolve(url);
+                    }
+                };
+                img.onerror = () => {
+                    if (useCors) {
+                        // CORS 方式加载失败，换无 CORS 重试
+                        tryLoad(false);
+                    } else {
+                        resolve('');
+                    }
+                };
+                img.src = url;
+            };
+            tryLoad(true);
         });
     }
 
