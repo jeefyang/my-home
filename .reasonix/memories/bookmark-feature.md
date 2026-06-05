@@ -9,7 +9,7 @@
 
 ### 拖拽与移动端兼容
 `draggable="true"` 会拦截移动端触摸事件，导致长按菜单失效。
-**修复**：`:draggable="!dataStore.isMobile"` — 桌面端可拖拽，移动端禁用拖拽。
+**修复**：`:draggable="!dataStore.isMobile"`
 
 ### 数据存储
 - `bookmarkList.json` — 收藏夹列表（Tab），`BookmarkType[]`
@@ -24,8 +24,12 @@
 - **文件夹展开**：右键菜单/PC悬停按钮 → 删除文件夹自身，子项平铺
 - **拖拽移动**（PC 端）：拖到书签=排序，拖到文件夹图标=移入，拖到面包屑=移入
 - **导入**：解析 Chrome/Firefox HTML，进度条+实时状态
-- **导出**：当前目录导出为标准 Netscape HTML
-- **移动端长按**：`vTouch` 指令 + `onLongPress` 双方案
+- **导出**：当前目录导出为标准 Netscape HTML，带进度条
+- **右键菜单**：可点击路径跳转，清空搜索框，关闭弹窗
+- **编辑弹窗**：显示书签所在文件夹路径
+- **移动端长按**：`vTouch` 指令
+- 仅书签列表区域滚动，隐藏滚动条，暗色模式图标浅色底
+- 悬停操作按钮 `visibility: hidden` 替代 `display: none`，防止布局偏移
 
 ### 后端接口（未改动）
 仅用 `itemApi` 的 `getItemData` / `updateItemData` / `deleteItemData`

@@ -32,7 +32,7 @@
         </div>
 
         <!-- 搜索框 -->
-        <n-input placeholder="搜索书签…" clearable :debounce="300" @update:value="onSearchChange" @clear="onSearchClear">
+        <n-input placeholder="搜索书签…" clearable :debounce="300" :value="searchKey" @update:value="onSearchChange" @clear="onSearchClear">
             <template #prefix>
                 <n-icon :component="Search" />
             </template>
@@ -67,7 +67,7 @@
         <!-- 书签列表（当前目录，可滚动） -->
         <template v-if="displayList.length > 0">
             <div class="bookmark-list" @contextmenu.prevent>
-                <n-flex vertical style="margin-top: 6px; gap: 6px">
+                <n-flex vertical style="margin-top: 6px; gap: 10px">
                     <div
                         v-for="node in displayList"
                         :key="node.item.uuid"
@@ -146,6 +146,12 @@
         <!-- 移动端长按菜单 -->
         <x-modal v-model:show="contextShow" title="" :content-max-height="'auto'">
             <n-flex vertical>
+                <div style="font-size:11px;color:#888;padding:4px 8px;word-break:break-all;display:flex;gap:2px;flex-wrap:wrap">
+                    <template v-for="(seg, sIdx) in getItemSegments(contextItem?.uuid)">
+                        <span v-if="sIdx > 0" style="color:#aaa"> &gt; </span>
+                        <span @click.stop="navigateToSeg(seg.uuid)" style="cursor:pointer;color:#409eff">{{ seg.title }}</span>
+                    </template>
+                </div>
                 <n-button v-if="contextItem && !contextItem.isFolder" quaternary size="large" style="justify-content: flex-start" @click="contextAction('open')">
                     <template #icon><n-icon :component="Launch" /></template>
                     新标签打开
@@ -201,6 +207,7 @@
 
         <!-- 添加/编辑弹窗 -->
         <x-modal v-model:show="formShow" :title="formIsEdit ? '编辑' : '添加'" content-max-height="80vh">
+            <div v-if="formIsEdit && editingItem" style="font-size:11px;color:#888;padding:2px 0 8px;word-break:break-all">{{ getItemPathText(editingItem?.uuid) }}</div>
             <n-form :model="formData" label-placement="top" size="small">
                 <n-form-item label="URL" v-if="!formData.isFolder">
                     <div class="form-line">
@@ -478,6 +485,49 @@ const contextItem = ref<BookmarkCollectionType | null>(null);
 const openContextMenu = (e: MouseEvent | TouchEvent, item: BookmarkCollectionType) => {
     contextItem.value = item;
     contextShow.value = true;
+};
+
+const getItemSegments = (uuid: string | undefined): { uuid: string; title: string }[] => {
+    const segs: { uuid: string; title: string }[] = [{ uuid: "__root__", title: "根目录" }];
+    if (!uuid) return segs;
+    const path = findNodePath(dataList.value, uuid);
+    if (!path) return segs;
+    const parentPath = path.slice(0, -1);
+    let items = dataList.value;
+    for (const u of parentPath) {
+        const f = items.find(item => item.uuid === u);
+        if (!f) break;
+        segs.push({ uuid: f.uuid, title: f.title });
+        items = f.children || [];
+    }
+    return segs;
+};
+
+const navigateToSeg = (uuid: string) => {
+    searchKey.value = "";
+    
+    contextShow.value = false;
+    if (uuid === "__root__") { curPath.value = []; return; }
+    const path = findNodePath(dataList.value, uuid);
+    if (path) curPath.value = path;
+};
+
+
+const getItemPathText = (uuid: string | undefined): string => {
+    if (!uuid || dataList.value.length === 0) return "";
+    const path = findNodePath(dataList.value, uuid);
+    if (!path) return "";
+    const parentPath = path.slice(0, -1);
+    const names: string[] = [];
+    let items = dataList.value;
+    for (const u of parentPath) {
+        const f = items.find(item => item.uuid === u);
+        if (!f) break;
+        names.push(f.title);
+        items = f.children || [];
+    }
+    if (names.length === 0) return "根目录";
+    return "根目录 > " + names.join(" > ");
 };
 
 const contextAction = (action: string) => {
@@ -1165,12 +1215,13 @@ onMounted(() => initData());
         display: inline;
     }
     .bookmark-actions {
-        display: none;
+        visibility: hidden;
         gap: 4px;
         flex-shrink: 0;
+        display: inline-flex;
     }
     .bookmark-row:hover .bookmark-actions {
-        display: inline-flex;
+        visibility: visible;
     }
 }
 
