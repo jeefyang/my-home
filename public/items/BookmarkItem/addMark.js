@@ -1,14 +1,14 @@
 // ==UserScript==
 // @name         导航面板书签助手
 // @namespace    https://github.com/your-name/my-home
-// @version      1.5.0
-// @description  右键 → Tampermonkey → 添加到导航面板书签
+// @version      1.5.1
+// @description  右键 → Tampermonkey → 添加到导航面板书签 → 添加书签
 // @author       you
 // @match        *://*/*
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_xmlhttpRequest
-// @run-at       context-menu
+// @grant        GM_registerMenuCommand
 // ==/UserScript==
 
 (function () {
@@ -269,5 +269,9 @@ label{font-size:12px;color:#666;display:block;margin-bottom:2px}
     }
 
     // ===== 触发 =====
-    openDlg();
+    // openDlg();
+
+    GM_registerMenuCommand("添加书签", function () {
+        openDlg();
+    });
 })();
