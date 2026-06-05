@@ -24,6 +24,9 @@
             <n-button quaternary size="tiny" type="info" @click="initData">
                 <template #icon><n-icon :component="Refresh" size="14" /></template>
             </n-button>
+            <n-button quaternary size="tiny" type="error" @click="clearAll">
+                <template #icon><n-icon :component="Trash" size="14" /></template>
+            </n-button>
         </n-flex>
 
         <!-- 输入区 -->
@@ -46,7 +49,7 @@
 
     <!-- 删除确认 -->
     <x-modal v-model:show="deleteShow" title="确认删除">
-        <p>确定删除这条记录吗？</p>
+        <p v-if="!deleteAll">确定删除这条记录吗？</p><p v-else>确定清空所有记录吗？</p>
         <template #footer>
             <n-flex justify="end">
                 <n-button @click="deleteShow = false">取消</n-button>
@@ -206,6 +209,13 @@ const openDelete = (idx: number) => {
 };
 
 const confirmDelete = async () => {
+    if (deleteAll.value) {
+        messageList.value = [];
+        deleteAll.value = false;
+        const ok = await saveData();
+        if (ok) { deleteShow.value = false; msg.success("已清空"); }
+        return;
+    }
     if (deleteIndex.value < 0) return;
     messageList.value.splice(deleteIndex.value, 1);
     const ok = await saveData();
@@ -221,6 +231,25 @@ const formatTime = (ts: number) => {
     return d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate()) + " " + pad(d.getHours()) + ":" + pad(d.getMinutes());
 };
 const pad = (n: number) => (n < 10 ? "0" + n : "" + n);
+
+const clearAll = () => {
+    if (messageList.value.length === 0) return msg.warning("没有内容可清空");
+    deleteShow.value = true;
+    deleteAll.value = true;
+};
+
+const deleteAll = ref(false);
+
+const originalConfirmDelete = confirmDelete;
+const confirmDeleteWrap = () => {
+    if (deleteAll.value) {
+        messageList.value = [];
+        deleteAll.value = false;
+        saveData().then(ok => { if (ok) { deleteShow.value = false; msg.success("已清空"); } });
+        return;
+    }
+    originalConfirmDelete();
+};
 
 onMounted(() => initData());
 </script>
