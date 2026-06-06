@@ -50,3 +50,7 @@ initPages.js
 auto-imports.d.ts
 
 logs
+
+*.pid
+
+.reasonix/*.json
