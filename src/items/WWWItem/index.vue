@@ -21,51 +21,51 @@
         </n-flex>
     </n-flex>
     <!-- 设置 -->
-    <x-modal v-model:show="show">
-        <template #header>
-            <div>搜索设置</div>
-        </template>
-        <n-button size="small" type="primary" @click="toAddEngine(0)">
-            <n-icon :component="Add12Filled"></n-icon>
-        </n-button>
-        <x-divider></x-divider>
-        <n-flex v-if="cacheEngineList.length > 0" vertical>
-            <n-flex vertical v-for="(item, index) in cacheEngineList" :key="item.uuid">
-                <label>名称:</label>
-                <n-input v-model:value="item.name" placeholder="请输入引擎名称"></n-input>
-                <label>icon:</label>
-                <n-flex align="center" style="flex-wrap: nowrap">
-                    <n-input v-model:value="item.icon" placeholder="接受图片url和base64"></n-input>
-                    <n-icon style="width: 32px" size="20" v-if="item.icon">
-                        <img :src="UrlUtils.checkImgUrl(item.icon, `./api/files/items/${props.item.type}/${props.item.uuid}`)" class="icon" />
-                    </n-icon>
-                </n-flex>
+    <x-modal v-model:show="show" title="搜索设置" is-item>
+        <n-scrollbar>
+            <n-button size="small" type="primary" @click="toAddEngine(0)">
+                <n-icon :component="Add12Filled"></n-icon>
+            </n-button>
+            <x-divider></x-divider>
+            <n-flex v-if="cacheEngineList.length > 0" vertical>
+                <n-flex vertical v-for="(item, index) in cacheEngineList" :key="item.uuid">
+                    <label>名称:</label>
+                    <n-input v-model:value="item.name" placeholder="请输入引擎名称"></n-input>
+                    <label>icon:</label>
+                    <n-flex align="center" style="flex-wrap: nowrap">
+                        <n-input v-model:value="item.icon" placeholder="接受图片url和base64"></n-input>
+                        <n-icon style="width: 32px" size="20" v-if="item.icon">
+                            <img :src="UrlUtils.checkImgUrl(item.icon, `./api/files/items/${props.item.type}/${props.item.uuid}`)" class="icon" />
+                        </n-icon>
+                    </n-flex>
 
-                <label>搜索路径:</label>
-                <n-input v-model:value="item.url" placeholder="搜索关键字替换请用$$key$$来替换"></n-input>
-                <label>icon生成器:</label>
-                <n-flex style="flex-wrap: nowrap" align="center">
-                    <n-input v-model:value="item._iconUrl" placeholder="请输入图标url"> </n-input>
-                    <n-button size="small" @click="toCreateIcon(item)">生成</n-button>
-                </n-flex>
-                <n-flex justify="space-between" align="center">
-                    <n-flex>
-                        <label>默认:</label>
-                        <n-switch v-model:value="item.isDefault" />
+                    <label>搜索路径:</label>
+                    <n-input v-model:value="item.url" placeholder="搜索关键字替换请用$$key$$来替换"></n-input>
+                    <label>icon生成器:</label>
+                    <n-flex style="flex-wrap: nowrap" align="center">
+                        <n-input v-model:value="item._iconUrl" placeholder="请输入图标url"> </n-input>
+                        <n-button size="small" @click="toCreateIcon(item)">生成</n-button>
                     </n-flex>
-                    <n-flex>
-                        <n-button type="error" @click="toSubEngine(index)">
-                            <n-icon :component="Subtract12Filled"></n-icon>
-                        </n-button>
-                        <n-button type="primary" @click="toAddEngine(index + 1)">
-                            <n-icon :component="Add12Filled"></n-icon>
-                        </n-button>
+                    <n-flex justify="space-between" align="center">
+                        <n-flex>
+                            <label>默认:</label>
+                            <n-switch v-model:value="item.isDefault" />
+                        </n-flex>
+                        <n-flex>
+                            <n-button type="error" @click="toSubEngine(index)">
+                                <n-icon :component="Subtract12Filled"></n-icon>
+                            </n-button>
+                            <n-button type="primary" @click="toAddEngine(index + 1)">
+                                <n-icon :component="Add12Filled"></n-icon>
+                            </n-button>
+                        </n-flex>
                     </n-flex>
+                    <x-divider></x-divider>
                 </n-flex>
-                <x-divider></x-divider>
             </n-flex>
-        </n-flex>
-        <n-empty v-else description="快添加新的搜索引擎吧"> </n-empty>
+            <n-empty v-else description="快添加新的搜索引擎吧"> </n-empty>
+        </n-scrollbar>
+
         <template #footer>
             <n-flex class="mt-1">
                 <n-button @click="show = false">取消</n-button>

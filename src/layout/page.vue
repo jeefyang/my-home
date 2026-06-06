@@ -5,14 +5,14 @@
             <template v-if="curPage">
                 <div v-for="group in curPage.itemGroupList" :key="group.uuid" :class="{ group_full_parent: group.display == 'fullPage' }">
                     <!-- 按钮分组  -->
-                    <div v-if="group.display == 'btn'">
-                        <n-card class="btnGroup group_btn mb-2">
-                            <n-button type="primary" v-for="item in group.list" :key="item.uuid">{{ getItemTitle(item) }}</n-button>
+                    <div v-if="group.display == 'btn'" class="mb-2 group_btn">
+                        <n-card class="btnGroup group_btn mb-2" content-class="flex flex-gap-1 flex-wrap width-100">
+                            <n-button type="primary" v-for="item in group.list" :key="item.uuid" @click="toItem(group, item)">{{ getItemTitle(item) }}</n-button>
                         </n-card>
                     </div>
 
                     <!-- 图标分组 -->
-                    <div v-else-if="group.display == 'icon'" style="display: flex; flex-wrap: wrap">
+                    <div v-else-if="group.display == 'icon'" class="mb-2 group_icon">
                         <n-card class="group_btn mb-2">
                             <n-button type="primary" v-for="item in group.list" :key="item.uuid">{{ getItemTitle(item) }}</n-button>
                         </n-card>
@@ -68,21 +68,39 @@
         </div>
         <tool-bar :pageUUID="props.pageUUID" v-model:show="showOption"></tool-bar>
     </n-config-provider>
+    <x-modal v-model:show="showItem" :maskClosable="false" display-directive="show" :title="getItemTitle(selectItem)" titleClass="fs-12 fw-bold" :isScroll="false">
+        <keep-alive :max="10">
+            <component
+                v-if="selectItem?.uuid"
+                :is="ItemView"
+                :key="selectItem.uuid"
+                :item="selectItem"
+                :pageUUID="curPage.uuid"
+                :itemGroupUUID="selectGroup.uuid"
+                :display="selectGroup.display"
+                style="height: 100%; display: flex; flex-direction: column"
+            ></component>
+        </keep-alive>
+    </x-modal>
 </template>
 <script setup lang="ts">
 import { useDataStore } from "@/stores/data";
 import { pageFetch } from "@/utils/jFetch";
 import { ItemRouterList } from "@common/utils/itemRouterouterList";
 import { useThemeVars, type GlobalThemeOverrides } from "naive-ui";
-import { computed, defineAsyncComponent, onMounted, ref, watch } from "vue";
+import { computed, defineAsyncComponent, KeepAlive, onMounted, ref, watch } from "vue";
 import ItemView from "@/components/ItemView.vue";
 import FloatBtn from "@/components/FloatBtn.vue";
 import ToolBar from "@/components/ToolBar.vue";
-import { IosOptions } from "@vicons/ionicons4";
+import XModal from "@/components/XModal.vue";
+import { IosOptions, IosClose } from "@vicons/ionicons4";
 
 const dataStore = useDataStore();
 const themeVars = useThemeVars();
 const themeOverrides = ref(<GlobalThemeOverrides>null);
+const showItem = ref(false);
+const selectItem = ref(<ItemType>null);
+const selectGroup = ref(<ItemGroupType>null);
 
 const parentRef = ref(<HTMLElement>null);
 
@@ -99,7 +117,16 @@ const curPage = computed(() => {
     return dataStore.pageList.find((page) => page.uuid == props.pageUUID);
 });
 
+const toItem = (group: ItemGroupType, item: ItemType) => {
+    selectItem.value = item;
+    selectGroup.value = group;
+    showItem.value = true;
+};
+
 const getItemTitle = (item: ItemType): string => {
+    if (!item) {
+        return "";
+    }
     if (item?.options?.title) {
         return item.options.title;
     }
@@ -129,6 +156,7 @@ onMounted(async () => {
     scrollbar-width: none;
     position: relative;
     top: 0;
+    padding: 5px;
     /* padding-bottom: 20px; */
 }
 </style>

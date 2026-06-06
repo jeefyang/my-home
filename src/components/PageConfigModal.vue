@@ -1,8 +1,5 @@
 <template>
-    <XModal v-model:show="modelShow" class="pageConfigModal">
-        <template #header>
-            <div>页面设置</div>
-        </template>
+    <XModal v-model:show="modelShow" class="pageConfigModal" title="页面设置" isItem>
         <div class="line">
             <n-select v-model:value="cacheGroupInsetDisplay" :options="displayTypeList"></n-select>
             <n-button size="tiny" type="primary" @click="addItemGroup(cacheGroupInsetDisplay, 0)"> 插入分组 </n-button>
@@ -58,6 +55,7 @@
             </div>
             <n-button type="error" size="tiny" @click="deleteGroup(group)">删除分组</n-button>
         </n-card>
+
         <template #footer>
             <n-button @click="modelShow = false">返回</n-button>
         </template>
