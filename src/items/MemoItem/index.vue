@@ -1,20 +1,20 @@
 <template>
     <div class="memo-wrap">
-        <n-divider style="margin-top: 0; margin-bottom: 2px" dashed>
+        <n-divider v-if="props.display != 'btn' && props.display != 'icon'" style="margin-top: 0; margin-bottom: 2px" dashed>
             <div style="font-size: 12px">{{ props.item?.options?.title || "备忘录" }}</div>
         </n-divider>
         <!-- 对话历史 -->
         <div ref="historyRef" class="memo-history" @scroll="onHistoryScroll">
-            <div v-for="(msg, idx) in messageList" :key="msg.uuid" class="memo-item">
+            <div v-for="(msg, idx) in messageList" :key="msg.uuid" class="memo-item" :class="{ active: activeIdx === idx }" @click="(e) => toggleActions(e, idx)">
                 <div class="memo-head">
                     <span class="memo-time">{{ formatTime(msg.createTime) }}</span>
-                    <span class="memo-actions">
-                        <n-button quaternary size="tiny" type="warning" @click="copyMsg(msg.content)"><n-icon :component="Copy" size="13" /></n-button>
+                    <span class="memo-actions" @click.stop>
+                        <n-button quaternary size="tiny" type="info" @click="copyMsg(msg.content)"><n-icon :component="Copy" size="13" /></n-button>
                         <n-button quaternary size="tiny" type="warning" @click="openEdit(idx)"><n-icon :component="Edit" size="13" /></n-button>
                         <n-button quaternary size="tiny" type="error" @click="openDelete(idx)"><n-icon :component="Trash" size="13" /></n-button>
                     </span>
                 </div>
-                <div class="memo-text" v-text="msg.content"></div>
+                <div class="memo-text" v-text="msg.content" @dblclick.stop="copyMsg(msg.content)"></div>
             </div>
             <div v-if="messageList.length === 0" class="memo-empty">暂无记录</div>
         </div>
@@ -49,7 +49,8 @@
 
     <!-- 删除确认 -->
     <x-modal v-model:show="deleteShow" title="确认删除">
-        <p v-if="!deleteAll">确定删除这条记录吗？</p><p v-else>确定清空所有记录吗？</p>
+        <p v-if="!deleteAll">确定删除这条记录吗？</p>
+        <p v-else>确定清空所有记录吗？</p>
         <template #footer>
             <n-flex justify="end">
                 <n-button @click="deleteShow = false">取消</n-button>
@@ -61,7 +62,7 @@
 
 <script setup lang="ts">
 import { computed, nextTick, onMounted, ref, watch } from "vue";
-import { Refresh, Edit, Trash, Copy } from "@vicons/tabler";
+import { Refresh, Copy, Edit, Trash } from "@vicons/tabler";
 import { itemFetch } from "@/utils/jFetch";
 import { useMessage } from "naive-ui";
 import { nanoid } from "nanoid";
@@ -80,6 +81,7 @@ const props = defineProps<{
     item: ItemType;
     pageUUID: string;
     itemGroupUUID: string;
+    display: ItemDisplayType;
 }>();
 
 const filename = "memoList.json";
@@ -97,6 +99,14 @@ const editIndex = ref(-1);
 // 删除
 const deleteShow = ref(false);
 const deleteIndex = ref(-1);
+
+// 操作按钮显隐（移动端点击切换）
+const activeIdx = ref(-1);
+const toggleActions = (e: MouseEvent | TouchEvent, idx: number) => {
+    const target = e.target as HTMLElement;
+    if (target.closest(".memo-actions") || target.closest(".memo-text")) return;
+    activeIdx.value = activeIdx.value === idx ? -1 : idx;
+};
 
 // ====== 数据 ======
 const initData = async () => {
@@ -213,7 +223,10 @@ const confirmDelete = async () => {
         messageList.value = [];
         deleteAll.value = false;
         const ok = await saveData();
-        if (ok) { deleteShow.value = false; msg.success("已清空"); }
+        if (ok) {
+            deleteShow.value = false;
+            msg.success("已清空");
+        }
         return;
     }
     if (deleteIndex.value < 0) return;
@@ -239,17 +252,6 @@ const clearAll = () => {
 };
 
 const deleteAll = ref(false);
-
-const originalConfirmDelete = confirmDelete;
-const confirmDeleteWrap = () => {
-    if (deleteAll.value) {
-        messageList.value = [];
-        deleteAll.value = false;
-        saveData().then(ok => { if (ok) { deleteShow.value = false; msg.success("已清空"); } });
-        return;
-    }
-    originalConfirmDelete();
-};
 
 onMounted(() => initData());
 </script>
@@ -306,8 +308,23 @@ onMounted(() => initData());
     transition: opacity 0.15s;
 }
 
-.memo-item:hover .memo-actions {
+/* 桌面 hover 显示操作按钮 */
+@media (hover: hover) {
+    .memo-item:hover .memo-actions {
+        opacity: 1;
+    }
+}
+
+/* 移动端点击切换显示 */
+.memo-item.active .memo-actions {
     opacity: 1;
+}
+
+/* 移动端按钮稍大，方便点按 */
+@media (hover: none) {
+    .memo-actions:not(.hidden) :deep(.n-button) {
+        --n-height: 28px;
+    }
 }
 
 .memo-text {

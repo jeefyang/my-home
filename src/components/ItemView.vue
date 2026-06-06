@@ -1,6 +1,6 @@
 <template>
     <div :class="`view-${props.display}`">
-        <component :is="lazyComponent" :item="props.item" :pageUUID="props.pageUUID" :itemGroupUUID="props.itemGroupUUID" />
+        <component :is="lazyComponent" :item="props.item" :pageUUID="props.pageUUID" :itemGroupUUID="props.itemGroupUUID" :display="props.display" />
     </div>
 </template>
 <script lang="ts">
