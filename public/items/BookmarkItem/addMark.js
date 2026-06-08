@@ -91,7 +91,7 @@
 <div style="display:flex;gap:6px;margin-bottom:6px"><button class="nb-btn nbs ni">📥 导入 JSON</button></div>
 <textarea class="nbi nji" rows="2" placeholder="粘贴连接信息 JSON" style="display:none;font-size:11px;font-family:monospace"></textarea>
 <label>服务器地址</label><input class="nbi nsu"><label>PathID</label><input class="nbi npi"><label>SecondCode</label><input class="nbi nsci" type="password">
-<label>项目UUID</label><input class="nbi niui"><label>收藏夹UUID</label><div style="display:flex;gap:6px"><input class="nbi nbui" style="flex:1"><button class="nb-btn nbs nrb">🔄</button></div></div>
+<label>项目UUID</label><input class="nbi niui"><label>收藏夹UUID</label><div style="display:flex;gap:6px"><input class="nbi nbui" style="flex:1"><button class="nb-btn nbs nrb">🔄</button></div><div class="nbnt" style="font-size:11px;color:#409eff;padding:2px 0 4px;display:none"></div></div>
 </div><div class="nf"><span class="nst"></span><div style="display:flex;gap:8px"><button class="nb-btn nbc">取消</button><button class="nb-btn nbp nba">添加到书签</button></div></div></div></div>`;
         document.body.appendChild(dlg);
 
@@ -127,7 +127,7 @@ label{font-size:12px;color:#666;display:block;margin-bottom:2px}
             pt: $('.npt'), pu: $('.npu'), pic: $('.npic'), ip: $('.nip'),
             fp: $('.nfp'), fl: $('.nfl'),
             fu: $('.nfu'), rt: $('.nrt'), rb: $('.nrb'),
-            ab: $('.nba'), st: $('.nst'),
+            ab: $('.nba'), st: $('.nst'), bnt: $('.nbnt'),
         };
 
         el.su.value = cfg.serverUrl || ''; el.pi.value = cfg.pathid || ''; el.sci.value = cfg.secondcode || '';
@@ -153,7 +153,7 @@ label{font-size:12px;color:#666;display:block;margin-bottom:2px}
                 }
                 el.ji.style.display = 'none'; el.ij.textContent = '📥 导入 JSON';
                 el.st.textContent = '✅ 已导入，正在连接…';
-                if (j.serverUrl && j.pathid && j.itemUUID && j.bookmarkUUID) load();
+                if (j.serverUrl && j.pathid && j.itemUUID && j.bookmarkUUID) { refreshBookmarkList(true); load(); }
             } catch { el.st.textContent = 'JSON 格式错误'; }
         });
 
@@ -199,25 +199,42 @@ label{font-size:12px;color:#666;display:block;margin-bottom:2px}
             }
         }
 
+        // 收藏夹名称显示
+        let curBookmarkTitle = '';
+        let bookmarkListCache = [];
+
+        function updateBookmarkTitle() {
+            const c = loadC();
+            const found = bookmarkListCache.find(b => b.uuid === c.bookmarkUUID);
+            curBookmarkTitle = found ? found.title : (c.bookmarkUUID ? '?' : '');
+            if (el.bnt) {
+                el.bnt.textContent = curBookmarkTitle ? '📁 ' + curBookmarkTitle : '';
+                el.bnt.style.display = curBookmarkTitle ? 'block' : 'none';
+            }
+        }
+
         async function load() {
-            el.st.textContent = '正在加载…';
+            el.st.textContent = '正在加载… [' + (curBookmarkTitle || '?') + ']';
             const t = await fetchTree();
             if (t === null) { el.st.textContent = '请先配置服务器连接'; return; }
             tree = Array.isArray(t) ? t : [];
             if (cp.length) { let ok = true, s = tree; for (const u of cp) { const f = s.find(x => x.uuid === u && x.isFolder); if (!f) { ok = false; break; } s = f.children || []; } if (!ok) cp = []; }
             render();
-            el.st.innerHTML = '已加载 ' + tree.length + ' 个根条目';
+            el.st.innerHTML = '<b>[' + (curBookmarkTitle || '?') + ']</b> 已加载 ' + tree.length + ' 个根条目';
             checkDup();
+            // 如果还没获取过收藏夹名称，尝试获取
+            if (bookmarkListCache.length === 0) refreshBookmarkList(true);
         }
 
-        el.rb.addEventListener('click', async () => {
+        async function refreshBookmarkList(skipLoad) {
             const c = loadC();
-            if (!c.serverUrl || !c.pathid || !c.itemUUID) { el.st.textContent = '请先填写服务器信息'; return; }
-            el.st.textContent = '正在获取收藏夹…';
+            if (!c.serverUrl || !c.pathid || !c.itemUUID) return;
             const r = await apiPost('api/item/getItemData', { itemType: 'bookmark', itemUUID: c.itemUUID, filename: 'bookmarkList.json' });
-            if (r.code === 200 && r.data) { try { const l = JSON.parse(r.data); el.st.textContent = '收藏夹: ' + l.map(b => b.title).join(' | '); if (l.length > 0) { const d = l.find(b => b.isDefault) || l[0]; el.bui.value = d.uuid; setC('bookmarkUUID', d.uuid); } } catch { el.st.textContent = '解析失败'; } }
-            else el.st.textContent = r.msg || '获取失败';
-        });
+            if (r.code === 200 && r.data) { try { bookmarkListCache = JSON.parse(r.data); updateBookmarkTitle(); } catch {} }
+            if (!skipLoad) load();
+        }
+
+        el.rb.addEventListener('click', () => refreshBookmarkList());
 
         el.rt.addEventListener('click', load);
         el.fu.addEventListener('click', () => { if (cp.length) { cp.pop(); setC('lastFolderPath', cp); render(); } });
