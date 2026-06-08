@@ -92,3 +92,9 @@ App.vue → home.vue → page.vue → ItemView.vue → {Name}Item/index.vue (动
 ### 生产部署
 
 PM2 管理进程，配置文件 `ecosystem.config.cjs`。构建后 `dist/server/index.cjs` 为入口，每 3 天自动重启，内存超 1G 自动重启。
+
+## 项目记忆
+
+`.reasonix-memory/` 目录下记录了关键改动和项目知识，随 git 版本管理，换机子克隆即用。
+
+更新记忆时直接编辑 `.reasonix-memory/` 下的文件（Markdown 格式），或新建文件并在 `.reasonix-memory/MEMORY.md` 添加索引。
