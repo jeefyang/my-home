@@ -27,6 +27,13 @@ a,
     }
 }
 
+.singe-line {
+    text-overflow: ellipsis;
+    overflow: hidden;
+    word-break: break-all;
+    white-space: nowrap;
+}
+
 .icon {
     object-fit: contain;
     width: 100%;

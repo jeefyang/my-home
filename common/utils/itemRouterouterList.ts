@@ -30,6 +30,7 @@ export const ItemRouterList: { [key: string]: ItemRouterType; } = {
         title: "docker转换",
         component: "DockerConvertItem",
         style: {},
+        icon: "icon.png",
         desc: "docker run → docker-compose"
     }
 };

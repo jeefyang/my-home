@@ -13,8 +13,16 @@
 
                     <!-- 图标分组 -->
                     <div v-else-if="group.display == 'icon'" class="mb-2 group_icon">
-                        <n-card class="group_btn mb-2">
-                            <n-button type="primary" v-for="item in group.list" :key="item.uuid">{{ getItemTitle(item) }}</n-button>
+                        <n-card class="btnGroup group_btn mb-2" content-class="flex flex-gap-1 flex-wrap width-100">
+                            <n-flex class="width-45px" vertical align="center" v-for="item in group.list" :key="item.uuid">
+                                <n-button tertiary type="primary" circle @click="toItem(group, item)" style="overflow: hidden">
+                                    <n-image preview-disabled v-if="getItemIcon(item)" :src="getItemAbsIcon(item)"></n-image>
+                                    <div v-else>{{ getItemTitle(item)[0] }}</div>
+                                </n-button>
+                                <n-ellipsis style="max-width: 45px">
+                                    {{ getItemTitle(item) }}
+                                </n-ellipsis>
+                            </n-flex>
                         </n-card>
                     </div>
 
@@ -94,6 +102,7 @@ import FloatBtn from "@/components/FloatBtn.vue";
 import ToolBar from "@/components/ToolBar.vue";
 import XModal from "@/components/XModal.vue";
 import { IosOptions, IosClose } from "@vicons/ionicons4";
+import { UrlUtils } from "@/utils/url";
 
 const dataStore = useDataStore();
 const themeVars = useThemeVars();
@@ -134,10 +143,30 @@ const getItemTitle = (item: ItemType): string => {
     return data?.title || "unknown";
 };
 
+const getItemIcon = (item: ItemType): string => {
+    if (!item) {
+        return "";
+    }
+    if (item?.options?.icon) {
+        return item.options.icon;
+    }
+    const data = ItemRouterList[item.type]!;
+    return data?.icon || "";
+};
+
 const openOption = () => {
     setTimeout(() => {
         showOption.value = true;
     }, 100);
+};
+
+const getItemAbsIcon = (item: ItemType): string => {
+    const url = getItemIcon(item);
+    if (!url) {
+        return "";
+    }
+    const data = ItemRouterList[item.type]!;
+    return UrlUtils.checkImgUrl(url, `/items/${data.component}`);
 };
 
 onMounted(async () => {

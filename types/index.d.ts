@@ -38,8 +38,10 @@ type ItemGroupType = {
     /** 一般存放可以快速重置的数据(直接清空) */
     options?: Partial<ItemGroupOptionType>;
     uuid?: string;
-    /** 标题 */
+    /** 标题(区分用的) */
     title?: string;
+    /** 显示用的标题 */
+    displayTitle?: string;
     /** 自定义数据,可用于跨页面跨项目交互,请谨慎使用 */
     customData?: Record<string, any>;
 };
