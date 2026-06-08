@@ -24,5 +24,12 @@ export const ItemRouterList: { [key: string]: ItemRouterType; } = {
         component: "MemoItem",
         style: {},
         desc: "记事"
+    },
+    'dockerConvert': {
+        type: "dockerConvert",
+        title: "docker转换",
+        component: "DockerConvertItem",
+        style: {},
+        desc: "docker run → docker-compose"
     }
 };
