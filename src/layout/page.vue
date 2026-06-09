@@ -14,12 +14,12 @@
                     <!-- 图标分组 -->
                     <div v-else-if="group.display == 'icon'" class="mb-2 group_icon">
                         <n-card class="btnGroup group_btn mb-2" content-class="flex flex-gap-1 flex-wrap width-100">
-                            <n-flex class="width-45px" vertical align="center" v-for="item in group.list" :key="item.uuid">
+                            <n-flex class="width-43px mb-2"  vertical align="center" style="gap:0" v-for="item in group.list" :key="item.uuid">
                                 <n-button tertiary type="primary" circle @click="toItem(group, item)" style="overflow: hidden">
                                     <n-image preview-disabled v-if="getItemIcon(item)" :src="getItemAbsIcon(item)"></n-image>
                                     <div v-else>{{ getItemTitle(item)[0] }}</div>
                                 </n-button>
-                                <n-ellipsis style="max-width: 45px">
+                                <n-ellipsis style="max-width: 43px">
                                     {{ getItemTitle(item) }}
                                 </n-ellipsis>
                             </n-flex>

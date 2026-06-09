@@ -9,6 +9,7 @@ export const ItemRouterList: { [key: string]: ItemRouterType; } = {
         title: "www",
         style: {},
         component: "WWWItem",
+        icon: "icon.png",
         desc: "自定义搜索"
     },
     'bookmark': {
@@ -16,6 +17,7 @@ export const ItemRouterList: { [key: string]: ItemRouterType; } = {
         title: "收藏夹",
         component: "BookmarkItem",
         style: {},
+        icon: "icon.png",
         desc: "书签"
     },
     'memo': {
@@ -23,6 +25,7 @@ export const ItemRouterList: { [key: string]: ItemRouterType; } = {
         title: "备忘录",
         component: "MemoItem",
         style: {},
+        icon: "icon.png",
         desc: "记事"
     },
     'dockerConvert': {
