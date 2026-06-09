@@ -59,5 +59,13 @@ export const ItemRouterList: { [key: string]: ItemRouterType; } = {
         style: {},
         icon: "icon.png",
         desc: "加密解密工具"
+    },
+    'pathConvert': {
+        type: "pathConvert",
+        title: "路径转换",
+        component: "PathConvertItem",
+        style: {},
+        icon: "icon.png",
+        desc: "路径符号互转"
     }
 };

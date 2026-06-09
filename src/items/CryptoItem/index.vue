@@ -156,194 +156,94 @@ const convert = async (direction: "encrypt" | "decrypt") => {
 };
 
 // ===================================================================
-// 与佛论禅 — 兼容 takuron.top 版本
-// 算法: CryptoJS.AES.encrypt(passphrase) 的 OpenSSL 盐格式
-//       → base64 去 "U2FsdGVkX1" 前缀 → 字符替换映射
+// 与佛论禅 — 兼容 keyfc.net 原版（TudouCode 第一版「佛曰」）
+// 算法: AES-256-CBC + UTF-16LE + 128 TUDOU 字映射
+// KEY: 固定 'XDXDtudou@KeyFansClub^_^Encode!!'
+// IV:  固定 'Potato@Key@_@='
+// 前缀: "佛曰："
 // ===================================================================
-const defaultBuddhaKey = "takuron.top";
-const buddhaPrefix = "佛又曰：";
+const TUDOU = [
+    '滅','苦','婆','娑','耶','陀','跋','多','漫','都','殿','悉','夜','爍','帝','吉',
+    '利','阿','無','南','那','怛','喝','羯','勝','摩','伽','謹','波','者','穆','僧',
+    '室','藝','尼','瑟','地','彌','菩','提','蘇','醯','盧','呼','舍','佛','參','沙',
+    '伊','隸','麼','遮','闍','度','蒙','孕','薩','夷','迦','他','姪','豆','特','逝',
+    '朋','輸','楞','栗','寫','數','曳','諦','羅','曰','咒','即','密','若','般','故',
+    '不','實','真','訶','切','一','除','能','等','是','上','明','大','神','知','三',
+    '藐','耨','得','依','諸','世','槃','涅','竟','究','想','夢','倒','顛','離','遠',
+    '怖','恐','有','礙','心','所','以','亦','智','道','。','集','盡','死','老','至'
+];
+const BYTEMARK = ['冥','奢','梵','呐','俱','哆','怯','諳','罰','侄','缽','皤'];
 
-/** 加密: base64 字符 → 佛经字符映射表 */
-const b64ToBuddha: Record<string, string> = {
-    "e": "啰", "E": "羯", "t": "婆", "T": "提", "a": "摩", "A": "埵",
-    "o": "诃", "O": "迦", "i": "耶", "I": "吉", "n": "娑", "N": "佛",
-    "s": "夜", "S": "驮", "h": "那", "H": "谨", "r": "悉", "R": "墀",
-    "d": "阿", "D": "呼", "l": "萨", "L": "尼", "c": "陀", "C": "唵",
-    "u": "唎", "U": "伊", "m": "卢", "M": "喝", "w": "帝", "W": "烁",
-    "f": "醯", "F": "蒙", "g": "罚", "G": "沙", "y": "嚧", "Y": "他",
-    "p": "南", "P": "豆", "b": "无", "B": "孕", "v": "菩", "V": "伽",
-    "k": "怛", "K": "俱", "j": "哆", "J": "度", "x": "皤", "X": "阇",
-    "q": "室", "Q": "地", "z": "利", "Z": "遮",
-    "0": "穆", "1": "参", "2": "舍", "3": "苏", "4": "钵", "5": "曳",
-    "6": "数", "7": "写", "8": "栗", "9": "楞",
-    "+": "咩", "/": "输", "=": "漫"
-};
+const BUDDHA_KEY = new TextEncoder().encode("XDXDtudou@KeyFansClub^_^Encode!!");
+// Pad 14-byte IV to 16 bytes with null bytes (pycrypto behavior)
+const BUDDHA_IV = new TextEncoder().encode("Potato@Key@_@=_=");
 
-/** 解密: 佛经字符 → base64 字符 */
-const buddhaToB64: Record<string, string> = {};
-for (const [k, v] of Object.entries(b64ToBuddha)) buddhaToB64[v] = k;
-
-/** MD5 哈希（纯 JS 实现，Web Crypto API 不支持 MD5） */
-function md5(data: Uint8Array): Uint8Array {
-    // 标准 MD5 实现
-    function F(x: number, y: number, z: number) { return (x & y) | (~x & z); }
-    function G(x: number, y: number, z: number) { return (x & z) | (y & ~z); }
-    function H(x: number, y: number, z: number) { return x ^ y ^ z; }
-    function I(x: number, y: number, z: number) { return y ^ (x | ~z); }
-    function rotl(x: number, n: number) { return (x << n) | (x >>> (32 - n)); }
-    function FF(a: number, b: number, c: number, d: number, x: number, s: number, ac: number) {
-        a = (a + F(b, c, d) + x + ac) >>> 0;
-        return ((a << s) | (a >>> (32 - s))) + b >>> 0;
+/** 字节 → 佛经汉字 */
+function bytesToBuddha(bytes: Uint8Array): string {
+    let result = "佛曰：";
+    for (let i = 0; i < bytes.length; i++) {
+        const byte = bytes[i];
+        if (byte < 128) result += TUDOU[byte];
+        else result += BYTEMARK[0] + TUDOU[byte - 128];
     }
-    function GG(a: number, b: number, c: number, d: number, x: number, s: number, ac: number) {
-        a = (a + G(b, c, d) + x + ac) >>> 0;
-        return ((a << s) | (a >>> (32 - s))) + b >>> 0;
-    }
-    function HH(a: number, b: number, c: number, d: number, x: number, s: number, ac: number) {
-        a = (a + H(b, c, d) + x + ac) >>> 0;
-        return ((a << s) | (a >>> (32 - s))) + b >>> 0;
-    }
-    function II(a: number, b: number, c: number, d: number, x: number, s: number, ac: number) {
-        a = (a + I(b, c, d) + x + ac) >>> 0;
-        return ((a << s) | (a >>> (32 - s))) + b >>> 0;
-    }
-
-    // 补位: 追加 0x80, 补零至 56 mod 64, 追加 64-bit 位长度
-    const msgLenBits = data.length * 8;
-    const padLen = (((data.length + 8) >>> 6) + 1) * 64;
-    const padded = new Uint8Array(padLen);
-    padded.set(data);
-    padded[data.length] = 0x80;
-    const view = new DataView(padded.buffer);
-    view.setUint32(padLen - 8, msgLenBits, true);
-    view.setUint32(padLen - 4, 0, true);
-
-    let A = 0x67452301, B = 0xEFCDAB89, C = 0x98BADCFE, D = 0x10325476;
-    const S: number[] = [7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22, 7, 12, 17, 22,
-                         5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20, 5, 9, 14, 20,
-                         4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23, 4, 11, 16, 23,
-                         6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21, 6, 10, 15, 21];
-    const T: number[] = [];
-    for (let i = 1; i <= 64; i++) T.push(Math.floor(Math.abs(Math.sin(i)) * 0x100000000) >>> 0);
-
-    for (let block = 0; block < padLen / 64; block++) {
-        const X: number[] = [];
-        const off = block * 64;
-        for (let j = 0; j < 16; j++) X.push(view.getUint32(off + j * 4, true));
-        let a = A, b = B, c = C, d = D;
-        for (let i = 0; i < 64; i++) {
-            let f, g;
-            if (i < 16) { f = F(b, c, d); g = i; }
-            else if (i < 32) { f = G(b, c, d); g = (5 * i + 1) % 16; }
-            else if (i < 48) { f = H(b, c, d); g = (3 * i + 5) % 16; }
-            else { f = I(b, c, d); g = (7 * i) % 16; }
-            const temp = d;
-            d = c; c = b;
-            b = (b + rotl(a + f + X[g] + T[i], S[i])) >>> 0;
-            a = temp;
-        }
-        A = (A + a) >>> 0; B = (B + b) >>> 0; C = (C + c) >>> 0; D = (D + d) >>> 0;
-    }
-
-    const result = new Uint8Array(16);
-    const rv = new DataView(result.buffer);
-    rv.setUint32(0, A, true); rv.setUint32(4, B, true);
-    rv.setUint32(8, C, true); rv.setUint32(12, D, true);
     return result;
 }
 
-/** EVP_BytesToKey (OpenSSL 兼容): MD5 迭代派生 Key+IV */
-function evpBytesToKey(password: string, salt: Uint8Array): { key: Uint8Array; iv: Uint8Array } {
-    const pwBytes = new TextEncoder().encode(password);
-    const concat = new Uint8Array(pwBytes.length + salt.length);
-    concat.set(pwBytes);
-    concat.set(salt, pwBytes.length);
-
-    const d1 = md5(concat);
-    const d2Input = new Uint8Array(d1.length + pwBytes.length + salt.length);
-    d2Input.set(d1);
-    d2Input.set(pwBytes, d1.length);
-    d2Input.set(salt, d1.length + pwBytes.length);
-    const d2 = md5(d2Input);
-
-    const d3Input = new Uint8Array(d2.length + pwBytes.length + salt.length);
-    d3Input.set(d2);
-    d3Input.set(pwBytes, d2.length);
-    d3Input.set(salt, d2.length + pwBytes.length);
-    const d3 = md5(d3Input);
-
-    const key = new Uint8Array(32);
-    key.set(d1);
-    key.set(d2, 16);
-    const iv = d3;
-    return { key, iv };
+/** 佛经汉字 → 字节 */
+function buddhaToBytes(text: string): Uint8Array {
+    let clean = text.replace(/^佛曰[：:]?/, "").trim();
+    const bytes: number[] = [];
+    let i = 0;
+    while (i < clean.length) {
+        const ch = clean[i];
+        const bmIdx = BYTEMARK.indexOf(ch);
+        if (bmIdx >= 0) { i++; if (i < clean.length) { const lowIdx = TUDOU.indexOf(clean[i]); if (lowIdx >= 0) bytes.push(lowIdx + 128); } }
+        else { const bIdx = TUDOU.indexOf(ch); if (bIdx >= 0) bytes.push(bIdx); }
+        i++;
+    }
+    return new Uint8Array(bytes);
 }
 
-async function buddhaEncrypt(text: string, password: string = defaultBuddhaKey): Promise<string> {
-    // 1. 生成 8 字节随机盐
-    const salt = crypto.getRandomValues(new Uint8Array(8));
+async function buddhaEncrypt(text: string): Promise<string> {
+    // 1. UTF-16LE 编码
+    let u16 = "";
+    for (let i = 0; i < text.length; i++) {
+        const code = text.charCodeAt(i);
+        u16 += String.fromCharCode(code & 0xFF, (code >> 8) & 0xFF);
+    }
+    const data = new TextEncoder().encode(u16);
 
-    // 2. EVP_BytesToKey 派生 Key+IV
-    const { key, iv } = await evpBytesToKey(password, salt);
+    // 2. PKCS7 填充
+    const bs = 16;
+    const pads = bs - (data.length % bs);
+    const padded = new Uint8Array(data.length + pads);
+    padded.set(data);
+    for (let i = data.length; i < padded.length; i++) padded[i] = pads;
 
     // 3. AES-256-CBC 加密
-    const cryptoKey = await crypto.subtle.importKey("raw", key.buffer as ArrayBuffer, { name: "AES-CBC" }, false, ["encrypt"]);
-    const data = new TextEncoder().encode(text);
-    const encrypted = await crypto.subtle.encrypt({ name: "AES-CBC", iv: iv.buffer as ArrayBuffer }, cryptoKey, data);
+    const encrypted = aesCbcEncrypt(padded, BUDDHA_KEY, BUDDHA_IV);
 
-    // 4. 拼接 OpenSSL 盐格式: "Salted__" + salt + ciphertext
-    const output = new Uint8Array(8 + 8 + encrypted.byteLength);
-    output.set(new TextEncoder().encode("Salted__"), 0);
-    output.set(salt, 8);
-    output.set(new Uint8Array(encrypted), 16);
-
-    // 5. base64 编码
-    const b64 = btoa(String.fromCharCode(...output));
-
-    // 6. 去掉前 10 位 "U2FsdGVkX1"
-    const withoutPrefix = b64.substring(10);
-
-    // 7. 字符替换
-    let result = "";
-    for (const ch of withoutPrefix) {
-        result += b64ToBuddha[ch] || ch;
-    }
-    return buddhaPrefix + result;
+    return bytesToBuddha(encrypted);
 }
 
-async function buddhaDecrypt(text: string, password: string = defaultBuddhaKey): Promise<string> {
-    // 1. 去除前缀
-    let clean = text.replace(/^佛又曰[：:]?/, "").trim();
+async function buddhaDecrypt(text: string): Promise<string> {
+    // 1. 汉字 → 字节
+    const data = buddhaToBytes(text);
 
-    // 2. 逆向字符替换
-    let b64 = "";
-    for (const ch of clean) {
-        b64 += buddhaToB64[ch] || ch;
+    // 2. AES-256-CBC 解密
+    const decrypted = aesCbcDecrypt(data, BUDDHA_KEY, BUDDHA_IV);
+
+    // 3. 去除 PKCS7 填充
+    const flag = decrypted[decrypted.length - 1];
+    const unpadded = flag < 16 ? decrypted.slice(0, decrypted.length - flag) : decrypted;
+
+    // 4. UTF-16LE → 文本
+    const chars: number[] = [];
+    for (let i = 0; i < unpadded.length; i += 2) {
+        const lo = unpadded[i], hi = unpadded[i + 1] || 0;
+        if (lo !== 0 || hi !== 0) chars.push(lo | (hi << 8));
     }
-
-    // 3. 补回 "U2FsdGVkX1" = base64("Salted__")
-    b64 = "U2FsdGVkX1" + b64;
-
-    // 4. base64 解码
-    const binaryStr = atob(b64);
-    const bytes = new Uint8Array(binaryStr.length);
-    for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
-
-    // 5. 校验 Salted__ 头
-    const header = new TextDecoder().decode(bytes.slice(0, 8));
-    if (header !== "Salted__") throw new Error("非有效的佛曰密文");
-
-    // 6. 提取盐和密文
-    const salt = bytes.slice(8, 16);
-    const ciphertext = bytes.slice(16);
-
-    // 7. EVP_BytesToKey 派生 Key+IV
-    const { key, iv } = await evpBytesToKey(password, salt);
-
-    // 8. AES-256-CBC 解密
-    const cryptoKey = await crypto.subtle.importKey("raw", key.buffer as ArrayBuffer, { name: "AES-CBC" }, false, ["decrypt"]);
-    const decrypted = await crypto.subtle.decrypt({ name: "AES-CBC", iv: iv.buffer as ArrayBuffer }, cryptoKey, ciphertext);
-    return new TextDecoder().decode(decrypted);
+    return String.fromCharCode(...chars);
 }
 
 async function processBuddha(text: string, direction: "encrypt" | "decrypt"): Promise<{ text: string; lines: OutputLine[] }> {
@@ -368,7 +268,103 @@ async function processBuddha(text: string, direction: "encrypt" | "decrypt"): Pr
         return { text: "", lines };
     }
 }
+
 // ===================================================================
+// AES-256-CBC 纯 JS 实现
+// ===================================================================
+const S_BOX = [
+    0x63,0x7c,0x77,0x7b,0xf2,0x6b,0x6f,0xc5,0x30,0x01,0x67,0x2b,0xfe,0xd7,0xab,0x76,
+    0xca,0x82,0xc9,0x7d,0xfa,0x59,0x47,0xf0,0xad,0xd4,0xa2,0xaf,0x9c,0xa4,0x72,0xc0,
+    0xb7,0xfd,0x93,0x26,0x36,0x3f,0xf7,0xcc,0x34,0xa5,0xe5,0xf1,0x71,0xd8,0x31,0x15,
+    0x04,0xc7,0x23,0xc3,0x18,0x96,0x05,0x9a,0x07,0x12,0x80,0xe2,0xeb,0x27,0xb2,0x75,
+    0x09,0x83,0x2c,0x1a,0x1b,0x6e,0x5a,0xa0,0x52,0x3b,0xd6,0xb3,0x29,0xe3,0x2f,0x84,
+    0x53,0xd1,0x00,0xed,0x20,0xfc,0xb1,0x5b,0x6a,0xcb,0xbe,0x39,0x4a,0x4c,0x58,0xcf,
+    0xd0,0xef,0xaa,0xfb,0x43,0x4d,0x33,0x85,0x45,0xf9,0x02,0x7f,0x50,0x3c,0x9f,0xa8,
+    0x51,0xa3,0x40,0x8f,0x92,0x9d,0x38,0xf5,0xbc,0xb6,0xda,0x21,0x10,0xff,0xf3,0xd2,
+    0xcd,0x0c,0x13,0xec,0x5f,0x97,0x44,0x17,0xc4,0xa7,0x7e,0x3d,0x64,0x5d,0x19,0x73,
+    0x60,0x81,0x4f,0xdc,0x22,0x2a,0x90,0x88,0x46,0xee,0xb8,0x14,0xde,0x5e,0x0b,0xdb,
+    0xe0,0x32,0x3a,0x0a,0x49,0x06,0x24,0x5c,0xc2,0xd3,0xac,0x62,0x91,0x95,0xe4,0x79,
+    0xe7,0xc8,0x37,0x6d,0x8d,0xd5,0x4e,0xa9,0x6c,0x56,0xf4,0xea,0x65,0x7a,0xae,0x08,
+    0xba,0x78,0x25,0x2e,0x1c,0xa6,0xb4,0xc6,0xe8,0xdd,0x74,0x1f,0x4b,0xbd,0x8b,0x8a,
+    0x70,0x3e,0xb5,0x66,0x48,0x03,0xf6,0x0e,0x61,0x35,0x57,0xb9,0x86,0xc1,0x1d,0x9e,
+    0xe1,0xf8,0x98,0x11,0x69,0xd9,0x8e,0x94,0x9b,0x1e,0x87,0xe9,0xce,0x55,0x28,0xdf,
+    0x8c,0xa1,0x89,0x0d,0xbf,0xe6,0x42,0x68,0x41,0x99,0x2d,0x0f,0xb0,0x54,0xbb,0x16
+];
+const RCON = [0x01,0x02,0x04,0x08,0x10,0x20,0x40,0x80,0x1b,0x36];
+
+function keyExpansion256(key: Uint8Array): Uint8Array[] {
+    const w: Uint8Array[] = [];
+    for (let i = 0; i < 8; i++) w.push(key.slice(i * 4, i * 4 + 4));
+    for (let i = 8; i < 60; i++) {
+        let temp = new Uint8Array(w[i - 1]);
+        if (i % 8 === 0) { temp = new Uint8Array([temp[1],temp[2],temp[3],temp[0]]); for (let j = 0; j < 4; j++) temp[j] = S_BOX[temp[j]]; temp[0] ^= RCON[Math.floor(i / 8) - 1]; }
+        else if (i % 8 === 4) { for (let j = 0; j < 4; j++) temp[j] = S_BOX[temp[j]]; }
+        const n = new Uint8Array(4);
+        for (let j = 0; j < 4; j++) n[j] = w[i - 8][j] ^ temp[j];
+        w.push(n);
+    }
+    return w;
+}
+
+function aesBlockEncrypt(block: Uint8Array, key: Uint8Array): Uint8Array {
+    const w = keyExpansion256(key);
+    let s = new Uint8Array(block);
+    addRoundKey(s, w, 0);
+    for (let r = 1; r < 14; r++) { subBytes(s); shiftRows(s); mixColumns(s); addRoundKey(s, w, r); }
+    subBytes(s); shiftRows(s); addRoundKey(s, w, 14);
+    return s;
+}
+
+function aesBlockDecrypt(block: Uint8Array, key: Uint8Array): Uint8Array {
+    const w = keyExpansion256(key);
+    let s = new Uint8Array(block);
+    addRoundKey(s, w, 14);
+    for (let r = 13; r >= 1; r--) { invShiftRows(s); invSubBytes(s); addRoundKey(s, w, r); invMixColumns(s); }
+    invShiftRows(s); invSubBytes(s); addRoundKey(s, w, 0);
+    return s;
+}
+
+function subBytes(s: Uint8Array) { for (let i = 0; i < 16; i++) s[i] = S_BOX[s[i]]; }
+function invSubBytes(s: Uint8Array) { const inv: number[] = []; for (let i = 0; i < 256; i++) inv[S_BOX[i]] = i; for (let i = 0; i < 16; i++) s[i] = inv[s[i]]; }
+function shiftRows(s: Uint8Array) { const t = new Uint8Array(s); s[1]=t[5];s[5]=t[9];s[9]=t[13];s[13]=t[1];s[2]=t[10];s[10]=t[2];s[6]=t[14];s[14]=t[6];s[3]=t[15];s[15]=t[11];s[11]=t[7];s[7]=t[3]; }
+function invShiftRows(s: Uint8Array) { const t = new Uint8Array(s); s[1]=t[13];s[13]=t[9];s[9]=t[5];s[5]=t[1];s[2]=t[10];s[10]=t[2];s[6]=t[14];s[14]=t[6];s[3]=t[7];s[7]=t[11];s[11]=t[15];s[15]=t[3]; }
+function gfMul(a: number, b: number): number { let p = 0; for (let i = 0; i < 8; i++) { if (b & 1) p ^= a; const hi = a & 0x80; a = (a << 1) & 0xff; if (hi) a ^= 0x1b; b >>= 1; } return p; }
+function mixColumns(s: Uint8Array) { for (let c = 0; c < 4; c++) { const i = c * 4; const t = [s[i],s[i+1],s[i+2],s[i+3]]; s[i]=gfMul(2,t[0])^gfMul(3,t[1])^t[2]^t[3];s[i+1]=t[0]^gfMul(2,t[1])^gfMul(3,t[2])^t[3];s[i+2]=t[0]^t[1]^gfMul(2,t[2])^gfMul(3,t[3]);s[i+3]=gfMul(3,t[0])^t[1]^t[2]^gfMul(2,t[3]); } }
+function invMixColumns(s: Uint8Array) { for (let c = 0; c < 4; c++) { const i = c * 4; const t = [s[i],s[i+1],s[i+2],s[i+3]]; s[i]=gfMul(14,t[0])^gfMul(11,t[1])^gfMul(13,t[2])^gfMul(9,t[3]);s[i+1]=gfMul(9,t[0])^gfMul(14,t[1])^gfMul(11,t[2])^gfMul(13,t[3]);s[i+2]=gfMul(13,t[0])^gfMul(9,t[1])^gfMul(14,t[2])^gfMul(11,t[3]);s[i+3]=gfMul(11,t[0])^gfMul(13,t[1])^gfMul(9,t[2])^gfMul(14,t[3]); } }
+function addRoundKey(s: Uint8Array, w: Uint8Array[], r: number) { for (let i = 0; i < 16; i++) s[i] ^= w[r * 4 + Math.floor(i / 4)][i % 4]; }
+
+function aesCbcEncrypt(data: Uint8Array, key: Uint8Array, iv: Uint8Array): Uint8Array {
+    const bs = 16;
+    const padded = new Uint8Array(data.length);
+    padded.set(data);
+    const result = new Uint8Array(padded.length);
+    let prev = new Uint8Array(iv);
+    for (let block = 0; block < padded.length / bs; block++) {
+        const off = block * bs;
+        const xored = new Uint8Array(bs);
+        for (let j = 0; j < bs; j++) xored[j] = padded[off + j] ^ prev[j];
+        const enc = aesBlockEncrypt(xored, key);
+        result.set(enc, off);
+        prev = new Uint8Array(enc);
+    }
+    return result;
+}
+
+function aesCbcDecrypt(data: Uint8Array, key: Uint8Array, iv: Uint8Array): Uint8Array {
+    const bs = 16;
+    const result = new Uint8Array(data.length);
+    let prev = new Uint8Array(iv);
+    for (let block = 0; block < data.length / bs; block++) {
+        const off = block * bs;
+        const dec = aesBlockDecrypt(data.slice(off, off + bs), key);
+        for (let j = 0; j < bs; j++) result[off + j] = dec[j] ^ prev[j];
+        prev = data.slice(off, off + bs);
+    }
+    return result;
+}
+
+// ===================================================================
+// 核心价值观暗号（hex-digit 映射，兼容 core-values-encoder）
 const valueWords = ["富强", "民主", "文明", "和谐", "自由", "平等", "公正", "法治", "爱国", "敬业"];
 const carryWord = "诚信";   // 索引 10，表示 hex 值 A-F 需要加 10
 const separatorWord = "友善"; // 索引 11，用于分隔字节
@@ -455,26 +451,21 @@ function processBase64(text: string, direction: "encrypt" | "decrypt"): { text: 
     try {
         if (direction === "decrypt") {
             add("✅ 解码中...");
-            const decoded = atob(clean);
-            let humanReadable = true;
-            for (let i = 0; i < decoded.length; i++) {
-                const cc = decoded.charCodeAt(i);
-                if (cc < 32 && cc !== 10 && cc !== 13) { humanReadable = false; break; }
-            }
-            if (humanReadable) {
-                add(`  解码结果:`);
-                lines.push({ text: decoded });
-                return { text: decoded, lines };
-            } else {
-                const bytes = Uint8Array.from(decoded, c => c.charCodeAt(0));
-                const hex = Array.from(bytes).map(b => b.toString(16).padStart(2, '0')).join(' ');
-                add(`  ⚠️ 非文本数据，显示为 Hex:`);
-                lines.push({ text: hex });
-                return { text: decoded, lines };
-            }
+            // base64 → 字节 → UTF-8 文本
+            const binaryStr = atob(clean);
+            const bytes = new Uint8Array(binaryStr.length);
+            for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i);
+            const decoded = new TextDecoder().decode(bytes);
+            add(`  解码结果:`);
+            lines.push({ text: decoded });
+            return { text: decoded, lines };
         } else {
             add("✅ 编码中...");
-            const encoded = btoa(clean);
+            // UTF-8 文本 → 字节 → base64
+            const data = new TextEncoder().encode(clean);
+            let binary = "";
+            for (let i = 0; i < data.length; i++) binary += String.fromCharCode(data[i]);
+            const encoded = btoa(binary);
             add(`  编码结果（${encoded.length} 字符）:`);
             lines.push({ text: encoded });
             return { text: encoded, lines };
