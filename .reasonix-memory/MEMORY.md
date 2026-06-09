@@ -9,3 +9,4 @@
 - [2026-06-09 改动](june-9-changes.md) — 增加图标 + PageConfigModal 样式/折叠重构 + 移动端适配
 - [QuickAccessItem 快捷访问](quickaccess-item.md) — 快捷访问网址元件 + BookmarkItem 复制数据
 - [MagnetItem 磁力补全](magnet-item.md) — 磁力链接补全元件
+- [CryptoItem 暗号工具](crypto-item.md) — 佛论禅/核心价值观/Base64 加密解密

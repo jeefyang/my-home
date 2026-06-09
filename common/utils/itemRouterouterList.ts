@@ -51,5 +51,13 @@ export const ItemRouterList: { [key: string]: ItemRouterType; } = {
         style: {},
         icon: "icon.png",
         desc: "磁力链接补全"
+    },
+    'crypto': {
+        type: "crypto",
+        title: "暗号",
+        component: "CryptoItem",
+        style: {},
+        icon: "icon.png",
+        desc: "加密解密工具"
     }
 };
