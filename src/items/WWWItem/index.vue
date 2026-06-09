@@ -112,6 +112,7 @@ const props = defineProps<{
     item: ItemType;
     pageUUID: string;
     itemGroupUUID: string;
+    display: ItemDisplayType;
 }>();
 
 const toShow = () => {

@@ -146,6 +146,29 @@ a,
     }
 }
 
+.box {
+    width: 100%;
+}
+
+/** 移动端：小于 768px */
+@media (width <768px) {
+    .box {
+        width: 100% !important;
+    }
+    .group_btn {
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+    .group_icon {
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+    .group_box {
+        width: 100% !important;
+        min-width: 100% !important;
+    }
+}
+
 /* PC 端：768px 以上自动切换 */
 @media (width >=768px) {
     .box {

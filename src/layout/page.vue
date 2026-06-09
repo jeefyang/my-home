@@ -6,15 +6,15 @@
                 <div v-for="group in curPage.itemGroupList" :key="group.uuid" :class="{ group_full_parent: group.display == 'fullPage' }">
                     <!-- 按钮分组  -->
                     <div v-if="group.display == 'btn'" class="mb-2 group_btn">
-                        <n-card class="btnGroup group_btn mb-2" content-class="flex flex-gap-1 flex-wrap width-100">
+                        <n-card class="btnGroup group_btn mb-2" content-class="flex flex-gap-1 flex-wrap width-100" :style="group.style">
                             <n-button type="primary" v-for="item in group.list" :key="item.uuid" @click="toItem(group, item)">{{ getItemTitle(item) }}</n-button>
                         </n-card>
                     </div>
 
                     <!-- 图标分组 -->
                     <div v-else-if="group.display == 'icon'" class="mb-2 group_icon">
-                        <n-card class="btnGroup group_btn mb-2" content-class="flex flex-gap-1 flex-wrap width-100">
-                            <n-flex class="width-43px mb-2"  vertical align="center" style="gap:0" v-for="item in group.list" :key="item.uuid">
+                        <n-card class="btnGroup group_btn mb-2" content-class="flex flex-gap-1 flex-wrap width-100" :style="group.style">
+                            <n-flex class="width-43px mb-2" vertical align="center" style="gap: 0" v-for="item in group.list" :key="item.uuid">
                                 <n-button tertiary type="primary" circle @click="toItem(group, item)" style="overflow: hidden">
                                     <n-image preview-disabled v-if="getItemIcon(item)" :src="getItemAbsIcon(item)"></n-image>
                                     <div v-else>{{ getItemTitle(item)[0] }}</div>
@@ -28,14 +28,20 @@
 
                     <!-- 自适应盒子分组 -->
                     <div v-else-if="group.display == 'box'" class="mb-2 flex flex-gap-2 flex-wrap">
-                        <n-card class="group_box" v-for="item in group.list" :key="item.uuid" content-class="group_box_content">
+                        <n-card class="group_box" v-for="item in group.list" :key="item.uuid" :style="{ ...(group.style || {}), ...(item.style || {}) }" content-class="group_box_content">
                             <item-view :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid" :display="group.display"></item-view>
                         </n-card>
                     </div>
 
                     <!-- 宽度盒子分组(占满屏幕宽度) -->
                     <div v-else-if="group.display == 'widthBox'" class="group_widthBox" style="height: 100%; display: flex; flex-direction: column">
-                        <n-card v-for="item in group.list" :key="item.uuid" class="mb-2" style="height: 100%; display: flex; flex-direction: column; overflow: hidden">
+                        <n-card
+                            v-for="item in group.list"
+                            :key="item.uuid"
+                            class="mb-2"
+                            style="height: 100%; display: flex; flex-direction: column; overflow: hidden"
+                            :style="{ ...(group.style || {}), ...(item.style || {}) }"
+                        >
                             <item-view
                                 :item="item"
                                 :pageUUID="curPage.uuid"
@@ -47,7 +53,13 @@
                     </div>
                     <!-- 全屏分组 -->
                     <div v-else-if="group.display == 'fullPage'" class="group_full">
-                        <n-card style="flex: 1; display: flex; flex-direction: column; overflow: auto" v-for="item in group.list" :key="item.uuid" content-class="group_full_content">
+                        <n-card
+                            style="flex: 1; display: flex; flex-direction: column; overflow: auto"
+                            v-for="item in group.list"
+                            :key="item.uuid"
+                            content-class="group_full_content"
+                            :style="{ ...(group.style || {}), ...(item.style || {}) }"
+                        >
                             <item-view
                                 :item="item"
                                 :pageUUID="curPage.uuid"
