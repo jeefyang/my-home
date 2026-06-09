@@ -168,6 +168,10 @@
                     <template #icon><n-icon :component="QrCode" /></template>
                     转二维码
                 </n-button>
+                <n-button v-if="contextItem && !contextItem.isFolder" quaternary size="large" style="justify-content: flex-start" @click="contextAction('copyData')">
+                    <template #icon><n-icon :component="Code" /></template>
+                    复制数据
+                </n-button>
                 <n-button v-if="contextItem && contextItem.isFolder" quaternary size="large" style="justify-content: flex-start" @click="contextAction('expand')">
                     <template #icon><n-icon :component="Move" /></template>
                     展开
@@ -547,10 +551,35 @@ const contextAction = (action: string) => {
         window.location.href = item.url;
     } else if (action === "copyLink" && item.url) copyLink(item.url);
     else if (action === "qrCode" && item.url) showQrCode(item.url, item.title);
+    else if (action === "copyData") copyItemAsJson(item);
     else if (action === "expand" && item.isFolder) expandFolder(item);
     else if (action === "edit") openEditForm(item);
     else if (action === "delete") openDeleteDialog(item);
     contextItem.value = null;
+};
+
+/** 复制书签为 JSON（图标转 base64），与 QuickAccessItem 导入对接 */
+const copyItemAsJson = async (item: BookmarkCollectionType) => {
+    let iconStr = item.icon || "";
+    if (iconStr && !iconStr.startsWith("data:") && !iconStr.startsWith("http://") && !iconStr.startsWith("https://")) {
+        const b64 = await iconFileToBase64(iconStr, iconBaseUrl.value);
+        if (b64) iconStr = b64;
+    }
+    const data = { title: item.title, url: item.url || "", icon: iconStr };
+    try {
+        await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
+        msg.success("已复制数据");
+    } catch {
+        const ta = document.createElement("textarea");
+        ta.value = JSON.stringify(data);
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand("copy");
+        document.body.removeChild(ta);
+        msg.success("已复制数据");
+    }
 };
 
 // 删除

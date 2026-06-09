@@ -35,5 +35,13 @@ export const ItemRouterList: { [key: string]: ItemRouterType; } = {
         style: {},
         icon: "icon.png",
         desc: "docker run → docker-compose"
+    },
+    'quickAccess': {
+        type: "quickAccess",
+        title: "快捷访问",
+        component: "QuickAccessItem",
+        style: {},
+        icon: "icon.png",
+        desc: "快捷网址访问"
     }
 };
