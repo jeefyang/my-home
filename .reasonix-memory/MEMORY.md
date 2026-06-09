@@ -6,3 +6,4 @@
 - [MemoItem 移动端交互](memoitem-mobile-interaction.md) — MemoItem：移动端点击切换操作按钮、双击复制文本
 - [2026-06-06 暂存改动总结](staged-changes-june-6.md) — 最近一次提交和当前暂存改动的详细摘要
 - [2026-06-06 未暂存改动](unstaged-changes-june-6-part2.md) — 当前未暂存的 4 个文件改动详情
+- [2026-06-09 改动](june-9-changes.md) — 增加图标 + PageConfigModal 样式/折叠重构 + 移动端适配
