@@ -146,9 +146,10 @@ const surnameMap81: Record<string, string> = {
     "鲁": "M", "韦": "N", "昌": "O", "马": "P", "苗": "Q", "凤": "R",
     "花": "S", "方": "T", "俞": "U", "任": "V", "袁": "W", "柳": "X",
     "唐": "Y", "罗": "Z",
-    "薛": ":", "姚": "/", "孟": "?", "江": "&", "钟": "=",
-    "顾": ".", "尹": "-", "余": "_", "贝": "%", "赖": " ",
-    "卜": "|"
+    "薛": ".", "姚": "/", "孟": "?", "江": "&", "钟": "=",
+    "顾": ".", "尹": "-", "余": "_", "贝": "=", "赖": " ",
+    "卜": "|",
+    "竺": ":"
 };
 
 function completeMagnet(input: string, addTrackers: boolean): { link: string; lines: OutputLine[] } {
@@ -173,9 +174,38 @@ function completeMagnet(input: string, addTrackers: boolean): { link: string; li
         const hasChinese = /[\u4e00-\u9fff]/.test(clean);
         if (hasChinese) {
             let decoded = "";
-            for (const ch of clean) { const h = surnameMap81[ch]; if (h !== undefined) decoded += h; }
-            if (decoded && /^[0-9a-fA-F]+$/.test(decoded)) { hash = decoded.toUpperCase(); add(`  ✅ 检测到百家姓暗号，已解码`); add(`  Info Hash: ${hash}`); }
-            else { add("  ❌ 包含中文字符但解码失败", true); return { link: "", lines }; }
+            let unknown = "";
+            for (const ch of clean) { const h = surnameMap81[ch]; if (h !== undefined) decoded += h; else unknown += ch; }
+            if (decoded && (/^[0-9a-fA-F]+$/.test(decoded) || decoded.startsWith("magnet:?") || decoded.includes("&tr="))) {
+                if (unknown) add(`  ⚠️ 有 ${unknown.length} 个字符未识别: ${unknown}`, true);
+                add(`  ✅ 检测到百家姓暗号，已解码`);
+                if (decoded.startsWith("magnet:?")) {
+                    // 完整磁链，提取 hash
+                    const m = decoded.match(/xt=urn:btih:([A-Fa-f0-9]+)/);
+                    if (m) { hash = m[1].toUpperCase(); add(`  Info Hash: ${hash}`); }
+                    else { add("  ⚠️ 解码结果未找到 Info Hash", true); }
+                    add(`  完整链接: ${decoded}`);
+                    outputLink.value = decoded;
+                } else if (decoded.includes("&tr=")) {
+                    // 已带 Tracker，提取 hash 然后保留原有 tracker
+                    const parts = decoded.split("&tr=");
+                    const rawHash = parts[0].replace(/[^A-Fa-f0-9]/g, "");
+                    if (rawHash.length >= 32) {
+                        hash = rawHash.toUpperCase().substring(0, 40);
+                        add(`  Info Hash: ${hash}`);
+                        for (let i = 1; i < parts.length; i++) {
+                            existingTrs.push(parts[i]);
+                            add(`  tr: ${parts[i]}`);
+                        }
+                    } else {
+                        add("  ⚠️ 未找到有效的 Info Hash", true);
+                    }
+                } else {
+                    // 纯 hash
+                    hash = decoded.toUpperCase();
+                    add(`  Info Hash: ${hash}`);
+                }
+            } else { add("  ❌ 包含中文字符但解码失败", true); return { link: "", lines }; }
         } else {
             const hashMatch = clean.match(/[A-Fa-f0-9]{32,40}/);
             if (hashMatch) { hash = hashMatch[0].toUpperCase(); add(`  Info Hash: ${hash}`); }
@@ -189,15 +219,17 @@ function completeMagnet(input: string, addTrackers: boolean): { link: string; li
 
     add(""); add("━━━ 生成磁力链接 ━━━");
     let magnet = `magnet:?xt=urn:btih:${hash}`;
-    for (const tr of existingTrs) magnet += `&tr=${encodeURIComponent(tr)}`;
-    if (addTrackers) {
+    for (const tr of existingTrs) magnet += `&tr=${tr}`;
+    if (addTrackers && existingTrs.length === 0) {
         let added = 0;
-        for (const tr of defaultTrackers) { if (!existingTrs.includes(tr)) { magnet += `&tr=${encodeURIComponent(tr)}`; added++; } }
+        for (const tr of defaultTrackers) { magnet += `&tr=${tr}`; added++; }
         if (added > 0) add(`  + ${added} 个默认 Tracker`);
+    } else if (existingTrs.length > 0) {
+        add(`  ✅ 已保留 ${existingTrs.length} 个原有 Tracker`);
     }
     add(`  协议: magnet:`);
     add(`  Hash: ${hash}`);
-    add(`  Tracker: ${(existingTrs.length + (addTrackers ? defaultTrackers.filter(t => !existingTrs.includes(t)).length : 0))} 个`);
+    add(`  Tracker: ${existingTrs.length > 0 ? existingTrs.length : (addTrackers ? defaultTrackers.length : 0)} 个`);
     return { link: magnet, lines };
 }
 </script>
