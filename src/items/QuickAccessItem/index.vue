@@ -26,7 +26,7 @@
         <n-flex justify="space-between" align="center" class="mb-2">
             <span style="font-size: 13px; font-weight: 600">网址列表</span>
             <n-flex>
-                <n-button size="tiny" @click="importFromClipboard">导入</n-button>
+                <n-button size="tiny" @click="showImport = true">导入</n-button>
                 <n-button size="tiny" type="primary" @click="addSite">添加</n-button>
             </n-flex>
         </n-flex>
@@ -77,6 +77,17 @@
             </n-flex>
         </template>
     </x-modal>
+
+    <!-- 导入弹窗 -->
+    <x-modal v-model:show="showImport" title="导入 JSON">
+        <n-input v-model:value="importText" type="textarea" :autosize="{ minRows: 5, maxRows: 12 }" placeholder="粘贴要导入的 JSON（支持单个对象或数组）&#10;格式: {\"title\":\"...\",\"url\":\"...\",\"icon\":\"...\"}" />
+        <template #footer>
+            <n-flex justify="end">
+                <n-button @click="showImport = false">取消</n-button>
+                <n-button type="primary" @click="confirmImport">确定导入</n-button>
+            </n-flex>
+        </template>
+    </x-modal>
 </template>
 
 <script setup lang="ts">
@@ -109,6 +120,8 @@ type SiteItem = {
 const filename = "siteList.json";
 const siteList = ref<SiteItem[]>([]);
 const showConfig = ref(false);
+const showImport = ref(false);
+const importText = ref("");
 const saving = ref(false);
 
 // ====== 数据 ======
@@ -230,22 +243,17 @@ const saveConfig = async () => {
     }
 };
 
-// ====== 导入：从剪贴板读取 JSON ======
-const importFromClipboard = async () => {
-    let text = "";
-    try {
-        text = await navigator.clipboard.readText();
-    } catch {
-        msg.error("无法读取剪贴板");
-        return;
-    }
+// ====== 导入：弹出输入框粘贴 JSON ======
+const confirmImport = () => {
+    const text = importText.value.trim();
+    if (!text) { msg.warning("请输入 JSON 内容"); return; }
 
     let items: any[] = [];
     try {
         const parsed = JSON.parse(text);
         items = Array.isArray(parsed) ? parsed : [parsed];
     } catch {
-        msg.error("剪贴板内容不是有效的 JSON");
+        msg.error("内容不是有效的 JSON");
         return;
     }
 
@@ -264,6 +272,8 @@ const importFromClipboard = async () => {
 
     if (count > 0) {
         msg.success(`已导入 ${count} 条`);
+        showImport.value = false;
+        importText.value = "";
     } else {
         msg.warning("未找到有效数据");
     }
