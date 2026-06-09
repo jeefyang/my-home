@@ -8,3 +8,4 @@
 - [2026-06-06 未暂存改动](unstaged-changes-june-6-part2.md) — 当前未暂存的 4 个文件改动详情
 - [2026-06-09 改动](june-9-changes.md) — 增加图标 + PageConfigModal 样式/折叠重构 + 移动端适配
 - [QuickAccessItem 快捷访问](quickaccess-item.md) — 快捷访问网址元件 + BookmarkItem 复制数据
+- [MagnetItem 磁力补全](magnet-item.md) — 磁力链接补全元件

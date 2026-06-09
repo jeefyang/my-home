@@ -43,5 +43,13 @@ export const ItemRouterList: { [key: string]: ItemRouterType; } = {
         style: {},
         icon: "icon.png",
         desc: "快捷网址访问"
+    },
+    'magnet': {
+        type: "magnet",
+        title: "磁力补全",
+        component: "MagnetItem",
+        style: {},
+        icon: "icon.png",
+        desc: "磁力链接补全"
     }
 };
