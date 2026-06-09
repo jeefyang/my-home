@@ -32,12 +32,12 @@
         </n-flex>
 
         <n-flex vertical v-if="siteList.length > 0" style="gap: 12px">
-            <n-card v-for="(site, idx) in siteList" :key="site.uuid" size="small" :style="{ borderColor: site.pin ? '#409eff' : undefined }">
+            <n-card v-for="(site, idx) in siteList" :key="site.uuid" size="small">
                 <n-flex vertical style="gap: 6px">
                     <n-flex justify="space-between" align="center">
                         <n-flex align="center" size="small">
-                            <n-button size="tiny" quaternary @click="togglePin(idx)" :type="site.pin ? 'primary' : 'default'" title="置顶">
-                                <template #icon><n-icon :component="Pin" :size="14" /></template>
+                            <n-button size="tiny" quaternary @click="moveToTop(idx)" title="置顶">
+                                <template #icon><n-icon :component="ArrowUp" :size="14" /></template>
                             </n-button>
                             <span style="font-size: 12px; color: #888">#{{ idx + 1 }}</span>
                         </n-flex>
@@ -57,6 +57,7 @@
                     <label>图标</label>
                     <n-flex align="center" style="gap: 6px">
                         <n-input v-model:value="site.icon" placeholder="图标 URL / base64 / 文件名" size="small" style="flex: 1" />
+                        <n-button size="tiny" type="warning" :loading="convertingIdx === idx" @click="convertIcon(idx)" :disabled="!needConvert(site.icon)">转换</n-button>
                         <n-upload :custom-request="(o) => uploadIcon(o, idx)" :show-file-list="false" accept="image/*">
                             <n-button size="tiny" :type="site.icon ? 'default' : 'primary'">
                                 {{ site.icon ? '替换' : '上传' }}
@@ -73,6 +74,7 @@
 
         <template #footer>
             <n-flex justify="end">
+                <n-button @click="cancelConfig">取消</n-button>
                 <n-button :loading="saving" type="primary" @click="saveConfig">保存</n-button>
             </n-flex>
         </template>
@@ -80,7 +82,7 @@
 
     <!-- 导入弹窗 -->
     <x-modal v-model:show="showImport" title="导入 JSON">
-        <n-input v-model:value="importText" type="textarea" :autosize="{ minRows: 5, maxRows: 12 }" placeholder="粘贴要导入的 JSON（支持单个对象或数组）&#10;格式: {\"title\":\"...\",\"url\":\"...\",\"icon\":\"...\"}" />
+        <n-input v-model:value="importText" type="textarea" :autosize="{ minRows: 5, maxRows: 12 }" :placeholder="importPlaceholder" />
         <template #footer>
             <n-flex justify="end">
                 <n-button @click="showImport = false">取消</n-button>
@@ -91,16 +93,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from "vue";
-import { Settings, Pin, Trash } from "@vicons/tabler";
+import { ref, onMounted, watch } from "vue";
+import { Settings, ArrowUp, Trash } from "@vicons/tabler";
 import { itemFetch } from "@/utils/jFetch";
 import { myUpload, base64ToFile } from "@/utils/upload";
 import { UrlUtils } from "@/utils/url";
 import { useMessage } from "naive-ui";
 import { nanoid } from "nanoid";
 import XModal from "@/components/XModal.vue";
+import { useDataStore } from "@/stores/data";
 
 const msg = useMessage();
+const dataStore = useDataStore();
 
 const props = defineProps<{
     item: ItemType;
@@ -114,7 +118,6 @@ type SiteItem = {
     title: string;
     url: string;
     icon: string; // 文件名 / base64 / 外链
-    pin?: boolean;
 };
 
 const filename = "siteList.json";
@@ -122,7 +125,13 @@ const siteList = ref<SiteItem[]>([]);
 const showConfig = ref(false);
 const showImport = ref(false);
 const importText = ref("");
+const importPlaceholder = `粘贴要导入的 JSON（支持单个对象或数组）\n格式: ${JSON.stringify({ title: "...", url: "...", icon: "..." })}`;
 const saving = ref(false);
+const convertingIdx = ref(-1);
+
+/** 配置打开时的数据备份，取消时还原 */
+let siteListBackup: SiteItem[] = [];
+let savedSuccessfully = false;
 
 // ====== 数据 ======
 const loadData = async () => {
@@ -137,6 +146,18 @@ const loadData = async () => {
         siteList.value = [];
     }
 };
+
+/** 打开配置时备份，关闭时若未保存则还原 */
+watch(() => showConfig.value, (val) => {
+    if (val) {
+        // 打开 → 备份当前数据
+        siteListBackup = JSON.parse(JSON.stringify(siteList.value));
+        savedSuccessfully = false;
+    } else if (!savedSuccessfully) {
+        // 关闭且未保存 → 还原
+        siteList.value = JSON.parse(JSON.stringify(siteListBackup));
+    }
+});
 
 const saveData = async () => {
     saving.value = true;
@@ -183,8 +204,10 @@ const deleteSite = (idx: number) => {
     siteList.value.splice(idx, 1);
 };
 
-const togglePin = (idx: number) => {
-    siteList.value[idx].pin = !siteList.value[idx].pin;
+const moveToTop = (idx: number) => {
+    if (idx === 0) return;
+    const item = siteList.value.splice(idx, 1)[0];
+    siteList.value.unshift(item);
 };
 
 // ====== 图标上传 ======
@@ -197,7 +220,10 @@ const uploadIcon = async (o: any, idx: number) => {
 
     const [res, err] = await myUpload(
         { data: file, type: "file" },
-        { url: `./api/upload/file/items/${props.item.type}/${props.item.uuid}` }
+        {
+            url: `./api/upload/file/items/${props.item.type}/${props.item.uuid}`,
+            other: { headers: { pathid: dataStore.pathid || "", secondcode: dataStore.secondcode || "" } }
+        }
     );
 
     if (err || !res || res.code !== 200) {
@@ -207,6 +233,64 @@ const uploadIcon = async (o: any, idx: number) => {
 
     site.icon = res.data.filename;
     msg.success("图标已上传");
+};
+
+// ====== 图标转换（base64/外链 → 服务器文件） ======
+const needConvert = (icon: string): boolean => {
+    if (!icon) return false;
+    return icon.startsWith("data:") || icon.startsWith("http://") || icon.startsWith("https://");
+};
+
+const convertIcon = async (idx: number) => {
+    const site = siteList.value[idx];
+    if (!site || !site.icon) return;
+    if (!needConvert(site.icon)) {
+        msg.info("已是文件名，无需转换");
+        return;
+    }
+
+    convertingIdx.value = idx;
+
+    try {
+        let file: File;
+
+        if (site.icon.startsWith("data:")) {
+            // base64 → File → 上传
+            file = base64ToFile(site.icon);
+        } else {
+            // 外链 → 下载为 Blob → File → 上传
+            const resp = await fetch(site.icon);
+            if (!resp.ok) {
+                msg.error("下载图标失败");
+                convertingIdx.value = -1;
+                return;
+            }
+            const blob = await resp.blob();
+            const ext = (blob.type.split("/")[1] || "png").replace(/[^a-z0-9]/g, "");
+            file = new File([blob], `icon.${ext}`, { type: blob.type });
+        }
+
+        const [res, err] = await myUpload(
+            { data: file, type: "file" },
+            {
+                url: `./api/upload/file/items/${props.item.type}/${props.item.uuid}`,
+                other: { headers: { pathid: dataStore.pathid || "", secondcode: dataStore.secondcode || "" } }
+            }
+        );
+
+        if (err || !res || res.code !== 200) {
+            msg.error("图标上传失败");
+            convertingIdx.value = -1;
+            return;
+        }
+
+        site.icon = res.data.filename;
+        msg.success("图标已转换");
+    } catch (e) {
+        msg.error("图标转换失败");
+    }
+
+    convertingIdx.value = -1;
 };
 
 // ====== 保存配置 ======
@@ -223,7 +307,10 @@ const saveConfig = async () => {
                 const file = base64ToFile(site.icon);
                 const [res, err] = await myUpload(
                     { data: file, type: "file" },
-                    { url: `./api/upload/file/items/${props.item.type}/${props.item.uuid}` }
+                    {
+                        url: `./api/upload/file/items/${props.item.type}/${props.item.uuid}`,
+                        other: { headers: { pathid: dataStore.pathid || "", secondcode: dataStore.secondcode || "" } }
+                    }
                 );
                 if (err || !res || res.code !== 200) {
                     msg.error(`图标 ${i + 1} 上传失败`);
@@ -238,9 +325,15 @@ const saveConfig = async () => {
 
     const ok = await saveData();
     if (ok) {
+        savedSuccessfully = true;
         msg.success("已保存");
         showConfig.value = false;
     }
+};
+
+const cancelConfig = () => {
+    siteList.value = JSON.parse(JSON.stringify(siteListBackup));
+    showConfig.value = false;
 };
 
 // ====== 导入：弹出输入框粘贴 JSON ======

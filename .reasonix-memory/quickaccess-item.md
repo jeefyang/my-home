@@ -11,14 +11,17 @@
 
 **配置弹窗**：
 - 每个网址可编辑标题、URL、图标
-- 添加 / 删除 / 置顶（pin）功能
-- 导入：从剪贴板读取 JSON（支持数组或单对象），与 BookmarkItem 复制数据对接
-- 图标上传：输入框为空时点上传→选取文件；已有内容时替换
-- 图标处理：base64 自动上传到服务器并转为文件名存储
+- 添加 / 删除 / 置顶（移至第0位）功能
+- 导入：弹窗输入框粘贴 JSON（支持数组或单对象），与 BookmarkItem 复制数据对接
+- 图标上传：上传按钮支持选择文件上传
+- 图标转换：base64/外链 → 上传到服务器转为文件名存储
+- 取消功能：不点保存自动恢复到打开前的数据
 - 保存按钮带 loading 状态
+- 所有 myUpload 调用带 pathid/secondcode 认证头
 
 **数据存储**：`itemFetch.request("getItemData/updateItemData", { filename: "siteList.json" })`
 **图标预览**：通过 `UrlUtils.checkImgUrl` 转换，服务器文件名 → 文件 URL
+**导入**：改为弹窗输入框粘贴 JSON，替代剪贴板读取（兼容性更好）
 
 ## BookmarkItem 右键菜单新增"复制数据"
 
