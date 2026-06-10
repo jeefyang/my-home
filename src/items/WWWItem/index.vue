@@ -2,17 +2,25 @@
     <n-flex vertical align="center">
         <n-input v-model:value="searchKey" type="text" placeholder="世界之窗" round clearable @keyup.enter="toLink(true)"> </n-input>
         <n-flex align="center">
-            <n-button v-for="(item, index) in engineList" :key="item.uuid" size="tiny" @click="switchSearchIndex = index" :type="switchSearchIndex == index ? 'primary' : 'default'">
+            <n-button
+                v-for="(item, index) in engineList"
+                :key="item.uuid"
+                @click="switchSearchIndex = index"
+                :type="switchSearchIndex == index ? 'primary' : 'default'"
+                circle
+                style="overflow: hidden"
+                size="small"
+            >
                 <div v-if="!item.icon">{{ item.name[0] }}</div>
-                <n-icon size="15" v-else>
+                <n-icon size="20" v-else>
                     <img :src="UrlUtils.checkImgUrl(item.icon, `./api/files/items/${props.item.type}/${props.item.uuid}`)" class="icon" />
                 </n-icon>
             </n-button>
-            <n-button :bordered="false" :type="switchSearchIndex == -1 ? 'primary' : 'default'" size="tiny" @click="switchSearchIndex = -1">
-                <n-icon :component="Link"> </n-icon>
+            <n-button :bordered="false" :type="switchSearchIndex == -1 ? 'primary' : 'default'" @click="switchSearchIndex = -1" circle style="overflow: hidden" size="small">
+                <n-icon :component="Link" size="20"> </n-icon>
             </n-button>
-            <n-button :bordered="false" type="info" size="tiny" @click="toShow">
-                <n-icon :component="SettingOutlined"> </n-icon>
+            <n-button :bordered="false" type="info" @click="toShow" circle style="overflow: hidden" size="small">
+                <n-icon :component="SettingOutlined" size="20"> </n-icon>
             </n-button>
         </n-flex>
         <n-flex>
