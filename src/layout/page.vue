@@ -89,7 +89,7 @@
         <tool-bar :pageUUID="props.pageUUID" v-model:show="showOption"></tool-bar>
     </n-config-provider>
     <x-modal v-model:show="showItem" :maskClosable="false" display-directive="show" :title="getItemTitle(selectItem)" titleClass="fs-12 fw-bold" :isScroll="false">
-        <keep-alive :max="10">
+        <keep-alive :max="10" :trap-focus="false">
             <component
                 v-if="selectItem?.uuid"
                 :is="ItemView"

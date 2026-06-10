@@ -1,5 +1,5 @@
 <template>
-    <n-modal v-model:show="modelShow" :mask-closable="props.maskClosable" :display-directive="props.displayDirective">
+    <n-modal v-model:show="modelShow" :mask-closable="props.maskClosable" :display-directive="props.displayDirective" :trap-focus="props.trapFocus">
         <div class="modalBox">
             <n-card>
                 <div class="card flex flex-col" :style="{ minHeight: props.contentMinHeight, maxHeight: props.contentMaxHeight }">
@@ -45,6 +45,7 @@ const props = withDefaults(
         contentMinHeight?: string;
         isScroll?: boolean;
         scrollClass?: string;
+        trapFocus?: boolean;
     }>(),
     {
         show: false,
@@ -54,7 +55,8 @@ const props = withDefaults(
         maskClosable: true,
         displayDirective: "if",
         isScroll: true,
-        scrollClass: "pr-1 pl-1"
+        scrollClass: "pr-1 pl-1",
+        trapFocus: true
     }
 );
 

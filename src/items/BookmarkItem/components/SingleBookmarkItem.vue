@@ -146,10 +146,10 @@
         <!-- 移动端长按菜单 -->
         <x-modal v-model:show="contextShow" title="" :content-max-height="'auto'">
             <n-flex vertical>
-                <div style="font-size:11px;color:#888;padding:4px 8px;word-break:break-all;display:flex;gap:2px;flex-wrap:wrap">
+                <div style="font-size: 11px; color: #888; padding: 4px 8px; word-break: break-all; display: flex; gap: 2px; flex-wrap: wrap">
                     <template v-for="(seg, sIdx) in getItemSegments(contextItem?.uuid)">
-                        <span v-if="sIdx > 0" style="color:#aaa"> &gt; </span>
-                        <span @click.stop="navigateToSeg(seg.uuid)" style="cursor:pointer;color:#409eff">{{ seg.title }}</span>
+                        <span v-if="sIdx > 0" style="color: #aaa"> &gt; </span>
+                        <span @click.stop="navigateToSeg(seg.uuid)" style="cursor: pointer; color: #409eff">{{ seg.title }}</span>
                     </template>
                 </div>
                 <n-button v-if="contextItem && !contextItem.isFolder" quaternary size="large" style="justify-content: flex-start" @click="contextAction('open')">
@@ -211,7 +211,7 @@
 
         <!-- 添加/编辑弹窗 -->
         <x-modal v-model:show="formShow" :title="formIsEdit ? '编辑' : '添加'" content-max-height="80vh">
-            <div v-if="formIsEdit && editingItem" style="font-size:11px;color:#888;padding:2px 0 8px;word-break:break-all">{{ getItemPathText(editingItem?.uuid) }}</div>
+            <div v-if="formIsEdit && editingItem" style="font-size: 11px; color: #888; padding: 2px 0 8px; word-break: break-all">{{ getItemPathText(editingItem?.uuid) }}</div>
             <n-form :model="formData" label-placement="top" size="small">
                 <n-form-item label="URL" v-if="!formData.isFolder">
                     <div class="form-line">
@@ -226,12 +226,7 @@
                     <div class="form-line">
                         <n-input v-model:value="formData._iconInput" placeholder="URL 或留空自动获取" />
                         <n-button size="small" :loading="iconLoading" @click="fetchIcon">获取</n-button>
-                        <img
-                            v-if="formIconPreview"
-                            :key="formIconPreview"
-                            :src="formIconPreview"
-                            style="width: 28px; height: 28px; border-radius: 4px; object-fit: contain; flex-shrink: 0"
-                        />
+                        <img v-if="formIconPreview" :key="formIconPreview" :src="formIconPreview" style="width: 28px; height: 28px; border-radius: 4px; object-fit: contain; flex-shrink: 0" />
                     </div>
                 </n-form-item>
                 <n-form-item label="类型">
@@ -291,13 +286,14 @@ import {
     resolveImportIcons
 } from "./bookmarkUtils";
 import { vTouch } from "@/directives/touch";
+import { Utils } from "@/utils";
 
 /** 补全 URL 协议头 */
 function normalizeUrl(url: string): string {
     const t = url.trim();
     if (!t) return t;
     if (/^https?:\/\//i.test(t)) return t;
-    return 'https://' + t;
+    return "https://" + t;
 }
 
 const msg = useMessage();
@@ -507,7 +503,7 @@ const getItemSegments = (uuid: string | undefined): { uuid: string; title: strin
     const parentPath = path.slice(0, -1);
     let items = dataList.value;
     for (const u of parentPath) {
-        const f = items.find(item => item.uuid === u);
+        const f = items.find((item) => item.uuid === u);
         if (!f) break;
         segs.push({ uuid: f.uuid, title: f.title });
         items = f.children || [];
@@ -517,13 +513,15 @@ const getItemSegments = (uuid: string | undefined): { uuid: string; title: strin
 
 const navigateToSeg = (uuid: string) => {
     searchKey.value = "";
-    
+
     contextShow.value = false;
-    if (uuid === "__root__") { curPath.value = []; return; }
+    if (uuid === "__root__") {
+        curPath.value = [];
+        return;
+    }
     const path = findNodePath(dataList.value, uuid);
     if (path) curPath.value = path;
 };
-
 
 const getItemPathText = (uuid: string | undefined): string => {
     if (!uuid || dataList.value.length === 0) return "";
@@ -533,7 +531,7 @@ const getItemPathText = (uuid: string | undefined): string => {
     const names: string[] = [];
     let items = dataList.value;
     for (const u of parentPath) {
-        const f = items.find(item => item.uuid === u);
+        const f = items.find((item) => item.uuid === u);
         if (!f) break;
         names.push(f.title);
         items = f.children || [];
@@ -566,20 +564,7 @@ const copyItemAsJson = async (item: BookmarkCollectionType) => {
         if (b64) iconStr = b64;
     }
     const data = { title: item.title, url: item.url || "", icon: iconStr };
-    try {
-        await navigator.clipboard.writeText(JSON.stringify(data, null, 2));
-        msg.success("已复制数据");
-    } catch {
-        const ta = document.createElement("textarea");
-        ta.value = JSON.stringify(data);
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        msg.success("已复制数据");
-    }
+    Utils.copyStr(msg, JSON.stringify(data, null, 2), { successMsg: "已复制数据" });
 };
 
 // 删除
@@ -750,15 +735,7 @@ const copyScript = async () => {
     try {
         const res = await fetch("/items/BookmarkItem/addMark.js");
         const text = await res.text();
-        const ta = document.createElement("textarea");
-        ta.value = text;
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        msg.success("油猴脚本已复制，粘贴到 Tampermonkey 新建脚本即可");
+        Utils.copyStr(msg,text, { successMsg: "油猴脚本已复制，粘贴到 Tampermonkey 新建脚本即可", errorMsg: "复制失败" });
     } catch {
         msg.error("复制失败");
     }
@@ -788,19 +765,7 @@ const exportTabInfo = () => {
 
 const copyLink = (url: string) => {
     if (!url) return;
-    try {
-        const ta = document.createElement("textarea");
-        ta.value = url;
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        msg.success("链接已复制");
-    } catch {
-        msg.error("复制失败");
-    }
+    Utils.copyStr(msg,url, { successMsg: "链接已复制", errorMsg: "复制失败" });
 };
 
 const qrShow = ref(false);
@@ -1108,7 +1073,10 @@ const toExport = async () => {
     const resolveWithProgress = async (items) => {
         for (const item of items) {
             if (item.icon && !item.icon.startsWith("data:") && !item.icon.startsWith("http")) {
-                try { const b64 = await iconFileToBase64(item.icon, iconBaseUrl.value); if (b64) item.icon = b64; } catch {}
+                try {
+                    const b64 = await iconFileToBase64(item.icon, iconBaseUrl.value);
+                    if (b64) item.icon = b64;
+                } catch {}
                 doneIcons++;
                 if (totalIcons > 0) {
                     importProgress.value = Math.round((doneIcons / totalIcons) * 90);
@@ -1126,12 +1094,18 @@ const toExport = async () => {
     const blob = new Blob([html], { type: "text/html;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
-    a.href = url; a.download = `${title}.html`;
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    a.href = url;
+    a.download = `${title}.html`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
     URL.revokeObjectURL(url);
     importProgress.value = 100;
     importStatusText.value = "导出完成 ✓";
-    setTimeout(() => { importing.value = false; importProgress.value = 0; }, 800);
+    setTimeout(() => {
+        importing.value = false;
+        importProgress.value = 0;
+    }, 800);
     msg.success("导出成功");
 };
 

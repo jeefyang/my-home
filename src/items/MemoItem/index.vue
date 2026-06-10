@@ -67,6 +67,7 @@ import { itemFetch } from "@/utils/jFetch";
 import { useMessage } from "naive-ui";
 import { nanoid } from "nanoid";
 import XModal from "@/components/XModal.vue";
+import { Utils } from "@/utils";
 
 type MemoType = {
     uuid: string;
@@ -184,15 +185,7 @@ const send = async () => {
 
 // ====== 编辑 ======
 const copyMsg = (text: string) => {
-    const ta = document.createElement("textarea");
-    ta.value = text;
-    ta.style.position = "fixed";
-    ta.style.opacity = "0";
-    document.body.appendChild(ta);
-    ta.select();
-    document.execCommand("copy");
-    document.body.removeChild(ta);
-    msg.success("已复制");
+    Utils.copyStr(msg,text, { successMsg: "已复制" });
 };
 
 const openEdit = (idx: number) => {

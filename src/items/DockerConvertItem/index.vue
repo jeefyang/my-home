@@ -22,13 +22,17 @@
             <div class="dc-panel dc-panel-input">
                 <div class="dc-panel-header">
                     <span class="dc-label">docker run</span>
-                    <div style="display:flex;gap:4px">
-                        <n-button quaternary size="tiny" type="info" @click="pasteInput"><template #icon><n-icon :component="Clipboard" size="14" /></template></n-button>
-                        <n-button quaternary size="tiny" type="error" @click="clearInput"><template #icon><n-icon :component="Trash" size="14" /></template></n-button>
+                    <div style="display: flex; gap: 4px">
+                        <n-button quaternary size="tiny" type="info" @click="pasteInput"
+                            ><template #icon><n-icon :component="Clipboard" size="14" /></template
+                        ></n-button>
+                        <n-button quaternary size="tiny" type="error" @click="clearInput"
+                            ><template #icon><n-icon :component="Trash" size="14" /></template
+                        ></n-button>
                     </div>
                 </div>
                 <n-input v-model:value="inputText" type="textarea" :autosize="{ minRows: 3, maxRows: 4 }" placeholder="粘贴 docker run 命令..." class="dc-input" />
-                <n-button type="primary" size="small" style="margin-top:6px;width:100%" @click="convert">转换 →</n-button>
+                <n-button type="primary" size="small" style="margin-top: 6px; width: 100%" @click="convert">转换 →</n-button>
             </div>
 
             <div class="dc-panel dc-panel-output">
@@ -37,8 +41,12 @@
                 </div>
                 <div class="dc-output" ref="outputRef">
                     <n-flex class="dc-output-actions" size="small">
-                        <n-button quaternary size="tiny" type="warning" @click="copyOutput" title="复制"><template #icon><n-icon :component="Copy" size="14" /></template></n-button>
-                        <n-button quaternary size="tiny" type="info" @click="downloadFile" title="下载为文件"><template #icon><n-icon :component="Download" size="14" /></template></n-button>
+                        <n-button quaternary size="tiny" type="warning" @click="copyOutput" title="复制"
+                            ><template #icon><n-icon :component="Copy" size="14" /></template
+                        ></n-button>
+                        <n-button quaternary size="tiny" type="info" @click="downloadFile" title="下载为文件"
+                            ><template #icon><n-icon :component="Download" size="14" /></template
+                        ></n-button>
                     </n-flex>
                     <div class="dc-line" v-for="(line, idx) in outputLines" :key="idx" :style="{ paddingLeft: (line.indent || 0) + 'em' }">
                         <span v-if="line.isComment" class="dc-comment">{{ line.text }}</span>
@@ -55,6 +63,7 @@
 import { ref } from "vue";
 import { Clipboard, Copy, Download, Trash } from "@vicons/tabler";
 import { useMessage } from "naive-ui";
+import { Utils } from "@/utils";
 
 const msg = useMessage();
 
@@ -129,25 +138,14 @@ const clearInput = () => {
 };
 
 const copyOutput = async () => {
-    if (!outputText.value) { msg.warning("没有内容可复制"); return; }
-    try {
-        await navigator.clipboard.writeText(outputText.value);
-        msg.success("已复制");
-    } catch {
-        const ta = document.createElement("textarea");
-        ta.value = outputText.value;
-        ta.style.position = "fixed";
-        ta.style.opacity = "0";
-        document.body.appendChild(ta);
-        ta.select();
-        document.execCommand("copy");
-        document.body.removeChild(ta);
-        msg.success("已复制");
-    }
+    Utils.copyStr(msg,outputText.value, { successMsg: "复制成功", errorMsg: "复制失败" });
 };
 
 const downloadFile = () => {
-    if (!outputText.value) { msg.warning("没有内容可下载"); return; }
+    if (!outputText.value) {
+        msg.warning("没有内容可下载");
+        return;
+    }
     const blob = new Blob([outputText.value], { type: "text/yaml;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -162,7 +160,10 @@ const downloadFile = () => {
 
 const convert = () => {
     const raw = inputText.value.trim();
-    if (!raw) { msg.warning("请先输入 docker run 命令"); return; }
+    if (!raw) {
+        msg.warning("请先输入 docker run 命令");
+        return;
+    }
 
     const result = parseDockerRun(raw, showVersion.value);
     outputText.value = result.text;
@@ -439,7 +440,7 @@ function parseDockerRun(cmd: string, includeVersion: boolean): { text: string; l
         }
     }
 
-    const text = lines.map(l => " ".repeat(l.indent || 0) + l.text).join("\n");
+    const text = lines.map((l) => " ".repeat(l.indent || 0) + l.text).join("\n");
     return { text, lines };
 }
 
@@ -458,7 +459,10 @@ function tokenize(s: string): string[] {
             inQuote = true;
             quoteChar = c;
         } else if (c === " " || c === "\t") {
-            if (current) { tokens.push(current); current = ""; }
+            if (current) {
+                tokens.push(current);
+                current = "";
+            }
         } else {
             current += c;
         }
