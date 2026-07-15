@@ -1,15 +1,17 @@
 // ==UserScript==
 // @name         导航面板书签助手
 // @namespace    https://github.com/your-name/my-home
-// @version      1.5.3
+// @version      1.6.0
 // @description  右键 → Tampermonkey → 添加到导航面板书签 → 添加书签
-// @description  改进书签保存逻辑和增加一键快速保存
+// @description  1.5.4 改进书签保存逻辑和增加一键快速保存 
+// @description  1.6.0 调整样式,重新获取图标,改进一键快速保存
 // @author       you
 // @match        *://*/*
 // @grant        GM_setValue
 // @grant        GM_getValue
 // @grant        GM_xmlhttpRequest
 // @grant        GM_registerMenuCommand
+// @connect      *
 // ==/UserScript==
 
 (function () {
@@ -57,11 +59,11 @@
         });
     }
 
-    async function fetchTree() {
+    async function fetchTree(errorBack) {
         const c = loadC(); if (!c.serverUrl || !c.pathid || !c.itemUUID || !c.bookmarkUUID) return null;
         const r = await apiPost('api/item/getItemData', { itemType: 'bookmark', itemUUID: c.itemUUID, filename: 'collection-' + c.bookmarkUUID + '.json' });
-        if (r.code === 200 && r.data) { try { return JSON.parse(r.data); } catch { return []; } }
-        return [];
+        if (r.code === 200 && r.data) { try { return JSON.parse(r.data); } catch { return errorBack ? null : []; } }
+        return errorBack ? null : [];;
     }
 
     async function addBM(tree, item, fp) {
@@ -85,7 +87,7 @@
 <div class="ns"><div class="nt">🌐 网页信息</div>
 <label>标题</label><input class="nbi npt"><label>URL</label><input class="nbi npu" readonly>
 <label>图标</label><div style="display:flex;gap:6px;align-items:center"><input class="nbi npic" style="flex:1" placeholder="自动获取"><img class="nip" style="width:24px;height:24px;border-radius:4px;object-fit:contain;display:none;flex-shrink:0"></div></div>
-<div class="ns"><div class="nt">📂 目标文件夹 <span class="nfp" style="font-weight:400;text-transform:none;font-size:11px;color:#888">根目录</span></div>
+<div class="ns"><div class="nt">📂 目标文件夹 <span class="nfp" style="font-weight:400;text-transform:none;font-size:11px">根目录</span></div>
 <div style="display:flex;gap:6px;align-items:center;margin-bottom:4px"><button class="nb-btn nbs nfu">⬆ 上层</button><button class="nb-btn nbs nrt">🔄 刷新</button></div>
 <div class="nfl"></div></div>
 <div class="ns"><div class="nt">🔗 服务器连接</div>
@@ -99,23 +101,23 @@
         if (!document.getElementById('nab-s')) {
             const s = document.createElement('style'); s.id = 'nab-s';
             s.textContent = `.no{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,0.4);z-index:999999;display:flex;align-items:center;justify-content:center;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;font-size:13px;color:#333}
-.nd{background:#fff;border-radius:10px;width:400px;max-width:92vw;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,0.25)}
+.nd{ background-color: rgba(255, 255, 255, 0.3);color: #ffffff;backdrop-filter: blur(5px);  border-radius:10px;width:400px;max-width:92vw;max-height:85vh;display:flex;flex-direction:column;box-shadow:0 8px 30px rgba(0,0,0,0.25)}
 .nh{display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #eee;font-weight:600;font-size:15px;-webkit-user-select:none;user-select:none}
 .nx{cursor:pointer;font-size:22px;color:#999;line-height:1}.nx:hover{color:#333}
 .nb{padding:12px 16px;overflow-y:auto;flex:1}.ns{margin-bottom:12px}
-.nt{font-size:12px;font-weight:600;color:#666;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #f0f0f0}
+.nt{font-size:12px;font-weight:600;text-transform:uppercase;letter-spacing:.5px;margin-bottom:6px;padding-bottom:4px;border-bottom:1px solid #f0f0f0}
 .nbi{box-sizing:border-box;width:100%;padding:6px 8px;border:1px solid #ddd;border-radius:5px;font-size:13px;margin-bottom:6px;outline:none}
 .nbi:focus{border-color:#409eff}
 .nb-btn{padding:6px 14px;border:none;border-radius:5px;cursor:pointer;font-size:13px;white-space:nowrap;-webkit-user-select:none;user-select:none}
 .nbs{padding:4px 10px;font-size:12px}
 .nbp{background:#409eff;color:#fff}.nbp:hover{background:#337ecc}
-.nbc{background:#f0f0f0;color:#666}.nbc:hover{background:#e0e0e0}
+.nbc{background:#f0f0f0;color:#999}.nbc:hover{background:#e0e0e0}
 .nf{display:flex;justify-content:space-between;align-items:center;padding:10px 16px;border-top:1px solid #eee}
-.nst{font-size:12px;color:#888}
+.nst{font-size:12px;}
 .nfl{max-height:180px;overflow-y:auto;margin-top:4px;border:1px solid #eee;border-radius:5px;padding:4px;-webkit-user-select:none;user-select:none}
 .nfl>div{padding:6px 8px;cursor:pointer;border-radius:4px;font-size:13px;-webkit-user-select:none;user-select:none}
 .nfl>div:hover{background:#f5f7fa}
-label{font-size:12px;color:#666;display:block;margin-bottom:2px}
+label{font-size:12px;display:block;margin-bottom:2px}
 .ndup{padding:6px 16px;font-size:12px;min-height:0;border-bottom:1px solid #f0f0f0;word-break:break-all}`;
             document.head.appendChild(s);
         }
@@ -171,7 +173,7 @@ label{font-size:12px;color:#666;display:block;margin-bottom:2px}
             el.fl.innerHTML = '';
             let hf = false;
             for (const it of items) { if (!it.isFolder) continue; hf = true; const d = document.createElement('div'); d.textContent = '📁 ' + (it.title || '未命名'); d.addEventListener('click', () => { cp.push(it.uuid); setC('lastFolderPath', cp); render(); }); el.fl.appendChild(d); }
-            if (!hf) el.fl.innerHTML = '<div style="padding:10px;text-align:center;color:#aaa;font-size:12px">此目录下没有文件夹</div>';
+            if (!hf) el.fl.innerHTML = '<div style="padding:10px;text-align:center;opacity:0.6;font-size:12px">此目录下没有文件夹</div>';
             setC('lastFolderPath', cp);
         }
 
@@ -276,12 +278,65 @@ label{font-size:12px;color:#666;display:block;margin-bottom:2px}
         if (cfg.serverUrl && cfg.pathid && cfg.itemUUID && cfg.bookmarkUUID) load();
     }
 
+    /**
+     * 方法1：使用 GM_xmlhttpRequest 获取图片并转为Base64
+     */
+    function fetchImageAsBase64(url) {
+        return new Promise((resolve, reject) => {
+            GM_xmlhttpRequest({
+                method: 'GET',
+                url: url,
+                responseType: 'blob', // 关键：以blob格式接收二进制数据
+                onload: function (response) {
+                    if (response.status === 200) {
+                        // 获取blob数据
+                        const blob = response.response;
+
+                        // 方式A：使用 FileReader 转Base64
+                        const reader = new FileReader();
+                        reader.onloadend = function () {
+                            const base64Data = reader.result; // 这就是完整的Base64数据，格式如 "data:image/png;base64,xxxxx"
+                            console.log('✅ 转换成功！');
+                            console.log('Base64 长度:', base64Data.length);
+                            console.log('Base64 预览:', base64Data.substring(0, 100) + '...');
+
+                            // 这里你可以使用base64Data做任何事，比如：
+                            // 1. 显示在页面上
+                            resolve(base64Data)
+                            // 2. 复制到剪贴板
+                            // 3. 发送到服务器
+                            // 4. 保存到本地存储
+                        };
+                        reader.readAsDataURL(blob);
+
+                    } else {
+                        console.error('❌ 请求失败，状态码:', response.status);
+                        reject(response.status)
+                    }
+                },
+                onerror: function (error) {
+                    console.error('❌ 请求出错:', error);
+                    reject(error)
+                }
+            });
+        })
+
+    }
+
     // ===== 工具 =====
     function getIcon() {
-        return new Promise(resolve => {
+        return new Promise(async (resolve) => {
             const icon = document.querySelector('link[rel*="icon"]') || document.querySelector('link[rel="shortcut icon"]');
             const url = icon ? icon.href : (location.origin + '/favicon.ico');
             if (!url || url.startsWith('data:')) { resolve(url || ''); return; }
+            try {
+                const base64 = await fetchImageAsBase64(url);
+                resolve(base64);
+                return;
+            }
+            catch {
+                console.warn("油猴获取图标失败，尝试无 CORS 获取图标")
+            }
             // 先试带 CORS（能转 base64 上传到服务器）
             const tryLoad = (useCors) => {
                 const img = new Image();
@@ -319,28 +374,39 @@ label{font-size:12px;color:#666;display:block;margin-bottom:2px}
         openDlg();
     });
 
+    let isQuickAdding = false
     GM_registerMenuCommand('一键添加', async () => {
         const c = loadC();
         if (!c.serverUrl || !c.pathid || !c.itemUUID || !c.bookmarkUUID) {
             alert('请先配置服务器信息');
             return;
         }
-        const title = document.title;
+        if (isQuickAdding) {
+            alert('正在添加中，请稍候');
+            return;
+        }
+
+        const title = document.title.trim();
+        if (!title) {
+            alert('当前页面没有标题，请手动添加');
+            return;
+        }
         const url = location.href;
-        // 获取当前配置的收藏夹数据
-        const r = await apiPost('api/item/getItemData', {
-            itemType: 'bookmark', itemUUID: c.itemUUID,
-            filename: 'collection-' + c.bookmarkUUID + '.json'
-        });
-        if (r.code !== 200) { alert('获取收藏夹失败'); return; }
-        let tree = r.data ? JSON.parse(r.data) : [];
-        // 添加到根目录
-        tree.push({ uuid: nanoid(), title, url, icon: '', isFolder: false });
-        await apiPost('api/item/updateItemData', {
-            itemType: 'bookmark', itemUUID: c.itemUUID,
-            filename: 'collection-' + c.bookmarkUUID + '.json',
-            content: JSON.stringify(tree)
-        });
-        alert('已添加：' + title);
+        isQuickAdding = true
+        const icon = await getIcon()
+        try {
+            // 获取当前配置的收藏夹数据
+            const tree = await fetchTree(true)
+            if (!tree) { alert('获取收藏夹失败'); isQuickAdding = false; return; }
+            // 添加到根目录
+            const ni = { uuid: nanoid(10), title: document.title, url: location.href, icon: icon, isFolder: false, creatTime: Date.now(), modifyTime: Date.now(), children: [] };
+            const r = await addBM(tree, ni, []);
+            alert('已添加：' + title);
+            isQuickAdding = false
+        }
+        catch (e) {
+            alert('添加失败：' + e)
+            isQuickAdding = false
+        }
     });
 })();
