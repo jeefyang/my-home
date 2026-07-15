@@ -1,8 +1,9 @@
 // ==UserScript==
 // @name         导航面板书签助手
 // @namespace    https://github.com/your-name/my-home
-// @version      1.5.1
+// @version      1.5.3
 // @description  右键 → Tampermonkey → 添加到导航面板书签 → 添加书签
+// @description  改进书签保存逻辑和增加一键快速保存
 // @author       you
 // @match        *://*/*
 // @grant        GM_setValue
@@ -230,7 +231,7 @@ label{font-size:12px;color:#666;display:block;margin-bottom:2px}
             const c = loadC();
             if (!c.serverUrl || !c.pathid || !c.itemUUID) return;
             const r = await apiPost('api/item/getItemData', { itemType: 'bookmark', itemUUID: c.itemUUID, filename: 'bookmarkList.json' });
-            if (r.code === 200 && r.data) { try { bookmarkListCache = JSON.parse(r.data); updateBookmarkTitle(); } catch {} }
+            if (r.code === 200 && r.data) { try { bookmarkListCache = JSON.parse(r.data); updateBookmarkTitle(); } catch { } }
             if (!skipLoad) load();
         }
 
@@ -244,7 +245,6 @@ label{font-size:12px;color:#666;display:block;margin-bottom:2px}
             setC('secondcode', el.sci.value.trim()); setC('itemUUID', el.iui.value.trim());
             setC('bookmarkUUID', el.bui.value.trim());
         }
-
         // 添加
         el.ab.addEventListener('click', async () => {
             save(); el.st.textContent = '正在添加…'; el.ab.disabled = true;
@@ -262,8 +262,10 @@ label{font-size:12px;color:#666;display:block;margin-bottom:2px}
             const ni = { uuid: nanoid(10), title: el.pt.value.trim() || document.title, url: el.pu.value || location.href, icon: iconF, isFolder: false, creatTime: Date.now(), modifyTime: Date.now(), children: [] };
             const r = await addBM(t, ni, cp.slice());
             if (r.code === 200) { el.st.textContent = '✅ 添加成功！'; setTimeout(() => { dlg.remove(); dlg = null; }, 1200); }
-            else el.st.textContent = '添加失败: ' + (r.msg || '');
-            el.ab.disabled = false;
+            else {
+                el.st.textContent = '添加失败: ' + (r.msg || '');
+                el.ab.disabled = false;
+            }
         });
 
         el.o.addEventListener('click', e => { if (e.target === el.o) close(); });
@@ -315,5 +317,30 @@ label{font-size:12px;color:#666;display:block;margin-bottom:2px}
 
     GM_registerMenuCommand("添加书签", function () {
         openDlg();
+    });
+
+    GM_registerMenuCommand('一键添加', async () => {
+        const c = loadC();
+        if (!c.serverUrl || !c.pathid || !c.itemUUID || !c.bookmarkUUID) {
+            alert('请先配置服务器信息');
+            return;
+        }
+        const title = document.title;
+        const url = location.href;
+        // 获取当前配置的收藏夹数据
+        const r = await apiPost('api/item/getItemData', {
+            itemType: 'bookmark', itemUUID: c.itemUUID,
+            filename: 'collection-' + c.bookmarkUUID + '.json'
+        });
+        if (r.code !== 200) { alert('获取收藏夹失败'); return; }
+        let tree = r.data ? JSON.parse(r.data) : [];
+        // 添加到根目录
+        tree.push({ uuid: nanoid(), title, url, icon: '', isFolder: false });
+        await apiPost('api/item/updateItemData', {
+            itemType: 'bookmark', itemUUID: c.itemUUID,
+            filename: 'collection-' + c.bookmarkUUID + '.json',
+            content: JSON.stringify(tree)
+        });
+        alert('已添加：' + title);
     });
 })();
