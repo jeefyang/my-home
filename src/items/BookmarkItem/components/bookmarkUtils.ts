@@ -223,7 +223,7 @@ export function getFaviconUrl(url: string): string {
 /** 通过后端 favicon 服务获取图标并存储到元件目录 */
 export async function fetchFaviconToServer(
     url: string,
-    toolsImgFetch: { request: (key: string, data: any) => Promise<any> },
+    toolsImgFetch: { request: (key: string, data: any) => Promise<any>; },
     itemType: string,
     itemUUID: string
 ): Promise<string> {
@@ -292,8 +292,8 @@ export function getFolderContent(curPath: string[], root: BookmarkCollectionType
     return current;
 }
 
-export function getBreadcrumb(curPath: string[], root: BookmarkCollectionType[]): { uuid: string; title: string }[] {
-    const crumbs: { uuid: string; title: string }[] = [{ uuid: "__root__", title: "根目录" }];
+export function getBreadcrumb(curPath: string[], root: BookmarkCollectionType[]): { uuid: string; title: string; }[] {
+    const crumbs: { uuid: string; title: string; }[] = [{ uuid: "__root__", title: "根目录" }];
     let current = root;
     for (const uuid of curPath) {
         const found = current.find(item => item.uuid === uuid && item.isFolder);
@@ -302,6 +302,45 @@ export function getBreadcrumb(curPath: string[], root: BookmarkCollectionType[])
         current = found.children || [];
     }
     return crumbs;
+}
+
+export function checkSameItemAtPath(root: BookmarkCollectionType[], newItem: BookmarkCollectionType, updateTitle?: boolean): boolean {
+    if (root.length === 0) return false;
+    for (let i = 0; i < root.length; i++) {
+        const c = root[i];
+        if (c.isFolder) {
+            if (c.children && c.children.length > 0) {
+                const check = checkSameItemAtPath(c.children, newItem, updateTitle);
+                if (check) {
+                    return true;
+                }
+            }
+            continue;
+        }
+        if (!c.url || c.url != newItem.url) {
+            continue;
+        }
+        if (updateTitle) {
+            c.title = newItem.title;
+        }
+        return true;
+    }
+    return false;
+}
+
+export function filterItemsAtPath(root: BookmarkCollectionType[], newItems: BookmarkCollectionType[]): BookmarkCollectionType[] {
+    if (root.length === 0) return newItems;
+    return [...newItems].map(item => {
+        if (item.isFolder) {
+            if (!item.children || item.children.length === 0) { return null; };
+            const children = filterItemsAtPath(root, item.children);
+            if (children.length === 0) { return null; }
+            return { ...item, children };
+        }
+        if (checkSameItemAtPath(root, item, true)) { return null; };
+        return item;
+    }).filter(item => !!item);
+
 }
 
 export function addItemAtPath(root: BookmarkCollectionType[], curPath: string[], newItem: BookmarkCollectionType): BookmarkCollectionType[] {
@@ -332,8 +371,8 @@ export function updateItemInTree(items: BookmarkCollectionType[], uuid: string, 
     });
 }
 
-export function searchInTree(items: BookmarkCollectionType[], keyword: string, depth: number): { item: BookmarkCollectionType; depth: number }[] {
-    const result: { item: BookmarkCollectionType; depth: number }[] = [];
+export function searchInTree(items: BookmarkCollectionType[], keyword: string, depth: number): { item: BookmarkCollectionType; depth: number; }[] {
+    const result: { item: BookmarkCollectionType; depth: number; }[] = [];
     const kw = keyword.toLowerCase();
     for (const item of items) {
         const match = item.title.toLowerCase().includes(kw) || item.url.toLowerCase().includes(kw);

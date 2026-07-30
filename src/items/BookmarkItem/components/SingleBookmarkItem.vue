@@ -2,27 +2,62 @@
     <n-flex vertical style="width: 100%">
         <!-- 工具栏：仅图标按钮 -->
         <n-flex justify="center" align="center" style="gap: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none" class="mb-1">
-            <n-button quaternary type="info" size="small" @click="initData">
-                <template #icon><n-icon :component="Refresh" /></template>
-            </n-button>
-            <n-button quaternary type="primary" size="small" :disabled="!!searchKey" @click="openAddForm(false)">
-                <template #icon><n-icon :component="BookmarkAdd" /></template>
-            </n-button>
-            <n-button quaternary type="primary" size="small" :disabled="!!searchKey" @click="openAddForm(true)">
-                <template #icon><n-icon :component="FolderAdd" /></template>
-            </n-button>
-            <n-button quaternary type="info" size="small" :disabled="!!searchKey" @click="toImport">
-                <template #icon><n-icon :component="IosCloudDownload" /></template>
-            </n-button>
-            <n-button quaternary type="info" size="small" :disabled="!!searchKey" @click="toExport">
-                <template #icon><n-icon :component="IosCloudUpload" /></template>
-            </n-button>
-            <n-button quaternary type="info" size="small" :disabled="!!searchKey" @click="copyScript">
-                <template #icon><n-icon :component="Code" /></template>
-            </n-button>
-            <n-button quaternary type="info" size="small" :disabled="!!searchKey" @click="exportTabInfo">
-                <template #icon><n-icon :component="Information" /></template>
-            </n-button>
+            <n-tooltip trigger="hover">
+                <template #trigger>
+                    <n-button quaternary type="info" size="small" @click="initData">
+                        <template #icon><n-icon :component="Refresh" /></template>
+                    </n-button>
+                </template>
+                刷新
+            </n-tooltip>
+            <n-tooltip trigger="hover">
+                <template #trigger>
+                    <n-button quaternary type="primary" size="small" :disabled="!!searchKey" @click="openAddForm(false)">
+                        <template #icon><n-icon :component="BookmarkAdd" /></template>
+                    </n-button>
+                </template>
+                添加书签
+            </n-tooltip>
+            <n-tooltip trigger="hover">
+                <template #trigger>
+                    <n-button quaternary type="primary" size="small" :disabled="!!searchKey" @click="openAddForm(true)">
+                        <template #icon><n-icon :component="FolderAdd" /></template>
+                    </n-button>
+                </template>
+                添加文件夹
+            </n-tooltip>
+            <n-tooltip trigger="hover">
+                <template #trigger>
+                    <n-button quaternary type="info" size="small" :disabled="!!searchKey" @click="toImport">
+                        <template #icon><n-icon :component="IosCloudDownload" /></template>
+                    </n-button>
+                </template>
+                导入收藏夹
+            </n-tooltip>
+            <n-tooltip trigger="hover">
+                <template #trigger>
+                    <n-button quaternary type="info" size="small" :disabled="!!searchKey" @click="toExport">
+                        <template #icon><n-icon :component="IosCloudUpload" /></template>
+                    </n-button>
+                </template>
+                导出收藏夹
+            </n-tooltip>
+            <n-tooltip trigger="hover">
+                <template #trigger>
+                    <n-button quaternary type="info" size="small" :disabled="!!searchKey" @click="copyScript">
+                        <template #icon><n-icon :component="Code" /></template>
+                    </n-button>
+                </template>
+                油猴脚本
+            </n-tooltip>
+            <n-tooltip trigger="hover">
+                <template #trigger>
+                    <n-button quaternary type="info" size="small" :disabled="!!searchKey" @click="exportTabInfo">
+                        <template #icon><n-icon :component="Information" /></template>
+                    </n-button>
+                </template>
+                收藏夹信息(油猴必需)
+            </n-tooltip>
         </n-flex>
 
         <!-- 导入进度条 -->
@@ -104,35 +139,80 @@
                         <span class="bookmark-title">{{ node.item.title }}</span>
 
                         <!-- URL（非文件夹&非搜索模式） -->
-                        <span v-if="!node.item.isFolder && !searchKey" class="bookmark-url">{{ getDisplayUrl(node.item.url) }}</span>
+                        <n-tooltip trigger="hover" v-if="!node.item.isFolder && !searchKey">
+                            <template #trigger>
+                                <span class="bookmark-url">{{ getDisplayUrl(node.item.url) }}</span>
+                            </template>
+                            {{ node.item.url }}
+                        </n-tooltip>
 
                         <!-- 悬停操作 -->
                         <span class="bookmark-actions" @click.stop>
                             <n-flex vertical style="gap: 2px">
                                 <n-flex style="gap: 2px">
-                                    <n-button quaternary size="tiny" type="warning" @click.stop="openEditForm(node.item)">
-                                        <n-icon :component="Edit" size="13" />
-                                    </n-button>
-                                    <n-button quaternary size="tiny" type="error" @click.stop="openDeleteDialog(node.item)">
-                                        <n-icon :component="Trash" size="13" />
-                                    </n-button>
-                                    <n-button v-if="node.item.isFolder" quaternary size="tiny" type="default" @click.stop="expandFolder(node.item)">
-                                        <n-icon :component="Move" size="13" />
-                                    </n-button>
-                                    <n-button v-if="!node.item.isFolder" quaternary size="tiny" type="info" @click.stop="openUrl(node.item.url)">
-                                        <n-icon :component="Launch" size="13" />
-                                    </n-button>
+                                    <n-tooltip trigger="hover">
+                                        <template #trigger>
+                                            <n-button quaternary size="tiny" type="warning" @click.stop="openEditForm(node.item)">
+                                                <n-icon :component="Edit" size="13" />
+                                            </n-button>
+                                        </template>
+                                        修改
+                                    </n-tooltip>
+
+                                    <n-tooltip trigger="hover">
+                                        <template #trigger>
+                                            <n-button quaternary size="tiny" type="error" @click.stop="openDeleteDialog(node.item)">
+                                                <n-icon :component="Trash" size="13" />
+                                            </n-button>
+                                        </template>
+                                        删除
+                                    </n-tooltip>
+
+                                    <n-tooltip trigger="hover" v-if="node.item.isFolder">
+                                        <template #trigger>
+                                            <n-button quaternary size="tiny" type="default" @click.stop="expandFolder(node.item)">
+                                                <n-icon :component="Move" size="13" />
+                                            </n-button>
+                                        </template>
+                                        展开
+                                    </n-tooltip>
+
+                                    <n-tooltip trigger="hover" v-if="!node.item.isFolder">
+                                        <template #trigger>
+                                            <n-button quaternary size="tiny" type="info" @click.stop="openUrl(node.item.url)">
+                                                <n-icon :component="Launch" size="13" />
+                                            </n-button>
+                                        </template>
+                                        新开页面跳转
+                                    </n-tooltip>
                                 </n-flex>
                                 <n-flex v-if="!node.item.isFolder" style="gap: 2px">
-                                    <n-button quaternary size="tiny" type="default" @click.stop="gotoUrl(node.item.url)">
-                                        <n-icon :component="ArrowRight" size="13" />
-                                    </n-button>
-                                    <n-button quaternary size="tiny" type="default" @click.stop="copyLink(node.item.url)">
-                                        <n-icon :component="Copy" size="13" />
-                                    </n-button>
-                                    <n-button quaternary size="tiny" type="default" @click.stop="showQrCode(node.item.url, node.item.title)">
-                                        <n-icon :component="QrCode" size="13" />
-                                    </n-button>
+                                    <n-tooltip trigger="hover">
+                                        <template #trigger>
+                                            <n-button quaternary size="tiny" type="default" @click.stop="gotoUrl(node.item.url)">
+                                                <n-icon :component="ArrowRight" size="13" />
+                                            </n-button>
+                                        </template>
+                                        直接页面跳转
+                                    </n-tooltip>
+
+                                    <n-tooltip trigger="hover">
+                                        <template #trigger>
+                                            <n-button quaternary size="tiny" type="default" @click.stop="copyLink(node.item.url)">
+                                                <n-icon :component="Copy" size="13" />
+                                            </n-button>
+                                        </template>
+                                        复制链接
+                                    </n-tooltip>
+
+                                    <n-tooltip trigger="hover">
+                                        <template #trigger>
+                                            <n-button quaternary size="tiny" type="default" @click.stop="showQrCode(node.item.url, node.item.title)">
+                                                <n-icon :component="QrCode" size="13" />
+                                            </n-button>
+                                        </template>
+                                        二维码
+                                    </n-tooltip>
                                 </n-flex>
                             </n-flex>
                         </span>
@@ -240,7 +320,7 @@
             <template #footer>
                 <n-flex justify="end">
                     <n-button @click="formShow = false">取消</n-button>
-                    <n-button type="primary" @click="confirmForm">确定</n-button>
+                    <n-button type="primary" @click="confirmForm" :loading="loading">确定</n-button>
                 </n-flex>
             </template>
         </x-modal>
@@ -275,6 +355,8 @@ import {
     getFolderContent,
     getBreadcrumb,
     addItemAtPath,
+    filterItemsAtPath,
+    checkSameItemAtPath,
     removeItemFromTree,
     updateItemInTree,
     searchInTree,
@@ -579,31 +661,53 @@ const expandFolder = (folder: BookmarkCollectionType) => {
         return;
     }
     const expanded = doExpandItem(dataList.value, folder.uuid);
-    if (expanded) {
-        dataList.value = expanded;
-        saveData();
-        msg.success("已展开 " + children.length + " 个项目");
-    } else {
-        msg.error("展开失败");
-    }
+    saveData();
+    msg.success("已展开 " + expanded + " 个项目");
 };
 
-function doExpandItem(items: BookmarkCollectionType[], uuid: string): BookmarkCollectionType[] | null {
-    let found = false;
-    const result = items.flatMap((item) => {
-        if (item.uuid === uuid) {
-            found = true;
-            return item.children || [];
-        }
-        if (item.children && item.children.length > 0) {
-            const sub = doExpandItem(item.children, uuid);
-            if (sub) {
-                return { ...item, children: sub };
+function doExpandItem(items: BookmarkCollectionType[], uuid: string): number {
+    let compareCount = 0;
+    let loopCompareFunc = (root: BookmarkCollectionType[], folder: BookmarkCollectionType) => {
+        for (let i = 0; i < folder.children.length; i++) {
+            const c = folder.children[i];
+            const index = root.findIndex((item) => {
+                if(c.isFolder){
+                    return item.title=== c.title && item.isFolder;
+                }
+                return item.url==c.url && !item.isFolder;
+            });
+            if (index == -1) {
+                compareCount++;
+                root.push(c);
+                continue;
             }
+            if (c.isFolder) {
+                loopCompareFunc(root[index].children || [], c);
+                continue;
+            }
+            root[index].title = c.title;
         }
-        return item;
-    });
-    return found ? result : null;
+    };
+    let loopFindFolderFunc = (root: BookmarkCollectionType[]) => {
+        for (let i = root.length - 1; i > 0; i--) {
+            const c = root[i];
+            if (!c.isFolder) {
+                continue;
+            }
+            if (c.uuid !== uuid) {
+                loopFindFolderFunc(c.children || []);
+                continue;
+            }
+            if (!c.children || c.children.length == 0) {
+                return compareCount;
+            }
+            root.splice(i, 1);
+            loopCompareFunc(root, c);
+            break;
+        }
+    };
+    loopFindFolderFunc(items);
+    return compareCount;
 }
 
 const deleteShow = ref(false);
@@ -735,7 +839,7 @@ const copyScript = async () => {
     try {
         const res = await fetch("/items/BookmarkItem/addMark.js");
         const text = await res.text();
-        Utils.copyStr(msg,text, { successMsg: "油猴脚本已复制，粘贴到 Tampermonkey 新建脚本即可", errorMsg: "复制失败" });
+        Utils.copyStr(msg, text, { successMsg: "油猴脚本已复制，粘贴到 Tampermonkey 新建脚本即可", errorMsg: "复制失败" });
     } catch {
         msg.error("复制失败");
     }
@@ -765,7 +869,7 @@ const exportTabInfo = () => {
 
 const copyLink = (url: string) => {
     if (!url) return;
-    Utils.copyStr(msg,url, { successMsg: "链接已复制", errorMsg: "复制失败" });
+    Utils.copyStr(msg, url, { successMsg: "链接已复制", errorMsg: "复制失败" });
 };
 
 const qrShow = ref(false);
@@ -879,7 +983,7 @@ const openEditForm = (item: BookmarkCollectionType) => {
 const confirmForm = async () => {
     if (!formData.title.trim()) return msg.warning("请输入标题");
     if (!formData.isFolder && !formData.url.trim()) return msg.warning("请输入 URL");
-
+    loading.value = true;
     // 确定图标：优先用服务器文件，其次用户输入
     let finalIcon = formData._iconServerFile || formData._iconInput || "";
     // 如果是外部 URL 引用，保留（不存储到服务器）
@@ -907,6 +1011,7 @@ const confirmForm = async () => {
     }
 
     const ok = await saveData();
+    loading.value = false;
     if (ok) {
         formShow.value = false;
         msg.success(formIsEdit.value ? "已更新" : "已添加");
@@ -950,8 +1055,17 @@ const handleFileImport = async (e: Event) => {
         importProgress.value = 10;
         importStatusText.value = "正在解析书签…";
 
-        const items = parseHtmlBookmarks(html);
-        if (items.length === 0) {
+        let items = parseHtmlBookmarks(html);
+        if (items.length) {
+            items = filterItemsAtPath(dataList.value, items);
+            if (items.length === 0) {
+                importProgress.value = 0;
+                importing.value = false;
+                msg.warning("解析到的书签已存在于当前目录,更新当前标题");
+                await saveData();
+                return;
+            }
+        } else {
             importProgress.value = 0;
             importing.value = false;
             return msg.warning("未解析到有效书签数据");
