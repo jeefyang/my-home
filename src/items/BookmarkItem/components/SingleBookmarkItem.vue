@@ -671,10 +671,10 @@ function doExpandItem(items: BookmarkCollectionType[], uuid: string): number {
         for (let i = 0; i < folder.children.length; i++) {
             const c = folder.children[i];
             const index = root.findIndex((item) => {
-                if(c.isFolder){
-                    return item.title=== c.title && item.isFolder;
+                if (c.isFolder) {
+                    return item.title === c.title && item.isFolder;
                 }
-                return item.url==c.url && !item.isFolder;
+                return item.url == c.url && !item.isFolder;
             });
             if (index == -1) {
                 compareCount++;
@@ -689,7 +689,7 @@ function doExpandItem(items: BookmarkCollectionType[], uuid: string): number {
         }
     };
     let loopFindFolderFunc = (root: BookmarkCollectionType[]) => {
-        for (let i = root.length - 1; i > 0; i--) {
+        for (let i = root.length - 1; i >= 0; i--) {
             const c = root[i];
             if (!c.isFolder) {
                 continue;
@@ -772,10 +772,34 @@ const initData = async () => {
         return;
     }
     dataList.value = res.data ? JSON.parse(res.data) : [];
-    // 重置到根目录
-    curPath.value = [];
+    if (!checkCurPath()) {
+        // 重置到根目录
+        curPath.value = [];
+    }
     searchKey.value = "";
     loading.value = false;
+    msg.success("加载完成");
+};
+
+/**
+ * 目录是否匹配
+ * @param list  树形结构数据
+ * @param count 当前路径进度
+ */
+const checkCurPath = (list: BookmarkCollectionType[] = dataList.value, count: number = 0): boolean => {
+    if (!curPath.value[count]) {
+        // 目录匹配完成
+        return true;
+    }
+    for (let i = 0; i < list.length; i++) {
+        const item = list[i];
+        if (item.uuid !== curPath.value[count]) {
+            continue;
+        }
+        return checkCurPath(item.children || [], count + 1);
+    }
+    // 目录不匹配
+    return false;
 };
 
 const saveData = async (): Promise<boolean> => {
@@ -1248,6 +1272,8 @@ watch(
 );
 
 onMounted(() => initData());
+
+
 </script>
 
 <style scoped>

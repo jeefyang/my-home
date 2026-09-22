@@ -1,88 +1,92 @@
 <template>
-    <div v-if="dataList && dataList.length > 0" class="flex flex-col xx" style="min-height: 0;">
-        <n-tabs :bar-width="28" type="line" class="custom-tabs" v-model:value="switchTab">
-            <template #prefix>
-                <n-button size="tiny" quaternary type="primary" @click="refreshCurrent">
-                    <n-icon :component="IosRefresh"></n-icon>
-                </n-button>
-            </template>
-
-            <n-tab-pane v-for="(bookmark, index) in dataList" :key="bookmark.uuid" :name="bookmark.uuid">
-                <template #tab>
-                    <n-dropdown
-                        trigger="click"
-                        :options="getTabMenu(bookmark)"
-                        :show="dropdownOpen === bookmark.uuid"
-                        @update:show="
-                            (v) => {
-                                if (!v) dropdownOpen = '';
-                            }
-                        "
-                        @select="
-                            (key) => {
-                                onTabMenuSelect(key, bookmark, index);
-                                dropdownOpen = '';
-                            }
-                        "
-                    >
-                        <span style="cursor: context-menu; user-select: none; display: inline-block; padding: 0 4px" @contextmenu.prevent="dropdownOpen = bookmark.uuid">
-                            {{ bookmark.title }}
-                        </span>
-                    </n-dropdown>
+    <div>
+        <div v-if="dataList && dataList.length > 0" class="flex flex-col xx" style="min-height: 0">
+            <n-tabs :bar-width="28" type="line" class="custom-tabs" v-model:value="switchTab">
+                <template #prefix>
+                    <n-button size="tiny" quaternary type="primary" @click="refreshCurrent">
+                        <n-icon :component="IosRefresh"></n-icon>
+                    </n-button>
                 </template>
-            </n-tab-pane>
 
-            <template #suffix>
-                <n-button size="tiny" quaternary type="primary" @click="toAddBookmark">
-                    <n-icon :component="Add12Filled"></n-icon>
-                </n-button>
+                <n-tab-pane v-for="(bookmark, index) in dataList" :key="bookmark.uuid" :name="bookmark.uuid">
+                    <template #tab>
+                        <n-dropdown
+                            trigger="click"
+                            :options="getTabMenu(bookmark)"
+                            :show="dropdownOpen === bookmark.uuid"
+                            @update:show="
+                                (v) => {
+                                    if (!v) dropdownOpen = '';
+                                }
+                            "
+                            @select="
+                                (key) => {
+                                    onTabMenuSelect(key, bookmark, index);
+                                    dropdownOpen = '';
+                                }
+                            "
+                        >
+                            <span style="cursor: context-menu; user-select: none; display: inline-block; padding: 0 4px" @contextmenu.prevent="dropdownOpen = bookmark.uuid">
+                                {{ bookmark.title }}
+                            </span>
+                        </n-dropdown>
+                    </template>
+                </n-tab-pane>
+
+                <template #suffix>
+                    <n-button size="tiny" quaternary type="primary" @click="toAddBookmark">
+                        <n-icon :component="Add12Filled"></n-icon>
+                    </n-button>
+                </template>
+            </n-tabs>
+
+            <!-- 书签内容：用 v-show 保持组件挂载，切换页签不刷新 -->
+            <template v-for="(bookmark, index) in dataList" :key="bookmark.uuid">
+                <KeepAlive>
+                    <SingleBookmarkItem
+                        v-if="switchTab === bookmark.uuid"
+                        :item="props.item"
+                        :pageUUID="props.pageUUID"
+                        :itemGroupUUID="props.itemGroupUUID"
+                        v-model:bookmark="dataList[index]"
+                        :refresh-key="refreshKey"
+                        style="flex: 1; min-height: 0"
+                    />
+                </KeepAlive>
             </template>
-        </n-tabs>
+        </div>
 
-        <!-- 书签内容：用 v-show 保持组件挂载，切换页签不刷新 -->
-        <template v-for="(bookmark, index) in dataList" :key="bookmark.uuid">
-            <SingleBookmarkItem
-                v-show="switchTab === bookmark.uuid"
-                :item="props.item"
-                :pageUUID="props.pageUUID"
-                :itemGroupUUID="props.itemGroupUUID"
-                v-model:bookmark="dataList[index]"
-                :refresh-key="refreshKey"
-                style="flex: 1;min-height: 0;"
-            />
-        </template>
+        <n-flex v-else style="width: 100%; height: 100%; position: absolute; top: 0" align="center" justify="center">
+            <n-empty>
+                <n-flex vertical>
+                    <div>快添加新的收藏夹吧</div>
+                    <n-button type="primary" @click="toAddBookmark">添加收藏夹</n-button>
+                </n-flex>
+            </n-empty>
+        </n-flex>
+
+        <!-- 重命名弹窗 -->
+        <x-modal v-model:show="showRename" title="重命名收藏夹">
+            <n-input v-model:value="renameValue" placeholder="请输入新名称" @keyup.enter="confirmRename"></n-input>
+            <template #footer>
+                <n-flex justify="end">
+                    <n-button @click="showRename = false">取消</n-button>
+                    <n-button type="primary" @click="confirmRename">确认</n-button>
+                </n-flex>
+            </template>
+        </x-modal>
+
+        <!-- 删除确认弹窗 -->
+        <x-modal v-model:show="showDelete" title="删除收藏夹">
+            <p>确定要删除收藏夹「{{ deleteTarget?.title }}」吗？<br />其中的所有书签数据将被永久删除。</p>
+            <template #footer>
+                <n-flex justify="end">
+                    <n-button @click="showDelete = false">取消</n-button>
+                    <n-button type="error" @click="confirmDelete">确认删除</n-button>
+                </n-flex>
+            </template>
+        </x-modal>
     </div>
-
-    <n-flex v-else style="width: 100%; height: 100%; position: absolute; top: 0" align="center" justify="center">
-        <n-empty>
-            <n-flex vertical>
-                <div>快添加新的收藏夹吧</div>
-                <n-button type="primary" @click="toAddBookmark">添加收藏夹</n-button>
-            </n-flex>
-        </n-empty>
-    </n-flex>
-
-    <!-- 重命名弹窗 -->
-    <x-modal v-model:show="showRename" title="重命名收藏夹">
-        <n-input v-model:value="renameValue" placeholder="请输入新名称" @keyup.enter="confirmRename"></n-input>
-        <template #footer>
-            <n-flex justify="end">
-                <n-button @click="showRename = false">取消</n-button>
-                <n-button type="primary" @click="confirmRename">确认</n-button>
-            </n-flex>
-        </template>
-    </x-modal>
-
-    <!-- 删除确认弹窗 -->
-    <x-modal v-model:show="showDelete" title="删除收藏夹">
-        <p>确定要删除收藏夹「{{ deleteTarget?.title }}」吗？<br />其中的所有书签数据将被永久删除。</p>
-        <template #footer>
-            <n-flex justify="end">
-                <n-button @click="showDelete = false">取消</n-button>
-                <n-button type="error" @click="confirmDelete">确认删除</n-button>
-            </n-flex>
-        </template>
-    </x-modal>
 </template>
 
 <script setup lang="ts">
