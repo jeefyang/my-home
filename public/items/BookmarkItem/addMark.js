@@ -3,9 +3,9 @@
 // @namespace    https://github.com/your-name/my-home
 // @version      1.6.1
 // @description  右键 → Tampermonkey → 添加到导航面板书签 → 添加书签
-// @description:1.5.4  1.5.4 改进书签保存逻辑和增加一键快速保存
-// @description:1.6.0  1.6.0 调整样式,重新获取图标,改进一键快速保存
 // @description:1.6.1  1.6.1 修复图标获取：SVG 统一转为 256x256 PNG
+// @description:1.6.0  1.6.0 调整样式,重新获取图标,改进一键快速保存
+// @description:1.5.4  1.5.4 改进书签保存逻辑和增加一键快速保存
 // @author       you
 // @match        *://*/*
 // @grant        GM_setValue
