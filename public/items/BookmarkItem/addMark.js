@@ -1,10 +1,11 @@
 // ==UserScript==
 // @name         导航面板书签助手
 // @namespace    https://github.com/your-name/my-home
-// @version      1.6.0
+// @version      1.6.1
 // @description  右键 → Tampermonkey → 添加到导航面板书签 → 添加书签
-// @description  1.5.4 改进书签保存逻辑和增加一键快速保存 
-// @description  1.6.0 调整样式,重新获取图标,改进一键快速保存
+// @description:1.5.4  1.5.4 改进书签保存逻辑和增加一键快速保存
+// @description:1.6.0  1.6.0 调整样式,重新获取图标,改进一键快速保存
+// @description:1.6.1  1.6.1 修复图标获取：SVG 统一转为 256x256 PNG
 // @author       you
 // @match        *://*/*
 // @grant        GM_setValue
@@ -39,19 +40,107 @@
     function apiUrl(c, p) { return c.serverUrl.replace(/\/+$/, '') + '/' + p.replace(/^\/+/, ''); }
     function apiPost(p, b) { return gmFetch(apiUrl(loadC(), p), { method: 'POST', data: JSON.stringify(b) }); }
 
+    // ===== 把任意 data URL 规范化为 base64 形式 =====
+    function normalizeDataUrl(url) {
+        if (!url || !url.startsWith('data:')) return url;
+        if (/;base64,/i.test(url)) return url;
+        const m = url.match(/^data:([^,]*),(.*)$/s);
+        if (!m) return url;
+        const mime = (m[1].split(';')[0] || 'text/plain').trim();
+        let text;
+        try { text = decodeURIComponent(m[2]); } catch { text = m[2]; }
+        const b64 = btoa(unescape(encodeURIComponent(text)));
+        return 'data:' + mime + ';base64,' + b64;
+    }
+
+    // ===== SVG data URL → 256x256 PNG base64 =====
+    function svgToPngBase64(svgUrl, size = 256) {
+        return new Promise((resolve) => {
+            const img = new Image();
+            img.onload = () => {
+                try {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = size;
+                    canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+                    ctx.clearRect(0, 0, size, size);
+
+                    let sw = img.naturalWidth || img.width;
+                    let sh = img.naturalHeight || img.height;
+                    if (!sw || !sh) { sw = size; sh = size; }
+
+                    const scale = Math.min(size / sw, size / sh);
+                    const dw = sw * scale;
+                    const dh = sh * scale;
+                    const dx = (size - dw) / 2;
+                    const dy = (size - dh) / 2;
+
+                    ctx.drawImage(img, dx, dy, dw, dh);
+                    resolve(canvas.toDataURL('image/png'));
+                } catch (e) {
+                    console.warn('SVG→PNG 失败', e);
+                    resolve('');
+                }
+            };
+            img.onerror = () => {
+                console.warn('SVG 图片加载失败');
+                resolve('');
+            };
+            img.src = svgUrl;
+        });
+    }
+
     function uploadIcon(b64) {
-        const c = loadC(); const itemType = c.itemType || 'bookmark'; const url = apiUrl(c, 'api/upload/file/items/' + itemType + '/' + c.itemUUID);
-        const a = b64.split(','), mime = a[0].match(/:(.*?);/)[1], bin = atob(a[1]);
-        const ext = (mime.split('/')[1] || 'png').replace(/[^a-z0-9]/g, '');
-        const bd = '----nab' + Date.now(); const enc = new TextEncoder();
-        const head = enc.encode('--' + bd + '\r\nContent-Disposition: form-data; name="file"; filename="favcon.' + ext + '"\r\nContent-Type: ' + mime + '\r\n\r\n');
+        b64 = normalizeDataUrl(b64);
+        const c = loadC();
+        const itemType = c.itemType || 'bookmark';
+        const url = apiUrl(c, 'api/upload/file/items/' + itemType + '/' + c.itemUUID);
+
+        const a = b64.split(',');
+        const mime = a[0].match(/:(.*?);/)[1];
+        const raw = a[1];
+
+        // 扩展名映射
+        let ext = 'png';
+        if (mime.includes('svg')) ext = 'svg';
+        else if (mime.includes('jpeg') || mime.includes('jpg')) ext = 'jpg';
+        else if (mime.includes('gif')) ext = 'gif';
+        else if (mime.includes('webp')) ext = 'webp';
+        else if (mime.includes('x-icon') || mime.includes('vnd.microsoft.icon')) ext = 'ico';
+        else if (mime.includes('png')) ext = 'png';
+
+        // SVG 用 utf-8 文本编码；其余按二进制
+        let bytes;
+        if (ext === 'svg') {
+            const text = decodeURIComponent(escape(atob(raw)));
+            bytes = new TextEncoder().encode(text);
+        } else {
+            const bin = atob(raw);
+            bytes = new Uint8Array(bin.length);
+            for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+        }
+
+        const bd = '----nab' + Date.now();
+        const enc = new TextEncoder();
+        const head = enc.encode(
+            '--' + bd + '\r\nContent-Disposition: form-data; name="file"; filename="favcon.' + ext +
+            '"\r\nContent-Type: ' + mime + '\r\n\r\n'
+        );
         const tail = enc.encode('\r\n--' + bd + '--\r\n');
-        const body = new Uint8Array(head.length + bin.length + tail.length);
-        body.set(head, 0); for (let i = 0; i < bin.length; i++) body[head.length + i] = bin.charCodeAt(i); body.set(tail, head.length + bin.length);
+
+        const body = new Uint8Array(head.length + bytes.length + tail.length);
+        body.set(head, 0);
+        body.set(bytes, head.length);
+        body.set(tail, head.length + bytes.length);
+
         return new Promise(resolve => {
             GM_xmlhttpRequest({
                 method: 'POST', url,
-                headers: { 'Content-Type': 'multipart/form-data; boundary=' + bd, pathid: c.pathid || '', secondcode: c.secondcode || '' },
+                headers: {
+                    'Content-Type': 'multipart/form-data; boundary=' + bd,
+                    pathid: c.pathid || '',
+                    secondcode: c.secondcode || ''
+                },
                 data: body,
                 onload: r => { try { resolve(JSON.parse(r.responseText)); } catch { resolve({ code: 500, msg: '响应解析失败' }); } },
                 onerror: () => resolve({ code: 500, msg: '网络错误' })
@@ -279,35 +368,46 @@ label{font-size:12px;display:block;margin-bottom:2px}
     }
 
     /**
-     * 方法1：使用 GM_xmlhttpRequest 获取图片并转为Base64
+     * 使用 GM_xmlhttpRequest 获取图片并转为Base64
+     * SVG 走文本读取 → data URL → 再转 256x256 PNG
      */
     function fetchImageAsBase64(url) {
         return new Promise((resolve, reject) => {
             GM_xmlhttpRequest({
                 method: 'GET',
                 url: url,
-                responseType: 'blob', // 关键：以blob格式接收二进制数据
+                responseType: 'blob',
                 onload: function (response) {
                     if (response.status === 200) {
-                        // 获取blob数据
                         const blob = response.response;
 
-                        // 方式A：使用 FileReader 转Base64
-                        const reader = new FileReader();
-                        reader.onloadend = function () {
-                            const base64Data = reader.result; // 这就是完整的Base64数据，格式如 "data:image/png;base64,xxxxx"
-                            console.log('✅ 转换成功！');
-                            console.log('Base64 长度:', base64Data.length);
-                            console.log('Base64 预览:', base64Data.substring(0, 100) + '...');
+                        // 判断是否 SVG：优先看 blob.type，其次看 URL 后缀
+                        const isSvg = (blob.type && blob.type.includes('svg')) || /\.svg(\?|#|$)/i.test(url);
 
-                            // 这里你可以使用base64Data做任何事，比如：
-                            // 1. 显示在页面上
-                            resolve(base64Data)
-                            // 2. 复制到剪贴板
-                            // 3. 发送到服务器
-                            // 4. 保存到本地存储
-                        };
-                        reader.readAsDataURL(blob);
+                        if (isSvg) {
+                            // SVG → 文本 → data:image/svg+xml;base64 → 256 PNG
+                            const reader = new FileReader();
+                            reader.onloadend = async function () {
+                                const text = reader.result;
+                                const svgB64 = 'data:image/svg+xml;base64,' +
+                                    btoa(unescape(encodeURIComponent(text)));
+                                const png = await svgToPngBase64(svgB64, 256);
+                                resolve(png);
+                            };
+                            reader.onerror = reject;
+                            reader.readAsText(blob, 'utf-8');
+                        } else {
+                            const reader = new FileReader();
+                            reader.onloadend = function () {
+                                const base64Data = reader.result; // 形如 "data:image/png;base64,xxxxx"
+                                console.log('✅ 转换成功！');
+                                console.log('Base64 长度:', base64Data.length);
+                                console.log('Base64 预览:', base64Data.substring(0, 100) + '...');
+                                resolve(base64Data);
+                            };
+                            reader.onerror = reject;
+                            reader.readAsDataURL(blob);
+                        }
 
                     } else {
                         console.error('❌ 请求失败，状态码:', response.status);
@@ -328,7 +428,21 @@ label{font-size:12px;display:block;margin-bottom:2px}
         return new Promise(async (resolve) => {
             const icon = document.querySelector('link[rel*="icon"]') || document.querySelector('link[rel="shortcut icon"]');
             const url = icon ? icon.href : (location.origin + '/favicon.ico');
-            if (!url || url.startsWith('data:')) { resolve(url || ''); return; }
+            if (!url) { resolve(''); return; }
+
+            // data URL：若是 SVG，转成 256 PNG；否则规范化后返回
+            if (url.startsWith('data:')) {
+                const normalized = normalizeDataUrl(url);
+                if (/^data:image\/svg\+xml/i.test(normalized)) {
+                    const png = await svgToPngBase64(normalized, 256);
+                    resolve(png);
+                } else {
+                    resolve(normalized);
+                }
+                return;
+            }
+
+            // 远程 URL（含 SVG）：GM 获取 → 转 base64 / 转 PNG
             try {
                 const base64 = await fetchImageAsBase64(url);
                 resolve(base64);
@@ -337,20 +451,25 @@ label{font-size:12px;display:block;margin-bottom:2px}
             catch {
                 console.warn("油猴获取图标失败，尝试无 CORS 获取图标")
             }
-            // 先试带 CORS（能转 base64 上传到服务器）
+
+            // 回退：canvas（位图有效；SVG 走这里会失败）
             const tryLoad = (useCors) => {
                 const img = new Image();
                 if (useCors) img.crossOrigin = 'anonymous';
                 img.onload = () => {
                     try {
                         const c = document.createElement('canvas');
-                        c.width = img.naturalWidth || 32;
-                        c.height = img.naturalHeight || 32;
-                        c.getContext('2d').drawImage(img, 0, 0);
+                        c.width = 256;
+                        c.height = 256;
+                        const ctx = c.getContext('2d');
+                        const sw = img.naturalWidth || 256;
+                        const sh = img.naturalHeight || 256;
+                        const scale = Math.min(256 / sw, 256 / sh);
+                        const dw = sw * scale, dh = sh * scale;
+                        ctx.drawImage(img, (256 - dw) / 2, (256 - dh) / 2, dw, dh);
                         resolve(c.toDataURL('image/png'));
                     } catch {
-                        // CORS 失败也能显示图片，直接返回 URL
-                        resolve(url);
+                        resolve('');
                     }
                 };
                 img.onerror = () => {
