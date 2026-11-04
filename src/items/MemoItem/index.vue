@@ -185,7 +185,7 @@ const send = async () => {
 
 // ====== 编辑 ======
 const copyMsg = (text: string) => {
-    Utils.copyStr(msg,text, { successMsg: "已复制" });
+    Utils.copyStr(msg, text, { successMsg: "已复制" });
 };
 
 const openEdit = (idx: number) => {
@@ -208,6 +208,7 @@ const confirmEdit = async () => {
 // ====== 删除 ======
 const openDelete = (idx: number) => {
     deleteIndex.value = idx;
+    deleteAll.value = false;
     deleteShow.value = true;
 };
 
