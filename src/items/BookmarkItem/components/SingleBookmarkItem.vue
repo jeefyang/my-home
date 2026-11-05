@@ -295,7 +295,7 @@
             <n-form :model="formData" label-placement="top" size="small">
                 <n-form-item label="URL" v-if="!formData.isFolder">
                     <div class="form-line">
-                        <n-input v-model:value="formData.url" placeholder="https://example.com" />
+                        <n-input v-model:value="formData.url" placeholder="请输入 URL" />
                         <n-button size="small" type="info" :loading="detecting" @click="detectUrl()">检测</n-button>
                     </div>
                 </n-form-item>
@@ -362,8 +362,6 @@ import {
     searchInTree,
     generateHtmlBookmarks,
     parseHtmlBookmarks,
-    fetchFaviconToServer,
-    getFaviconUrl,
     iconFileToBase64,
     resolveImportIcons
 } from "./bookmarkUtils";
@@ -414,16 +412,13 @@ interface BookmarkForm {
     isFolder: boolean;
     /** 用户输入的图标 URL（可能是外部链接或留空） */
     _iconInput: string;
-    /** 保存在服务器上的图标文件名，空 = 自动 */
-    _iconServerFile: string;
 }
 
 const formData = reactive<BookmarkForm>({
     url: "",
     title: "",
     isFolder: false,
-    _iconInput: "",
-    _iconServerFile: ""
+    _iconInput: ""
 });
 
 // ========== 拖拽 ==========
@@ -740,15 +735,10 @@ const displayList = computed<DisplayNode[]>(() => {
 
 /** 图标预览 URL */
 const formIconPreview = computed(() => {
-    if (formData._iconServerFile) {
-        return UrlUtils.checkImgUrl(formData._iconServerFile, `./api/files/items/${props.item.type}/${props.item.uuid}`);
-    }
     if (formData._iconInput) {
-        return formData._iconInput;
+        return UrlUtils.checkImgUrl(formData._iconInput, `./api/files/items/${props.item.type}/${props.item.uuid}`);
     }
-    if (formData.url) {
-        return getFaviconUrl(formData.url);
-    }
+
     return "";
 });
 
@@ -931,10 +921,9 @@ const fetchIcon = async () => {
     const targetUrl = normalizeUrl(formData._iconInput || formData.url);
     iconLoading.value = true;
     try {
-        const filename = await fetchFaviconToServer(targetUrl, toolsImgFetch, props.item.type, props.item.uuid);
+        const filename = await Utils.fetchFaviconToServer(targetUrl, props.item.type, props.item.uuid);
         iconLoading.value = false;
         if (filename) {
-            formData._iconServerFile = filename;
             formData._iconInput = filename;
             msg.success("图标已获取");
         } else {
@@ -953,28 +942,26 @@ const detectUrl = async (rawUrl?: string) => {
     const safeUrl = normalizeUrl(url);
     detecting.value = true;
     try {
-        const res = await toolsUrlFetch.request("titleUrl", { url: safeUrl });
-        detecting.value = false;
-        if (res.code === 200 && res.data) {
-            formData.title = formData.title || res.data;
-        } else {
-            msg.warning(res.msg || "无法获取标题");
+        if (!formData.title) {
+            const res = await toolsUrlFetch.request("titleUrl", { url: safeUrl });
+
+            if (res.code === 200 && res.data) {
+                formData.title = formData.title || res.data;
+            } else {
+                msg.warning(res.msg || "无法获取标题");
+            }
         }
         // 自动获取图标：先用 Google 直链预览，再尝试保存到服务器
-        if (!formData._iconInput && !formData._iconServerFile) {
-            const previewUrl = getFaviconUrl(safeUrl);
-            if (previewUrl) {
-                formData._iconInput = previewUrl;
-            }
+        if (!formData._iconInput) {
             // 后台尝试保存到服务器，成功后替换为服务器文件
-            const filename = await fetchFaviconToServer(safeUrl, toolsImgFetch, props.item.type, props.item.uuid);
+            const filename = await Utils.fetchFaviconToServer(safeUrl, props.item.type, props.item.uuid);
             if (filename) {
-                formData._iconServerFile = filename;
                 formData._iconInput = filename;
             } else {
                 msg.warning("图标获取失败，已使用在线预览");
             }
         }
+        detecting.value = false;
     } catch {
         detecting.value = false;
     }
@@ -989,7 +976,6 @@ const openAddForm = (isFolder: boolean) => {
     formData.title = "";
     formData.isFolder = isFolder;
     formData._iconInput = "";
-    formData._iconServerFile = "";
     formShow.value = true;
 };
 
@@ -1000,7 +986,6 @@ const openEditForm = (item: BookmarkCollectionType) => {
     formData.title = item.title;
     formData.isFolder = !!item.isFolder;
     formData._iconInput = item.icon || "";
-    formData._iconServerFile = item.icon || "";
     formShow.value = true;
 };
 
@@ -1009,7 +994,7 @@ const confirmForm = async () => {
     if (!formData.isFolder && !formData.url.trim()) return msg.warning("请输入 URL");
     loading.value = true;
     // 确定图标：优先用服务器文件，其次用户输入
-    let finalIcon = formData._iconServerFile || formData._iconInput || "";
+    let finalIcon = formData._iconInput || "";
     // 如果是外部 URL 引用，保留（不存储到服务器）
     // 如果是服务器文件路径，保留
 
@@ -1260,20 +1245,7 @@ watch(
     () => initData()
 );
 
-// URL 输入变化时自动检测（粘贴/输入）
-let detectTimer: any = null;
-watch(
-    () => formData.url,
-    (newVal) => {
-        if (detectTimer) clearTimeout(detectTimer);
-        if (!newVal || newVal.length < 4) return;
-        detectTimer = setTimeout(() => detectUrl(newVal), 800);
-    }
-);
-
 onMounted(() => initData());
-
-
 </script>
 
 <style scoped>

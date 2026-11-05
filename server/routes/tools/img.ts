@@ -4,7 +4,7 @@ import fs from "fs";
 import { DATA_DIR, filesFolder, itemsFolder } from "../../stores/data";
 import { nanoid } from "nanoid";
 
-const FETCH_TIMEOUT = 3000;
+const FETCH_TIMEOUT = 10000;
 
 async function fetchFaviconToFile(url: string, saveDir: string): Promise<[string | undefined, any]> {
     const res = await fetch(url, { signal: AbortSignal.timeout(FETCH_TIMEOUT) });
@@ -21,9 +21,9 @@ async function fetchFaviconToFile(url: string, saveDir: string): Promise<[string
         "image/gif": "gif",
         "image/webp": "webp",
         "image/svg+xml": "svg",
-        "image/x-icon":"ico",
-        "image/vnd.microsoft.icon":"ico",
-        "application/octet-stream":"ico"
+        "image/x-icon": "ico",
+        "image/vnd.microsoft.icon": "ico",
+        "application/octet-stream": "ico"
     };
     if (!imgList[mimeType]) {
         return [undefined, "不支持的图片格式"];
@@ -52,7 +52,7 @@ export async function favicon(data: ToolsImgFaviconFromType): Promise<[string | 
     }
     const platfromList: { [x in NonNullable<ToolsImgFaviconFromType['platform']>]?: string } = {
         'direct': "https://$$key$$/favicon.ico",
-        'favicon': "https://favicon.im/$$key$$",
+        'favicon': "https://a.favicon.im/$$key$$",
         'google': "https://www.google.com/s2/favicons?domain=$$key$$",
         'duckduckgo': "https://icons.duckduckgo.com/ip3/$$key$$.ico"
     };
@@ -92,7 +92,12 @@ export async function favicon(data: ToolsImgFaviconFromType): Promise<[string | 
                 return await fetchFaviconToFile(platformUrl, d);
             }
             // 其他模式使用平台 URL
-            const res = await fetch(platformUrl, { signal: AbortSignal.timeout(FETCH_TIMEOUT) });
+            const res = await fetch(platformUrl, {
+                signal: AbortSignal.timeout(FETCH_TIMEOUT), headers: {
+                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0.0.0 Safari/537.36',
+                    'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+                }
+            });
             if (!res.ok) {
                 return [undefined, "请求失败"];
             }
@@ -106,8 +111,8 @@ export async function favicon(data: ToolsImgFaviconFromType): Promise<[string | 
                 "image/gif": "gif",
                 "image/webp": "webp",
                 "image/svg+xml": "svg",
-                "image/x-icon":"ico",
-                "image/vnd.microsoft.icon":"ico"
+                "image/x-icon": "ico",
+                "image/vnd.microsoft.icon": "ico"
             };
             if (!imgList[mimeType]) {
                 return [undefined, "不支持的图片格式"];
@@ -121,6 +126,7 @@ export async function favicon(data: ToolsImgFaviconFromType): Promise<[string | 
         return [undefined, "请选择正确的转换方式"];
     }
     catch (e) {
+        console.error("favicon_url", platformUrl);
         console.error(e);
         return [undefined, e];
     }

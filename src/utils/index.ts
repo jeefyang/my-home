@@ -1,4 +1,5 @@
 import { useMessage } from "naive-ui";
+import { toolsImgFetch } from "./jFetch";
 
 export class Utils {
     static async copyStr(msg: ReturnType<typeof useMessage>, str: string, obj?: {
@@ -64,4 +65,28 @@ export class Utils {
             }
         }
     };
+
+    /** 通过后端 favicon 服务获取图标并存储到元件目录 */
+    static async fetchFaviconToServer(
+        url: string,
+        itemType: string,
+        itemUUID: string
+    ): Promise<string> {
+        // a.favicon.im 最可靠放第一,direct 很多站点返回空占位符放最后
+        const platforms: ("direct" | "google" | 'favicon' | "duckduckgo")[] = ["favicon", "google", "duckduckgo", "direct"];
+        for (const platform of platforms) {
+            try {
+
+                const res = await toolsImgFetch.request("favicon", { url, platform, toUrl: "url", itemType, itemUUID });
+
+                if (res.code === 200 && res.data) return res.data as string;
+            } catch { /* try next */ }
+        }
+        return "";
+    }
+
+    static getFaviconUrl(url: string): string {
+        try { const p = new URL(url); return `https://a.favicon.im/${p.hostname}`; }
+        catch { return ""; }
+    }
 }

@@ -215,28 +215,8 @@ function escapeHtml(str: string): string {
 // 工具函数
 // ========================================================================
 
-export function getFaviconUrl(url: string): string {
-    try { const p = new URL(url); return `https://favicon.im/${p.hostname}`; }
-    catch { return ""; }
-}
 
-/** 通过后端 favicon 服务获取图标并存储到元件目录 */
-export async function fetchFaviconToServer(
-    url: string,
-    toolsImgFetch: { request: (key: string, data: any) => Promise<any>; },
-    itemType: string,
-    itemUUID: string
-): Promise<string> {
-    // favicon.im 最可靠放第一,direct 很多站点返回空占位符放最后
-    const platforms = ["favicon", "google", "duckduckgo", "direct"];
-    for (const platform of platforms) {
-        try {
-            const res = await toolsImgFetch.request("favicon", { url, platform, toUrl: "url", itemType, itemUUID });
-            if (res.code === 200 && res.data) return res.data as string;
-        } catch { /* try next */ }
-    }
-    return "";
-}
+
 
 /**
  * 导入解析后，递归处理书签树中的图标：

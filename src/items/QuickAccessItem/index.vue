@@ -21,56 +21,61 @@
     </div>
 
     <!-- 配置弹窗 -->
-    <x-modal v-model:show="showConfig" title="快捷访问配置" :isScroll="true" class="qa-config-modal">
-        <!-- 导入 -->
-        <n-flex justify="space-between" align="center" class="mb-2">
-            <span style="font-size: 13px; font-weight: 600">网址列表</span>
-            <n-flex>
-                <n-button size="tiny" @click="showImport = true">导入</n-button>
-                <n-button size="tiny" type="primary" @click="addSite">添加</n-button>
-            </n-flex>
-        </n-flex>
-
-        <n-flex vertical v-if="siteList.length > 0" style="gap: 12px">
-            <n-card v-for="(site, idx) in siteList" :key="site.uuid" size="small">
-                <n-flex vertical style="gap: 6px">
-                    <n-flex justify="space-between" align="center">
-                        <n-flex align="center" size="small">
-                            <n-button size="tiny" quaternary @click="moveToTop(idx)" title="置顶">
-                                <template #icon><n-icon :component="ArrowUp" :size="14" /></template>
-                            </n-button>
-                            <span style="font-size: 12px; color: #888">#{{ idx + 1 }}</span>
-                        </n-flex>
-                        <n-flex>
-                            <n-button size="tiny" quaternary type="error" @click="deleteSite(idx)" title="删除">
-                                <template #icon><n-icon :component="Trash" size="14" /></template>
-                            </n-button>
-                        </n-flex>
-                    </n-flex>
-
-                    <label>标题</label>
-                    <n-input v-model:value="site.title" placeholder="标题" size="small" />
-
-                    <label>URL</label>
-                    <n-input v-model:value="site.url" placeholder="https://" size="small" />
-
-                    <label>图标</label>
-                    <n-flex align="center" style="gap: 6px">
-                        <n-input v-model:value="site.icon" placeholder="图标 URL / base64 / 文件名" size="small" style="flex: 1" />
-                        <n-button size="tiny" type="warning" :loading="convertingIdx === idx" @click="convertIcon(idx)" :disabled="!needConvert(site.icon)">转换</n-button>
-                        <n-upload :custom-request="(o) => uploadIcon(o, idx)" :show-file-list="false" accept="image/*">
-                            <n-button size="tiny" :type="site.icon ? 'default' : 'primary'">
-                                {{ site.icon ? '替换' : '上传' }}
-                            </n-button>
-                        </n-upload>
-                    </n-flex>
-                    <div class="qa-icon-preview" v-if="site.icon">
-                        <img :src="iconUrl(site.icon)" style="width: 24px; height: 24px; border-radius: 4px; object-fit: contain" />
-                    </div>
+    <x-modal v-model:show="showConfig" title="快捷访问配置" :isScroll="false" class="qa-config-modal">
+        <div class="qa-config-modal-container">
+            <!-- 导入 -->
+            <n-flex justify="space-between" align="center" class="mb-2">
+                <span style="font-size: 13px; font-weight: 600">网址列表</span>
+                <n-flex>
+                    <n-button size="tiny" @click="showImport = true">导入</n-button>
+                    <n-button size="tiny" type="primary" @click="addSite">添加</n-button>
                 </n-flex>
-            </n-card>
-        </n-flex>
-        <n-empty v-else description="尚无快捷网址" class="mt-4" />
+            </n-flex>
+
+            <n-flex vertical v-if="siteList.length > 0" style="gap: 12px; flex: 1; overflow-y: auto" class="qa-config-modal-list">
+                <n-card v-for="(site, idx) in siteList" :key="site.uuid" size="small">
+                    <n-flex vertical style="gap: 6px">
+                        <n-flex justify="space-between" align="center">
+                            <n-flex align="center" size="small">
+                                <n-button size="tiny" quaternary @click="moveToTop(idx)" title="置顶">
+                                    <template #icon><n-icon :component="ArrowUp" :size="14" /></template>
+                                </n-button>
+                                <span style="font-size: 12px; color: #888">#{{ idx + 1 }}</span>
+                            </n-flex>
+                            <n-flex>
+                                <n-button size="tiny" quaternary type="error" @click="deleteSite(idx)" title="删除">
+                                    <template #icon><n-icon :component="Trash" size="14" /></template>
+                                </n-button>
+                            </n-flex>
+                        </n-flex>
+
+                        <label>URL</label>
+                        <n-flex align="center" style="gap: 6px">
+                            <n-input v-model:value="site.url" size="small" style="flex: 1" />
+                            <n-button size="tiny" type="success" :loading="convertingIdx === idx" @click="identifyIcon(idx)">识别</n-button>
+                        </n-flex>
+
+                        <label>标题</label>
+                        <n-input v-model:value="site.title" placeholder="标题" size="small" />
+
+                        <label>图标</label>
+                        <n-flex align="center" style="gap: 6px">
+                            <n-input v-model:value="site.icon" placeholder="图标 URL / base64 / 文件名" size="small" style="flex: 1" />
+                            <div class="qa-icon-preview" v-if="site.icon">
+                                <img :src="iconUrl(site.icon)" style="width: 24px; height: 24px; border-radius: 4px; object-fit: contain" />
+                            </div>
+                            <n-button size="tiny" type="warning" :loading="convertingIdx === idx" @click="convertIcon(idx)" :disabled="!needConvert(site.icon)">转换</n-button>
+                            <n-upload :custom-request="(o) => uploadIcon(o, idx)" :show-file-list="false" accept="image/*">
+                                <n-button size="tiny" :type="site.icon ? 'default' : 'primary'">
+                                    {{ site.icon ? "替换" : "上传" }}
+                                </n-button>
+                            </n-upload>
+                        </n-flex>
+                    </n-flex>
+                </n-card>
+            </n-flex>
+            <n-empty v-else description="尚无快捷网址" class="mt-4" />
+        </div>
 
         <template #footer>
             <n-flex justify="end">
@@ -95,13 +100,14 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
 import { Settings, ArrowUp, Trash } from "@vicons/tabler";
-import { itemFetch } from "@/utils/jFetch";
+import { itemFetch, toolsImgFetch, toolsUrlFetch } from "@/utils/jFetch";
 import { myUpload, base64ToFile } from "@/utils/upload";
 import { UrlUtils } from "@/utils/url";
 import { useMessage } from "naive-ui";
 import { nanoid } from "nanoid";
 import XModal from "@/components/XModal.vue";
 import { useDataStore } from "@/stores/data";
+import { Utils } from "@/utils";
 
 const msg = useMessage();
 const dataStore = useDataStore();
@@ -141,23 +147,30 @@ const loadData = async () => {
         filename
     });
     if (res.code === 200 && res.data) {
-        try { siteList.value = JSON.parse(res.data); } catch { siteList.value = []; }
+        try {
+            siteList.value = JSON.parse(res.data);
+        } catch {
+            siteList.value = [];
+        }
     } else {
         siteList.value = [];
     }
 };
 
 /** 打开配置时备份，关闭时若未保存则还原 */
-watch(() => showConfig.value, (val) => {
-    if (val) {
-        // 打开 → 备份当前数据
-        siteListBackup = JSON.parse(JSON.stringify(siteList.value));
-        savedSuccessfully = false;
-    } else if (!savedSuccessfully) {
-        // 关闭且未保存 → 还原
-        siteList.value = JSON.parse(JSON.stringify(siteListBackup));
+watch(
+    () => showConfig.value,
+    (val) => {
+        if (val) {
+            // 打开 → 备份当前数据
+            siteListBackup = JSON.parse(JSON.stringify(siteList.value));
+            savedSuccessfully = false;
+        } else if (!savedSuccessfully) {
+            // 关闭且未保存 → 还原
+            siteList.value = JSON.parse(JSON.stringify(siteListBackup));
+        }
     }
-});
+);
 
 const saveData = async () => {
     saving.value = true;
@@ -198,6 +211,11 @@ const addSite = () => {
         url: "",
         icon: ""
     });
+    setTimeout(() => {
+        const div = document.querySelector(".qa-config-modal-list");
+
+        div.scroll({ top: div.scrollHeight, behavior: "smooth" });
+    }, 200);
 };
 
 const deleteSite = (idx: number) => {
@@ -239,6 +257,45 @@ const uploadIcon = async (o: any, idx: number) => {
 const needConvert = (icon: string): boolean => {
     if (!icon) return false;
     return icon.startsWith("data:") || icon.startsWith("http://") || icon.startsWith("https://");
+};
+
+/** 补全 URL 协议头 */
+function normalizeUrl(url: string): string {
+    const t = url.trim();
+    if (!t) return t;
+    if (/^https?:\/\//i.test(t)) return t;
+    return "https://" + t;
+}
+
+const identifyIcon = async (idx: number) => {
+    const site = siteList.value[idx];
+    if (!site || !site.url) {
+        msg.info("请输入完整URL!");
+        return;
+    }
+    const safeUrl = normalizeUrl(site.url);
+    site.url = safeUrl;
+    convertingIdx.value = idx;
+
+    try {
+        const res = await toolsUrlFetch.request("titleUrl", { url: safeUrl });
+
+        if (res.code === 200 && res.data) {
+            site.title = site.title || res.data;
+        } else {
+            msg.warning(res.msg || "无法获取标题");
+        }
+        const filename = await Utils.fetchFaviconToServer(safeUrl, props.item.type, props.item.uuid);
+        if (!filename) {
+            msg.warning("图标获取失败");
+        } else {
+            site.icon = filename;
+        }
+        convertingIdx.value = -1;
+    } catch {
+        msg.warning("URL识别失败");
+        convertingIdx.value = -1;
+    }
 };
 
 const convertIcon = async (idx: number) => {
@@ -339,7 +396,10 @@ const cancelConfig = () => {
 // ====== 导入：弹出输入框粘贴 JSON ======
 const confirmImport = () => {
     const text = importText.value.trim();
-    if (!text) { msg.warning("请输入 JSON 内容"); return; }
+    if (!text) {
+        msg.warning("请输入 JSON 内容");
+        return;
+    }
 
     let items: any[] = [];
     try {
@@ -480,5 +540,11 @@ onMounted(() => loadData());
 
 .qa-config-modal :deep(.n-card__content) {
     padding: 12px !important;
+}
+
+.qa-config-modal-container {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 </style>
