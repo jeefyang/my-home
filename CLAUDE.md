@@ -98,3 +98,17 @@ PM2 管理进程，配置文件 `ecosystem.config.cjs`。构建后 `dist/server/
 `.reasonix-memory/` 目录下记录了关键改动和项目知识，随 git 版本管理，换机子克隆即用。
 
 更新记忆时直接编辑 `.reasonix-memory/` 下的文件（Markdown 格式），或新建文件并在 `.reasonix-memory/MEMORY.md` 添加索引。
+
+## Agent skills
+
+### Issue tracker
+
+Issue 与 spec 都记录在 GitHub Issues（`jeefyang/my-home`），用 `gh` CLI 操作。See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+五个默认 triage 角色（`needs-triage` / `needs-info` / `ready-for-agent` / `ready-for-human` / `wontfix`），另有 wayfinder 类型标签（`wayfinder:map` / `research` / `prototype` / `grilling` / `task`）。See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+single-context：一个仓库共用根目录的 `GLOSSARY.md`，架构决定放 `docs/adr/`。See `docs/agents/domain.md`.
