@@ -5,6 +5,7 @@ import { createServer } from 'vite';
 import http from 'http';
 import path from 'path';
 import helmet from 'helmet';
+import compression from 'compression';
 import router from './routes/api';
 import { dataInit, isDev } from './stores/data';
 
@@ -49,6 +50,7 @@ if (!isDev) {
 }
 
 
+app.use(compression({ threshold: 1024 }));
 app.use(cors());
 app.use(express.json({ limit: '50mb' }));
 app.use('/api', router);
@@ -98,18 +100,22 @@ else {
 
 
     const clientPath = path.resolve("./dist/client");
+    // index.html 不缓存，保证发版后刷新即可拿到新资源清单
+    const sendIndex = (res: any) => {
+        res.setHeader('Cache-Control', 'no-cache');
+        res.sendFile(path.join(clientPath, 'index.html'));
+    };
     // 默认index.html
     app.get('/', (req, res) => {
-        res.sendFile(path.join(clientPath, 'index.html'));
+        sendIndex(res);
     });
     // 其他路径
     app.get("/{*splat}", (req, res) => {
         const splat: string[] = (<any>req.params).splat || [];
-        const indexFile = path.join(clientPath, 'index.html');
         // 防止 ../ 跳出 dist/client 读取任意文件
         const requested = path.resolve(clientPath, splat.join('/'));
         if (requested !== clientPath && !requested.startsWith(clientPath + path.sep)) {
-            return res.sendFile(indexFile);
+            return sendIndex(res);
         }
         // 随机组件就添加缓存控制
         if (splat.length > 0 && splat[splat.length - 1].includes('-')) {
@@ -117,7 +123,7 @@ else {
         }
         res.sendFile(requested, (e) => {
             // 如果找不到文件,则返回 index.html
-            if (e) res.sendFile(indexFile);
+            if (e) sendIndex(res);
         });
     });
     // 这里的 process.env.SERVER_PORT 正好能接住你之前在 PM2 ecosystem 配置里写的 PORT: 4000

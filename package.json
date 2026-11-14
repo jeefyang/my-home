@@ -24,6 +24,7 @@
         "@vueuse/core": "^14.3.0",
         "axios": "^1.16.1",
         "cheerio": "^1.2.0",
+        "compression": "^1.8.2",
         "cors": "^2.8.6",
         "dotenv": "^17.4.2",
         "express": "^5.2.1",
@@ -38,6 +39,7 @@
     },
     "devDependencies": {
         "@tsconfig/node24": "^24.0.4",
+        "@types/compression": "^1.8.1",
         "@types/cors": "^2.8.19",
         "@types/dotenv": "^8.2.3",
         "@types/express": "^5.0.6",

@@ -45,12 +45,12 @@ async function api(method, urlPath, { body, headers = {} } = {}) {
 }
 
 /** 用 node:http 发送未规范化路径，验证 SPA fallback 不会跳出 dist/client */
-function rawGet(rawPath) {
+function rawGet(rawPath, headers = {}) {
     return new Promise((resolve, reject) => {
-        const req = http.request({ host: "127.0.0.1", port: PORT, path: rawPath, method: "GET" }, (res) => {
+        const req = http.request({ host: "127.0.0.1", port: PORT, path: rawPath, method: "GET", headers }, (res) => {
             let data = "";
             res.on("data", (c) => (data += c));
-            res.on("end", () => resolve({ status: res.statusCode, text: data }));
+            res.on("end", () => resolve({ status: res.statusCode, text: data, headers: res.headers }));
         });
         req.on("error", reject);
         req.end();
@@ -104,6 +104,21 @@ try {
         assert.equal(trav.status, 200);
         assert.ok(trav.text.toLowerCase().includes("<!doctype html"));
         assert.ok(!trav.text.includes('"name": "my-home"'));
+    });
+
+    // 2.1 静态资源传输优化：index.html 不缓存，带指纹的产物 gzip + 长缓存
+    const indexHtml = fs.readFileSync(path.join(ROOT, "dist", "client", "index.html"), "utf-8");
+    const mainAsset = indexHtml.match(/assets\/[^"']+\.js/)?.[0];
+    check("index.html 不被强缓存", () => {
+        assert.equal(trav.headers["cache-control"], "no-cache");
+        assert.ok(trav.text.toLowerCase().includes("<!doctype html"));
+    });
+    const asset = await rawGet("/" + (mainAsset || "assets/missing.js"), { "Accept-Encoding": "gzip" });
+    check("带指纹的 js 走 gzip 且可长缓存", () => {
+        assert.ok(mainAsset, "dist/client/index.html 里找不到 js 入口");
+        assert.equal(asset.status, 200);
+        assert.equal(asset.headers["content-encoding"], "gzip");
+        assert.equal(asset.headers["cache-control"], "public, max-age=31536000, immutable");
     });
 
     // 3. 未认证接口一律 401
