@@ -12,7 +12,13 @@ function readPage(uuid: string) {
 }
 
 function writePage(page: PageType) {
-    fs.writeFileSync(path.join(DATA_DIR, PagesFolder, page.uuid, pageFileName), JSON.stringify(page, null, '\t'));
+    const dir = path.join(DATA_DIR, PagesFolder, page.uuid);
+    fs.mkdirSync(dir, { recursive: true });
+    const file = path.join(dir, pageFileName);
+    const tmp = file + ".tmp";
+    // 先写临时文件再 rename，避免进程中断留下半截 JSON
+    fs.writeFileSync(tmp, JSON.stringify(page, null, '\t'));
+    fs.renameSync(tmp, file);
 }
 
 export function initPages(): [PageType[] | undefined, any] {
@@ -50,6 +56,15 @@ export function getPage(uuid: string): [PageType | undefined, any] {
     }
     try {
         const page = readPage(uuid);
+        // 兼容旧数据：缺少分组列表时补空数组，避免后续 .findIndex 报错
+        if (!Array.isArray(page.itemGroupList)) {
+            page.itemGroupList = [];
+        }
+        page.itemGroupList.forEach(group => {
+            if (!Array.isArray(group.list)) {
+                group.list = [];
+            }
+        });
         return [page, undefined];
     }
     catch (e) {
@@ -200,7 +215,7 @@ export function deletePageItemGroup(pageUUID: string, itemGroupUUID: string): [s
             return [undefined, "项目组不存在"];
         }
         const itemGroup = page.itemGroupList.splice(index, 1)[0];
-        itemGroup.list.forEach(item => {
+        (itemGroup.list || []).forEach(item => {
             const p = getItemPath(item.type, item.uuid!);
             if (fs.existsSync(p)) {
                 fs.rmSync(p, { recursive: true });
@@ -226,8 +241,9 @@ export function updatePageItem(pageUUID: string, obj: Partial<ItemType>): [ItemT
         if (index.groupIndex == -1 || index.itemIndex == -1) {
             return [undefined, "项目不存在"];
         }
-        let item = page.itemGroupList[index.groupIndex].list[index.itemIndex];
-        item = { ...item, ...obj, modifyTime: Date.now(), createTime: item.createTime };
+        const oldItem = page.itemGroupList[index.groupIndex].list[index.itemIndex];
+        // type 决定数据目录，禁止通过更新体改掉
+        const item = { ...oldItem, ...obj, type: oldItem.type, modifyTime: Date.now(), createTime: oldItem.createTime };
         page.itemGroupList[index.groupIndex].list[index.itemIndex] = item;
         writePage(page);
         return [item, undefined];

@@ -14,6 +14,58 @@ import { useToolsUrlApi } from './tools/urlApi';
 
 const router: Router = Router();
 
+// 允许上传的扩展名白名单（禁止 html/svg/js 等可执行内容）
+const UPLOAD_EXT_WHITELIST = new Set([
+    ".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".bmp", ".avif",
+    ".pdf", ".txt", ".json", ".zip", ".mp3", ".mp4", ".webm", ".woff", ".woff2",
+]);
+// 允许浏览器内联展示的扩展名，其余一律按附件下载，避免存储型 XSS
+const INLINE_EXT_WHITELIST = new Set([".png", ".jpg", ".jpeg", ".gif", ".webp", ".ico", ".bmp", ".avif"]);
+
+/** 文件响应统一加安全头；非图片强制下载 */
+function setFileResponseHeaders(res: any, filename: string) {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Content-Security-Policy", "default-src 'none'; sandbox");
+    if (!INLINE_EXT_WHITELIST.has(path.extname(filename).toLowerCase())) {
+        res.setHeader("Content-Disposition", "attachment; filename*=UTF-8''" + encodeURIComponent(filename));
+    }
+}
+
+/** 上传前校验 query 里的文件名/前缀/扩展名，任何一项不合法直接 400 */
+function validateUploadQuery(req: any, res: any, next: any) {
+    const filename = typeof req.query.filename === "string" ? req.query.filename : "";
+    if (filename) {
+        if (!UrlsUtils.checkSinglePath(filename)) {
+            return res.status(400).json({ code: 400, msg: "非法文件名" });
+        }
+        if (!UPLOAD_EXT_WHITELIST.has(path.extname(filename).toLowerCase())) {
+            return res.status(400).json({ code: 400, msg: "不支持的文件类型" });
+        }
+    }
+    const prifix = typeof req.query.prifix === "string" ? req.query.prifix : "";
+    if (prifix && !/^[A-Za-z0-9_-]{1,40}$/.test(prifix)) {
+        return res.status(400).json({ code: 400, msg: "非法文件名前缀" });
+    }
+    const extname = typeof req.query.extname === "string" ? req.query.extname.replace(/^\./, "") : "";
+    if (extname) {
+        if (!/^[a-z0-9]{1,8}$/i.test(extname) || !UPLOAD_EXT_WHITELIST.has("." + extname.toLowerCase())) {
+            return res.status(400).json({ code: 400, msg: "不支持的文件类型" });
+        }
+    }
+    next();
+}
+
+/** multer 中间件包装：把上传错误转成 JSON 400，而不是 HTML 500 */
+function uploadSingle(field: string) {
+    const middleware = upload.single(field);
+    return (req: any, res: any, next: any) => middleware(req, res, (err: any) => {
+        if (err) {
+            return res.status(400).json({ code: 400, msg: err.message || "上传失败" });
+        }
+        next();
+    });
+}
+
 useUserApi(router);
 usePageApi(router);
 useItemApi(router);
@@ -33,6 +85,7 @@ router.get("/files/items/:itemType/:itemUUID/:filename", async (req, res) => {
         return res.status(404).send(404);
     }
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    setFileResponseHeaders(res, filename);
     return res.sendFile(p);
 });
 
@@ -60,6 +113,7 @@ router.get("/files/:objType/:uuid/:filename", async (req, res, next) => {
         return res.status(404).send(404);
     }
     res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+    setFileResponseHeaders(res, filename);
 
     return res.sendFile(p);
 });
@@ -79,20 +133,19 @@ const storage = multer.diskStorage({
         }
     },
     filename: (req, file, cb) => {
-        let filename = req.query.filename as string || "";
-        if (!filename) {
-            filename = nanoid(16);
-            if (req.query.prifix) {
-                filename = req.query.prifix + filename;
-            }
-            if (req.query.extname) {
-                filename = filename + '.' + req.query.extname;
-            }
-            else {
-                filename = filename + path.extname(file.originalname);
-            }
+        // 自定义文件名已由 validateUploadQuery 校验过（无路径分隔符、扩展名在白名单内）
+        const provided = typeof req.query.filename === "string" ? req.query.filename : "";
+        if (provided) {
+            return cb(null, provided);
         }
-        cb(null, filename);
+        let filename = nanoid(16);
+        const prifix = typeof req.query.prifix === "string" ? req.query.prifix : "";
+        if (prifix) {
+            filename = prifix + filename;
+        }
+        const extname = typeof req.query.extname === "string" ? req.query.extname.replace(/^\./, "") : "";
+        const ext = extname ? "." + extname : path.extname(file.originalname).toLowerCase();
+        cb(null, filename + ext);
     }
 });
 
@@ -102,16 +155,12 @@ const upload = multer({
     limits: {
         fileSize: 100 * 1024 * 1024 // 限制 100MB
     },
-    fileFilter: (req, file, cb) => {
-        // const filetypes = /jpeg|jpg|png|pdf/;
-        // const mimetype = filetypes.test(file.mimetype);
-        // const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
-
-        // if (mimetype && extname) {
-        //     return cb(null, true);
-        // }
-        // cb(new Error('只支持图片(jpg/png)和PDF文件！'));
-        return cb(null, true);
+    fileFilter: (_req, file, cb) => {
+        const ext = path.extname(file.originalname).toLowerCase();
+        if (!UPLOAD_EXT_WHITELIST.has(ext)) {
+            return cb(new Error("不支持的文件类型: " + (ext || "无扩展名")));
+        }
+        cb(null, true);
     }
 });
 
@@ -131,7 +180,7 @@ router.post('/upload/file/items/:itemType/:itemUUID', async (req, res, next) => 
     }
     next();
 
-}, upload.single("file"), (req, res) => {
+}, validateUploadQuery, uploadSingle("file"), (req, res) => {
     res.status(200).json({
         code: 200,
         msg: '文件上传成功',
@@ -163,7 +212,7 @@ router.post('/upload/file/:objType/:uuid', async (req, res, next) => {
     }
     next();
 
-}, upload.single("file"), (req, res) => {
+}, validateUploadQuery, uploadSingle("file"), (req, res) => {
     res.status(200).json({
         code: 200,
         msg: '文件上传成功',

@@ -2,15 +2,23 @@ import fs from 'fs';
 import path from 'path';
 import dotenv from 'dotenv';
 
+const presetEnv = { ...process.env };
 const envFile = path.resolve(process.cwd(), '.env');
 dotenv.config({ path: envFile });
 const localEnvFile = path.resolve(process.cwd(), '.env.local');
 if (fs.existsSync(localEnvFile)) {
+    // .env.local 只覆盖 .env；PM2 / 命令行显式传入的变量优先级更高
     dotenv.config({ path: localEnvFile, override: true });
+}
+for (const key of Object.keys(presetEnv)) {
+    if (presetEnv[key] !== undefined) {
+        process.env[key] = presetEnv[key];
+    }
 }
 
 
-export const DATA_DIR = process.env.DATA_DIR;
+// 统一解析成绝对路径，避免不同启动目录下读写到不同位置
+export const DATA_DIR = path.resolve(process.cwd(), process.env.DATA_DIR || './data');
 
 console.log(`数据目录:${DATA_DIR}`);
 

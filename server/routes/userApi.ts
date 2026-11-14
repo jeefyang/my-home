@@ -9,7 +9,8 @@ export function useUserApi(router: Router) {
     userRouter.setRouter("getUser", async (from, req, res) => {
         const [user, err] = verifyUser(req.headers.pathid, req.headers.secondcode);
         if (err) {
-            return { err: err };
+            // 未登录/凭据错误按 401 返回，前端据此弹登录框
+            return { code: 401, msg: "身份验证失败", err: err };
         }
         // 证明是程序首次运行
         if (!user) {
@@ -35,9 +36,13 @@ export function useUserApi(router: Router) {
     });
 
     userRouter.setRouter("createUser", async (from, req, res) => {
-        const check = await verifyUserFromReq(req);
-        if (check) {
-            return check;
+        // 只有管理员可以创建用户，且类型必须在白名单内
+        const [adminUser, adminError] = verifyUser(req.headers.pathid, req.headers.secondcode);
+        if (adminError || !adminUser || adminUser.type !== "admin") {
+            return { code: 401, msg: "管理员验证失败" };
+        }
+        if (from.type !== "user" && from.type !== "admin") {
+            return { code: 400, msg: "用户类型不合法" };
         }
         const [user, err] = createUser(from.type);
         if (err) {
@@ -117,9 +122,13 @@ export function useUserApi(router: Router) {
 
     userRouter.setRouter("editUserPathID", async (from, req, res) => {
 
-        const [adminUser, adminError] = verifyUser(req.headers.pathid, req.headers.secondcode);
+        const [loginUser, loginError] = verifyUser(req.headers.pathid, req.headers.secondcode);
+        // 必须先证明自己就是这个 pathID 的主人（拿到旧口令）
+        if (loginError || !loginUser) {
+            return { code: 401, msg: "身份验证失败", err: loginError || "Unauthorized" };
+        }
         // 暂时只能管理员可以修改自己的pathID,普通用户暂不开放
-        if (from.newPathID && (adminError || !adminUser || adminUser.type !== "admin")) {
+        if (from.newPathID && loginUser.type !== "admin") {
             return { code: 401, msg: "管理员验证失败" };
         }
         if (!from.newPathID && from.newSecondCode == undefined) {

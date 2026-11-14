@@ -82,7 +82,7 @@ if (isDev) {
             app.use(vite.middlewares);
 
             // ✅ 4. 监听端口
-            const PORT = parseInt(process.env.PORT || '5173');
+            const PORT = parseInt(String(process.env.PORT || process.env.SERVER_PORT || '3000'), 10);
             httpServer.listen(PORT, () => {
                 console.log(`🚀 Dev server running on http://localhost:${PORT}`);
             });
@@ -104,18 +104,24 @@ else {
     });
     // 其他路径
     app.get("/{*splat}", (req, res) => {
-        const splat: string[] = (<any>req.params).splat;
+        const splat: string[] = (<any>req.params).splat || [];
+        const indexFile = path.join(clientPath, 'index.html');
+        // 防止 ../ 跳出 dist/client 读取任意文件
+        const requested = path.resolve(clientPath, splat.join('/'));
+        if (requested !== clientPath && !requested.startsWith(clientPath + path.sep)) {
+            return res.sendFile(indexFile);
+        }
         // 随机组件就添加缓存控制
         if (splat.length > 0 && splat[splat.length - 1].includes('-')) {
             res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
         }
-        res.sendFile(path.join(clientPath, splat.join('/')), (e) => {
+        res.sendFile(requested, (e) => {
             // 如果找不到文件,则返回 index.html
-            e && res.sendFile(path.join(clientPath, 'index.html'));
+            if (e) res.sendFile(indexFile);
         });
     });
     // 这里的 process.env.SERVER_PORT 正好能接住你之前在 PM2 ecosystem 配置里写的 PORT: 4000
-    const port = process.env.SERVER_PORT || 3000;
+    const port = process.env.SERVER_PORT || process.env.PORT || 3000;
 
     app.listen(port, () => {
         console.log(`🚀 后端服务已启动，生产环境监听端口: ${port}`);

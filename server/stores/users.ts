@@ -2,7 +2,7 @@ import { nanoid } from "nanoid";
 import { UsersFolder, DATA_DIR, dataOptions, dataFolder, filesFolder } from "./data";
 import fs from "fs";
 import path from "path";
-import { verify } from "crypto";
+import crypto from "crypto";
 import { ResSendType } from "@common/apis/tools/apiUrlsTrans";
 import { type Request } from "express";
 import { UrlsUtils } from "../utils/urls";
@@ -11,6 +11,35 @@ export const UserFileName = "user.jsonc";
 
 const cacheUserMax = 1000;// 缓存用户数量
 export const cacheUserList: UserType[] = [];
+
+/** 常量时间字符串比较，避免口令被逐字节试探 */
+function safeEqual(a: string, b: string): boolean {
+    const ha = crypto.createHash("sha256").update(a).digest();
+    const hb = crypto.createHash("sha256").update(b).digest();
+    return crypto.timingSafeEqual(ha, hb);
+}
+
+/** 原子写 user.jsonc：先写临时文件再 rename，避免进程中断留下半截 JSON */
+function writeUserFile(dir: string, user: UserType) {
+    const file = path.join(dir, UserFileName);
+    const tmp = file + ".tmp";
+    fs.writeFileSync(tmp, JSON.stringify(user, null, '\t'));
+    fs.renameSync(tmp, file);
+}
+
+/** 同步刷新缓存，避免改名/改口令后命中旧对象 */
+function refreshUserCache(user: UserType) {
+    const index = cacheUserList.findIndex(v => v.uuid == user.uuid);
+    if (index != -1) {
+        cacheUserList[index] = user;
+    }
+    else {
+        cacheUserList.push(user);
+    }
+    if (cacheUserList.length > cacheUserMax) {
+        cacheUserList.shift();
+    }
+}
 
 
 /** 创建用户 */
@@ -112,7 +141,8 @@ export function editUserPathID(fromPathID: string, toPathID?: string, secondCode
             user.secondCode = secondCode;
             user.modifyTime = Date.now();
         }
-        fs.writeFileSync(path.join(newP, UserFileName), JSON.stringify(user, null, '\t'));
+        writeUserFile(newP, user);
+        refreshUserCache(user);
 
         return [user, undefined];
     }
@@ -130,6 +160,13 @@ export function overCancelUser(pathID: string): [string | undefined, any] {
         return [undefined, "用户不存在"];
     }
     try {
+        // 至少保留一个用户，避免把系统删成空壳
+        const allUsers = fs.readdirSync(path.join(DATA_DIR, UsersFolder)).filter(name => {
+            return fs.existsSync(path.join(DATA_DIR, UsersFolder, name, UserFileName));
+        });
+        if (allUsers.length <= 1) {
+            return [undefined, "至少需要一个用户"];
+        }
         const index = cacheUserList.findIndex(v => v.pathID == pathID);
         if (index != -1) {
             cacheUserList.splice(index, 1);
@@ -180,10 +217,12 @@ export function updateUser(pathID: string, obj: Partial<UserType>): [UserType | 
         return [undefined, data[1]];
     }
     try {
-        let user = data[0]!;
+        const oldUser = data[0]!;
         // 不允许修改pathID,type,secondCode
-        user = { ...user!, ...obj, uuid: user.uuid, pathID: user.pathID, type: user.type, secondCode: user.secondCode, modifyTime: Date.now() };
-        fs.writeFileSync(path.join(DATA_DIR, UsersFolder, pathID, UserFileName), JSON.stringify(user, null, '\t'));
+        const user: UserType = { ...oldUser, ...obj, uuid: oldUser.uuid, pathID: oldUser.pathID, type: oldUser.type, secondCode: oldUser.secondCode, modifyTime: Date.now() };
+        writeUserFile(path.join(DATA_DIR, UsersFolder, pathID), user);
+        // 缓存里可能还是旧对象，必须同步替换
+        refreshUserCache(user);
         return [user, undefined];
     }
     catch (e) {
@@ -203,8 +242,9 @@ export function getUserList(): [Partial<UserType>[] | undefined, any] {
                 continue;
             }
             const user = JSON.parse(fs.readFileSync(f, "utf-8")) as Partial<UserType>;
-            // 删除pathID,防止pathID泄露,尊重隐私(doge)
+            // 删除各自身份凭据,防止泄露
             delete user.pathID;
+            delete user.secondCode;
             data.push(user);
         }
         data = data.sort((a, b) => {
@@ -238,7 +278,7 @@ export function verifyUser(pathID: string, secondCode?: string): [UserType | und
         return [undefined, data[1]];
     }
     const user = data[0]!;
-    if (user.secondCode && user.secondCode != secondCode) {
+    if (user.secondCode && !safeEqual(user.secondCode, secondCode || "")) {
         return [undefined, "密码错误"];
     }
     return [user, undefined];
