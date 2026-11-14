@@ -16,3 +16,4 @@ reasonix code   # 自动加载 .reasonix/ 下的记忆
 ## 当前记忆
 
 - `memories/bookmark-feature.md` — 书签工具完成状态
+- `memories/page-icons-research.md` — 页面图标来源与渲染契约（research #2）
