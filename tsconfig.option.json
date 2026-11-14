@@ -3,7 +3,7 @@
     "extends": "@tsconfig/node24/tsconfig.json",
     "compilerOptions": {
         "composite": true,
-        "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.server.tsbuildinfo",
+        "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.option.tsbuildinfo",
         "module": "ESNext",
         "moduleResolution": "Bundler",
         "allowJs": true,
@@ -20,6 +20,10 @@
     ],
     "exclude": [
         "node_modules",
+        // 这两个文件由 unplugin 生成，只为 Vue 应用服务；
+        // 放进本工程会把 src/**/*.vue 全部拉进来，而本工程没有 @/* 路径映射
+        "auto-imports.d.ts",
+        "components.d.ts",
     ],
     "references": []
 }

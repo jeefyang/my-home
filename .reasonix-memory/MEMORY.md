@@ -12,3 +12,4 @@
 - [QuickAccessItem 快捷访问](quickaccess-item.md) — 快捷访问网址元件 + BookmarkItem 复制数据
 - [MagnetItem 磁力补全](magnet-item.md) — 磁力链接补全元件
 - [CryptoItem 暗号工具](crypto-item.md) — 佛论禅/核心价值观/Base64 加密解密
+- [2026-11 安全加固](security-hardening-2026-11.md) — P0 越权/穿越/SSRF/XSS 修复 + P1/P2 体验修复 + scripts/security-check.mjs

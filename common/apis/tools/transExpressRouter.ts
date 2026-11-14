@@ -12,7 +12,7 @@ export class TransExpressRouter<T extends ReturnType<typeof apiUrlsTrans>> {
             try {
                 const data = await cb(from, req, res);
                 if (data.err) {
-                    const code = data.code || 500;
+                    const code = data.code ?? 500;
                     res.status(code).json({
                         code: code,
                         msg: data.msg || "操作错误",
@@ -20,7 +20,7 @@ export class TransExpressRouter<T extends ReturnType<typeof apiUrlsTrans>> {
                     });
                     return;
                 }
-                const code = data.code || 200;
+                const code = data.code ?? 200;
                 res.status(code).json({
                     code: code,
                     msg: data.msg || "操作成功",
@@ -28,11 +28,13 @@ export class TransExpressRouter<T extends ReturnType<typeof apiUrlsTrans>> {
                 });
             }
             catch (err) {
-                const code = 503;
+                // 以前这里吞掉了所有异常，排查时只能看到 503；先把堆栈打出来
+                console.error(`[api] ${String(key)} 处理异常`, err);
+                const code = 500;
                 res.status(code).json({
                     code: code,
-                    msg: "服务器数据冲突",
-                    err: err
+                    msg: "服务器内部错误",
+                    err: process.env.NODE_ENV === 'development' ? ((err as any)?.stack || err) : ""
                 });
                 return;
             }

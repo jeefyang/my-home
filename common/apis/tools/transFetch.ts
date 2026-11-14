@@ -37,7 +37,7 @@ export class TransFetch<T extends ReturnType<typeof apiUrlsTrans>> {
         }
     }
 
-    getHeaderFn: <K extends keyof T>(key: K) => Promise<HeadersInit | undefined> = async () => undefined;
+    getHeaderFn: <K extends keyof T>(key: K) => Promise<Record<string, string> | undefined> = async () => undefined;
 
     getErrFn: <K extends keyof T>(key: K, err: any) => Promise<ResSendType<T[K]["to"]>> = async (key, err) => {
         return {
@@ -47,8 +47,13 @@ export class TransFetch<T extends ReturnType<typeof apiUrlsTrans>> {
         };
     };
 
+    /** 单次请求超时时间(ms) */
+    timeout: number = 15000;
+
     /** 请求 */
     async request<K extends keyof T>(key: K, data?: T[K]["from"]): Promise<ResSendType<T[K]["to"]>> {
+        const controller = new AbortController();
+        const timer = setTimeout(() => controller.abort(), this.timeout);
         try {
             const item = this.transObj[key];
             if (!item) {
@@ -61,7 +66,33 @@ export class TransFetch<T extends ReturnType<typeof apiUrlsTrans>> {
                 url += "?" + new URLSearchParams(data as any).toString();
             }
             const headers = await this.getHeaderFn(key);
-            const res = await (await fetch(url, { method: item.method, body: item.method == "POST" ? JSON.stringify(data) : undefined, headers: headers })).json();
+            const response = await fetch(url, {
+                method: item.method,
+                body: item.method == "POST" ? JSON.stringify(data) : undefined,
+                headers: headers,
+                signal: controller.signal
+            });
+            const text = await response.text();
+            let res: any;
+            try {
+                res = text ? JSON.parse(text) : {};
+            } catch (err) {
+                return {
+                    code: 666,
+                    msg: `接口返回了非 JSON 数据(${response.status})`,
+                    err: text.slice(0, 200)
+                } as ResSendType<T[K]["to"]>;
+            }
+            if (response.status == 401) {
+                return { code: 401, msg: res?.msg || "登录已失效", err: res?.err } as ResSendType<T[K]["to"]>;
+            }
+            if (!response.ok) {
+                return {
+                    code: res?.code || response.status,
+                    msg: res?.msg || `请求失败(${response.status})`,
+                    err: res?.err
+                } as ResSendType<T[K]["to"]>;
+            }
             if (this.eventList["afterFetch"]) {
                 for (const fn of this.eventList["afterFetch"]!) {
                     if (await fn(key, res)) {
@@ -71,10 +102,17 @@ export class TransFetch<T extends ReturnType<typeof apiUrlsTrans>> {
             }
             return res;
         }
-        catch (err) {
-            return this.getErrFn(key, err);
+        catch (err: any) {
+            const aborted = err?.name == "AbortError";
+            return {
+                code: 666,
+                msg: aborted ? "请求超时" : "请求失败",
+                err
+            } as ResSendType<T[K]["to"]>;
         }
-
+        finally {
+            clearTimeout(timer);
+        }
     }
 
 }

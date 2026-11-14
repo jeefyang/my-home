@@ -8,8 +8,7 @@ export function apiUrlsTrans<F extends any, T extends any, D extends { [x in str
     const newO = {} as { [x in keyof D]: { url: string; } & D[x] };
     for (const key in o) {
         const c = o[key as keyof D] || {};
-        //@ts-expect-error
-        newO[key as keyof D] = { url: headerUrl + key, ...c };
+        newO[key as keyof D] = { url: headerUrl + key, ...c } as { url: string } & D[keyof D];
 
     }
     return newO;

@@ -9,6 +9,8 @@
         "preview": "vite preview",
         "build-only": "vite build --config vite.config.server.ts && vite build --config vite.config.ts",
         "type-check": "vue-tsc --build",
+        "test:security": "node scripts/security-check.mjs",
+        "verify": "vue-tsc --build && pnpm build && node scripts/security-check.mjs",
         "format": "prettier --write --experimental-cli src/",
         "update": "git pull&&pnpm install&&npm run build && pm2 reload ecosystem.config.cjs",
         "start": "pm2 start ecosystem.config.cjs",

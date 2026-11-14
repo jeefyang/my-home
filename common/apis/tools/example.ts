@@ -1,5 +1,6 @@
 import { apiUrlsTrans } from "./apiUrlsTrans";
 import { TransExpressRouter } from "./transExpressRouter";
+import { Router } from "express";
 import { TransFetch } from "./transFetch";
 
 
@@ -10,7 +11,7 @@ const ExampleApiUrl = apiUrlsTrans("test/", {
     testTo: { method: "POST", to: {} as { data: string; } }
 });
 
-const exampleRouter = new TransExpressRouter(ExampleApiUrl, undefined);
+const exampleRouter = new TransExpressRouter(ExampleApiUrl, Router());
 
 
 exampleRouter.setRouter('testPost', async (from) => {
