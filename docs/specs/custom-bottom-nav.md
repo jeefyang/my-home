@@ -113,7 +113,7 @@
 - 输出 `src/assets/page-icons.json`：`{ [id]: { from: "tabler/Home", svg: "<svg …>" } }`。
 - 语义名到包内名的别名表（Chart / Zap / Chess / Life / Log / Network / Pie / Scroll / Seed / Trending / Zoom 无同名），生成器内维护 `ALIAS`。
 - 生成结果**提交进仓库**，不在 `pnpm build` 时跑，避免构建依赖 `node_modules` 版本。
-- 规模：≥120 个，覆盖 6 个包（tabler / carbon / material / fluen / ionicons4 / ionicons5）；gzip ≈ 8–12 KB。
+- 规模：≥120 个，覆盖 6 个包（tabler / carbon / material / fluent / ionicons4 / ionicons5）；gzip ≈ 8–12 KB。
 
 ### 6.2 选择器数据
 
