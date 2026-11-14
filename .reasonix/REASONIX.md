@@ -16,3 +16,4 @@ reasonix code   # 自动加载 .reasonix/ 下的记忆
 ## 当前记忆
 
 - `memories/bookmark-feature.md` — 书签工具完成状态
+- `memories/custom-bottom-nav.md` — 自定义底部导航规格与四项默认决策
