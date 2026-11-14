@@ -7,14 +7,14 @@
                     <!-- 按钮分组  -->
                     <div v-if="group.display == 'btn'" class="mb-2 group_btn">
                         <n-card class="btnGroup group_btn mb-2" content-class="flex flex-gap-1 flex-wrap width-100" :style="group.style">
-                            <n-button type="primary" v-for="item in group.list" :key="item.uuid" @click="toItem(group, item)">{{ getItemTitle(item) }}</n-button>
+                            <n-button type="primary" v-for="item in visibleList(group)" :key="item.uuid" @click="toItem(group, item)">{{ getItemTitle(item) }}</n-button>
                         </n-card>
                     </div>
 
                     <!-- 图标分组 -->
                     <div v-else-if="group.display == 'icon'" class="mb-2 group_icon">
                         <n-card class="btnGroup group_btn mb-2" content-class="flex flex-gap-1 flex-wrap width-100" :style="group.style">
-                            <n-flex class="width-43px mb-2" vertical align="center" style="gap: 0" v-for="item in group.list" :key="item.uuid">
+                            <n-flex class="width-43px mb-2" vertical align="center" style="gap: 0" v-for="item in visibleList(group)" :key="item.uuid">
                                 <n-button tertiary type="primary" circle @click="toItem(group, item)" style="overflow: hidden">
                                     <n-image preview-disabled v-if="getItemIcon(item)" :src="getItemAbsIcon(item)"></n-image>
                                     <div v-else>{{ getItemTitle(item)[0] }}</div>
@@ -28,7 +28,7 @@
 
                     <!-- 自适应盒子分组 -->
                     <div v-else-if="group.display == 'box'" class="mb-2 flex flex-gap-2 flex-wrap">
-                        <n-card class="group_box" v-for="item in group.list" :key="item.uuid" :style="{ ...(group.style || {}), ...(item.style || {}) }" content-class="group_box_content">
+                        <n-card class="group_box" v-for="item in visibleList(group)" :key="item.uuid" :style="{ ...(group.style || {}), ...(item.style || {}) }" content-class="group_box_content">
                             <item-view :item="item" :pageUUID="curPage!.uuid" :itemGroupUUID="group.uuid ?? ''" :display="group.display"></item-view>
                         </n-card>
                     </div>
@@ -36,7 +36,7 @@
                     <!-- 宽度盒子分组(占满屏幕宽度) -->
                     <div v-else-if="group.display == 'widthBox'" class="group_widthBox" style="height: 100%; display: flex; flex-direction: column">
                         <n-card
-                            v-for="item in group.list"
+                            v-for="item in visibleList(group)"
                             :key="item.uuid"
                             class="mb-2"
                             style="height: 100%; display: flex; flex-direction: column; overflow: hidden"
@@ -55,7 +55,7 @@
                     <div v-else-if="group.display == 'fullPage'" class="group_full">
                         <n-card
                             style="flex: 1; display: flex; flex-direction: column; overflow: auto"
-                            v-for="item in group.list"
+                            v-for="item in visibleList(group)"
                             :key="item.uuid"
                             content-class="group_full_content"
                             :style="{ ...(group.style || {}), ...(item.style || {}) }"
@@ -108,7 +108,7 @@ import { useDataStore } from "@/stores/data";
 import { pageFetch } from "@/utils/jFetch";
 import { ItemRouterList } from "@common/utils/itemRouterouterList";
 import { useThemeVars, type GlobalThemeOverrides } from "naive-ui";
-import { computed, defineAsyncComponent, KeepAlive, nextTick, onMounted, ref, watch } from "vue";
+import { computed, defineAsyncComponent, KeepAlive, nextTick, onBeforeUnmount, onMounted, ref, watch } from "vue";
 import ItemView from "@/components/ItemView.vue";
 import FloatBtn from "@/components/FloatBtn.vue";
 import ToolBar from "@/components/ToolBar.vue";
@@ -137,6 +137,62 @@ const props = defineProps({
 const curPage = computed(() => {
     return dataStore.pageList.find((page) => page.uuid == props.pageUUID);
 });
+
+// 大页面分批挂载：首屏先渲染前 FIRST_RENDER_COUNT 个元件，其余在浏览器空闲时补齐，
+// 避免一次挂载上百个 item 组件阻塞首屏。最终 DOM 与一次性挂载完全一致。
+const FIRST_RENDER_COUNT = 24;
+const RENDER_STEP = 24;
+const renderLimit = ref(FIRST_RENDER_COUNT);
+
+const totalItemCount = computed(() =>
+    (curPage.value?.itemGroupList ?? []).reduce((n, group) => n + (group.list?.length ?? 0), 0)
+);
+
+const visibleList = (group: ItemGroupType) => (group.list ?? []).slice(0, renderLimit.value);
+
+let idleHandle: number | null = null;
+
+const cancelMore = () => {
+    if (idleHandle === null) {
+        return;
+    }
+    if (typeof window.cancelIdleCallback === "function") {
+        window.cancelIdleCallback(idleHandle);
+    } else {
+        clearTimeout(idleHandle);
+    }
+    idleHandle = null;
+};
+
+const scheduleMore = () => {
+    cancelMore();
+    if (renderLimit.value >= totalItemCount.value) {
+        return;
+    }
+    const run = () => {
+        idleHandle = null;
+        if (renderLimit.value >= totalItemCount.value) {
+            return;
+        }
+        renderLimit.value += RENDER_STEP;
+        scheduleMore();
+    };
+    idleHandle =
+        typeof window.requestIdleCallback === "function"
+            ? window.requestIdleCallback(run, { timeout: 200 })
+            : (setTimeout(run, 16) as unknown as number);
+};
+
+// 切换页面时从首批重新开始，避免残留上一页的渲染预算
+watch(
+    () => props.pageUUID,
+    () => {
+        renderLimit.value = FIRST_RENDER_COUNT;
+        scheduleMore();
+    }
+);
+
+onBeforeUnmount(cancelMore);
 
 const toItem = (group: ItemGroupType, item: ItemType) => {
     selectItem.value = item;
@@ -183,6 +239,7 @@ const getItemAbsIcon = (item: ItemType): string => {
 };
 
 onMounted(async () => {
+    scheduleMore();
     const themeRes = await pageFetch.request("getPageData", { pageUUID: props.pageUUID, filename: "theme.json" });
     if (themeRes.code == 200 && themeRes.data) {
         try {
