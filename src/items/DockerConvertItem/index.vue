@@ -186,13 +186,14 @@ function parseDockerRun(cmd: string, includeVersion: boolean): { text: string; l
 
     while (i < parts.length) {
         const p = parts[i];
+        if (p === undefined) break;
         if (p.startsWith("-")) {
             const key = p.replace(/^-+/, "");
             // 取下一个作为值（如果有的话）
-            const next = i + 1 < parts.length ? parts[i + 1] : null;
+            const next = i + 1 < parts.length ? parts[i + 1] : undefined;
 
             // 值在下一个且不是另一个 flag
-            if (next !== null && !next.startsWith("-")) {
+            if (next !== undefined && !next.startsWith("-")) {
                 // 有些 flag 没有值
                 if (["d", "detach", "rm", "t", "tty", "i", "interactive", "privileged"].includes(key)) {
                     args[key] = args[key] || [];
@@ -281,8 +282,9 @@ function parseDockerRun(cmd: string, includeVersion: boolean): { text: string; l
             add(`- ${vol}`, indent6);
             // 检测命名卷
             const m = vol.match(/^([a-zA-Z][a-zA-Z0-9_-]+):/);
-            if (m && !vol.startsWith("./") && !vol.startsWith("/") && !vol.startsWith("~")) {
-                if (!namedVolumes.includes(m[1])) namedVolumes.push(m[1]);
+            const volumeName = m?.[1];
+            if (volumeName && !vol.startsWith("./") && !vol.startsWith("/") && !vol.startsWith("~")) {
+                if (!namedVolumes.includes(volumeName)) namedVolumes.push(volumeName);
             }
         }
         if (namedVolumes.length > 0) {

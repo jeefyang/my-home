@@ -25,7 +25,9 @@
         "types": [
             "naive-ui/volar"
         ],
-        "strict": false,
+        // 严格模式：同时启用 strictNullChecks 与 noImplicitAny，
+        // 与 noUncheckedIndexedAccess 配合，避免下标/可空对象在运行时炸掉。
+        "strict": true,
         // `vue-tsc --build` produces a .tsbuildinfo file for incremental type-checking.
         // Specified here to keep it out of the root directory.
         "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.app.tsbuildinfo"

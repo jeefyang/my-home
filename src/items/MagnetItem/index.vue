@@ -84,7 +84,7 @@ const outputLines = ref<OutputLine[]>([]);
 const examples = ["C4B7E5D5A5E5A5E5A5E5A5E5A5E5A5E5A5E5A5", "magnet:?xt=urn:btih:C4B7E5D5A5E5A5E5A5E5A5E5A5E5A5E5A5E5A5", "赵钱孙李周吴郑王冯陈褚卫蒋沈韩杨"];
 
 const loadExample = () => {
-    inputText.value = examples[Math.floor(Math.random() * examples.length)];
+    inputText.value = examples[Math.floor(Math.random() * examples.length)] ?? "";
     convert();
 };
 
@@ -254,7 +254,7 @@ function completeMagnet(input: string, addTrackers: boolean): { link: string; li
                     // 完整磁链，提取 hash
                     const m = decoded.match(/xt=urn:btih:([A-Fa-f0-9]+)/);
                     if (m) {
-                        hash = m[1].toUpperCase();
+                        hash = (m[1] ?? "").toUpperCase();
                         add(`  Info Hash: ${hash}`);
                     } else {
                         add("  ⚠️ 解码结果未找到 Info Hash", true);
@@ -264,13 +264,15 @@ function completeMagnet(input: string, addTrackers: boolean): { link: string; li
                 } else if (decoded.includes("&tr=")) {
                     // 已带 Tracker，提取 hash 然后保留原有 tracker
                     const parts = decoded.split("&tr=");
-                    const rawHash = parts[0].replace(/[^A-Fa-f0-9]/g, "");
+                    const rawHash = (parts[0] ?? "").replace(/[^A-Fa-f0-9]/g, "");
                     if (rawHash.length >= 32) {
                         hash = rawHash.toUpperCase().substring(0, 40);
                         add(`  Info Hash: ${hash}`);
                         for (let i = 1; i < parts.length; i++) {
-                            existingTrs.push(parts[i]);
-                            add(`  tr: ${parts[i]}`);
+                            const part = parts[i];
+                            if (!part) continue;
+                            existingTrs.push(part);
+                            add(`  tr: ${part}`);
                         }
                     } else {
                         add("  ⚠️ 未找到有效的 Info Hash", true);

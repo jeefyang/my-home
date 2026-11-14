@@ -316,9 +316,9 @@ const BUDDHA_IV = new TextEncoder().encode("Potato@Key@_@=_=");
 function bytesToBuddha(bytes: Uint8Array): string {
     let result = "佛曰：";
     for (let i = 0; i < bytes.length; i++) {
-        const byte = bytes[i];
-        if (byte < 128) result += TUDOU[byte];
-        else result += BYTEMARK[0] + TUDOU[byte - 128];
+        const byte = bytes[i]!;
+        if (byte < 128) result += TUDOU[byte]!;
+        else result += BYTEMARK[0]! + TUDOU[byte - 128]!;
     }
     return result;
 }
@@ -329,12 +329,12 @@ function buddhaToBytes(text: string): Uint8Array {
     const bytes: number[] = [];
     let i = 0;
     while (i < clean.length) {
-        const ch = clean[i];
+        const ch = clean[i]!;
         const bmIdx = BYTEMARK.indexOf(ch);
         if (bmIdx >= 0) {
             i++;
             if (i < clean.length) {
-                const lowIdx = TUDOU.indexOf(clean[i]);
+                const lowIdx = TUDOU.indexOf(clean[i]!);
                 if (lowIdx >= 0) bytes.push(lowIdx + 128);
             }
         } else {
@@ -376,13 +376,13 @@ async function buddhaDecrypt(text: string): Promise<string> {
     const decrypted = aesCbcDecrypt(data, BUDDHA_KEY, BUDDHA_IV);
 
     // 3. 去除 PKCS7 填充
-    const flag = decrypted[decrypted.length - 1];
+    const flag = decrypted[decrypted.length - 1]!;
     const unpadded = flag < 16 ? decrypted.slice(0, decrypted.length - flag) : decrypted;
 
     // 4. UTF-16LE → 文本
     const chars: number[] = [];
     for (let i = 0; i < unpadded.length; i += 2) {
-        const lo = unpadded[i],
+        const lo = unpadded[i]!,
             hi = unpadded[i + 1] || 0;
         if (lo !== 0 || hi !== 0) chars.push(lo | (hi << 8));
     }
@@ -431,16 +431,16 @@ function keyExpansion256(key: Uint8Array): Uint8Array[] {
     const w: Uint8Array[] = [];
     for (let i = 0; i < 8; i++) w.push(key.slice(i * 4, i * 4 + 4));
     for (let i = 8; i < 60; i++) {
-        let temp = new Uint8Array(w[i - 1]);
+        let temp = new Uint8Array(w[i - 1]!);
         if (i % 8 === 0) {
-            temp = new Uint8Array([temp[1], temp[2], temp[3], temp[0]]);
-            for (let j = 0; j < 4; j++) temp[j] = S_BOX[temp[j]];
-            temp[0] ^= RCON[Math.floor(i / 8) - 1];
+            temp = new Uint8Array([temp[1]!, temp[2]!, temp[3]!, temp[0]!]);
+            for (let j = 0; j < 4; j++) temp[j] = S_BOX[temp[j]!]!;
+            temp[0] = temp[0]! ^ RCON[Math.floor(i / 8) - 1]!;
         } else if (i % 8 === 4) {
-            for (let j = 0; j < 4; j++) temp[j] = S_BOX[temp[j]];
+            for (let j = 0; j < 4; j++) temp[j] = S_BOX[temp[j]!]!;
         }
         const n = new Uint8Array(4);
-        for (let j = 0; j < 4; j++) n[j] = w[i - 8][j] ^ temp[j];
+        for (let j = 0; j < 4; j++) n[j] = w[i - 8]![j]! ^ temp[j]!;
         w.push(n);
     }
     return w;
@@ -479,42 +479,42 @@ function aesBlockDecrypt(block: Uint8Array, key: Uint8Array): Uint8Array {
 }
 
 function subBytes(s: Uint8Array) {
-    for (let i = 0; i < 16; i++) s[i] = S_BOX[s[i]];
+    for (let i = 0; i < 16; i++) s[i] = S_BOX[s[i]!]!;
 }
 function invSubBytes(s: Uint8Array) {
     const inv: number[] = [];
-    for (let i = 0; i < 256; i++) inv[S_BOX[i]] = i;
-    for (let i = 0; i < 16; i++) s[i] = inv[s[i]];
+    for (let i = 0; i < 256; i++) inv[S_BOX[i]!] = i;
+    for (let i = 0; i < 16; i++) s[i] = inv[s[i]!]!;
 }
 function shiftRows(s: Uint8Array) {
     const t = new Uint8Array(s);
-    s[1] = t[5];
-    s[5] = t[9];
-    s[9] = t[13];
-    s[13] = t[1];
-    s[2] = t[10];
-    s[10] = t[2];
-    s[6] = t[14];
-    s[14] = t[6];
-    s[3] = t[15];
-    s[15] = t[11];
-    s[11] = t[7];
-    s[7] = t[3];
+    s[1] = t[5]!;
+    s[5] = t[9]!;
+    s[9] = t[13]!;
+    s[13] = t[1]!;
+    s[2] = t[10]!;
+    s[10] = t[2]!;
+    s[6] = t[14]!;
+    s[14] = t[6]!;
+    s[3] = t[15]!;
+    s[15] = t[11]!;
+    s[11] = t[7]!;
+    s[7] = t[3]!;
 }
 function invShiftRows(s: Uint8Array) {
     const t = new Uint8Array(s);
-    s[1] = t[13];
-    s[13] = t[9];
-    s[9] = t[5];
-    s[5] = t[1];
-    s[2] = t[10];
-    s[10] = t[2];
-    s[6] = t[14];
-    s[14] = t[6];
-    s[3] = t[7];
-    s[7] = t[11];
-    s[11] = t[15];
-    s[15] = t[3];
+    s[1] = t[13]!;
+    s[13] = t[9]!;
+    s[9] = t[5]!;
+    s[5] = t[1]!;
+    s[2] = t[10]!;
+    s[10] = t[2]!;
+    s[6] = t[14]!;
+    s[14] = t[6]!;
+    s[3] = t[7]!;
+    s[7] = t[11]!;
+    s[11] = t[15]!;
+    s[15] = t[3]!;
 }
 function gfMul(a: number, b: number): number {
     let p = 0;
@@ -530,7 +530,7 @@ function gfMul(a: number, b: number): number {
 function mixColumns(s: Uint8Array) {
     for (let c = 0; c < 4; c++) {
         const i = c * 4;
-        const t = [s[i], s[i + 1], s[i + 2], s[i + 3]];
+        const t: [number, number, number, number] = [s[i]!, s[i + 1]!, s[i + 2]!, s[i + 3]!];
         s[i] = gfMul(2, t[0]) ^ gfMul(3, t[1]) ^ t[2] ^ t[3];
         s[i + 1] = t[0] ^ gfMul(2, t[1]) ^ gfMul(3, t[2]) ^ t[3];
         s[i + 2] = t[0] ^ t[1] ^ gfMul(2, t[2]) ^ gfMul(3, t[3]);
@@ -540,7 +540,7 @@ function mixColumns(s: Uint8Array) {
 function invMixColumns(s: Uint8Array) {
     for (let c = 0; c < 4; c++) {
         const i = c * 4;
-        const t = [s[i], s[i + 1], s[i + 2], s[i + 3]];
+        const t: [number, number, number, number] = [s[i]!, s[i + 1]!, s[i + 2]!, s[i + 3]!];
         s[i] = gfMul(14, t[0]) ^ gfMul(11, t[1]) ^ gfMul(13, t[2]) ^ gfMul(9, t[3]);
         s[i + 1] = gfMul(9, t[0]) ^ gfMul(14, t[1]) ^ gfMul(11, t[2]) ^ gfMul(13, t[3]);
         s[i + 2] = gfMul(13, t[0]) ^ gfMul(9, t[1]) ^ gfMul(14, t[2]) ^ gfMul(11, t[3]);
@@ -548,7 +548,7 @@ function invMixColumns(s: Uint8Array) {
     }
 }
 function addRoundKey(s: Uint8Array, w: Uint8Array[], r: number) {
-    for (let i = 0; i < 16; i++) s[i] ^= w[r * 4 + Math.floor(i / 4)][i % 4];
+    for (let i = 0; i < 16; i++) s[i] = s[i]! ^ w[r * 4 + Math.floor(i / 4)]![i % 4]!;
 }
 
 function aesCbcEncrypt(data: Uint8Array, key: Uint8Array, iv: Uint8Array): Uint8Array {
@@ -560,7 +560,7 @@ function aesCbcEncrypt(data: Uint8Array, key: Uint8Array, iv: Uint8Array): Uint8
     for (let block = 0; block < padded.length / bs; block++) {
         const off = block * bs;
         const xored = new Uint8Array(bs);
-        for (let j = 0; j < bs; j++) xored[j] = padded[off + j] ^ prev[j];
+        for (let j = 0; j < bs; j++) xored[j] = padded[off + j]! ^ prev[j]!;
         const enc = aesBlockEncrypt(xored, key);
         result.set(enc, off);
         prev = new Uint8Array(enc);
@@ -575,7 +575,7 @@ function aesCbcDecrypt(data: Uint8Array, key: Uint8Array, iv: Uint8Array): Uint8
     for (let block = 0; block < data.length / bs; block++) {
         const off = block * bs;
         const dec = aesBlockDecrypt(data.slice(off, off + bs), key);
-        for (let j = 0; j < bs; j++) result[off + j] = dec[j] ^ prev[j];
+        for (let j = 0; j < bs; j++) result[off + j] = dec[j]! ^ prev[j]!;
         prev = data.slice(off, off + bs);
     }
     return result;
@@ -588,7 +588,7 @@ const carryWord = "诚信"; // 索引 10，表示 hex 值 A-F 需要加 10
 const separatorWord = "友善"; // 索引 11，用于分隔字节
 
 const wordToIndex: Record<string, number> = {};
-for (let i = 0; i < valueWords.length; i++) wordToIndex[valueWords[i]] = i;
+for (let i = 0; i < valueWords.length; i++) wordToIndex[valueWords[i]!] = i;
 wordToIndex[carryWord] = 10;
 wordToIndex[separatorWord] = 11;
 
@@ -621,11 +621,11 @@ function encodeValues(text: string): string {
     for (let i = 0; i < hexStr.length; i += 2) {
         if (i > 0) result.push(separatorWord);
         for (let j = 0; j < 2; j++) {
-            const digit = parseInt(hexStr[i + j], 16);
-            if (digit < 10) result.push(valueWords[digit]);
+            const digit = parseInt(hexStr[i + j]!, 16);
+            if (digit < 10) result.push(valueWords[digit]!);
             else {
                 result.push(carryWord);
-                result.push(valueWords[digit - 10]);
+                result.push(valueWords[digit - 10]!);
             }
         }
     }
@@ -694,7 +694,7 @@ function processBase64(text: string, direction: "encrypt" | "decrypt"): { text: 
             // UTF-8 文本 → 字节 → base64
             const data = new TextEncoder().encode(clean);
             let binary = "";
-            for (let i = 0; i < data.length; i++) binary += String.fromCharCode(data[i]);
+            for (let i = 0; i < data.length; i++) binary += String.fromCharCode(data[i]!);
             const encoded = btoa(binary);
             add(`  编码结果（${encoded.length} 字符）:`);
             lines.push({ text: encoded });

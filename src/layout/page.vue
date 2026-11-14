@@ -29,7 +29,7 @@
                     <!-- 自适应盒子分组 -->
                     <div v-else-if="group.display == 'box'" class="mb-2 flex flex-gap-2 flex-wrap">
                         <n-card class="group_box" v-for="item in group.list" :key="item.uuid" :style="{ ...(group.style || {}), ...(item.style || {}) }" content-class="group_box_content">
-                            <item-view :item="item" :pageUUID="curPage.uuid" :itemGroupUUID="group.uuid" :display="group.display"></item-view>
+                            <item-view :item="item" :pageUUID="curPage!.uuid" :itemGroupUUID="group.uuid ?? ''" :display="group.display"></item-view>
                         </n-card>
                     </div>
 
@@ -44,8 +44,8 @@
                         >
                             <item-view
                                 :item="item"
-                                :pageUUID="curPage.uuid"
-                                :itemGroupUUID="group.uuid"
+                                :pageUUID="curPage!.uuid"
+                                :itemGroupUUID="group.uuid ?? ''"
                                 :display="group.display"
                                 style="height: 100%; display: flex; flex-direction: column"
                             ></item-view>
@@ -62,8 +62,8 @@
                         >
                             <item-view
                                 :item="item"
-                                :pageUUID="curPage.uuid"
-                                :itemGroupUUID="group.uuid"
+                                :pageUUID="curPage!.uuid"
+                                :itemGroupUUID="group.uuid ?? ''"
                                 :display="group.display"
                                 style="height: 100%; display: flex; flex-direction: column"
                             ></item-view>
@@ -93,11 +93,11 @@
             <component
                 v-if="selectItem?.uuid"
                 :is="ItemView"
-                :key="selectItem.uuid"
-                :item="selectItem"
-                :pageUUID="curPage.uuid"
-                :itemGroupUUID="selectGroup.uuid"
-                :display="selectGroup.display"
+                :key="selectItem!.uuid"
+                :item="selectItem!"
+                :pageUUID="curPage!.uuid"
+                :itemGroupUUID="selectGroup!.uuid ?? ''"
+                :display="selectGroup!.display"
                 style="height: 100%; display: flex; flex-direction: column"
             ></component>
         </keep-alive>
@@ -118,12 +118,12 @@ import { UrlUtils } from "@/utils/url";
 
 const dataStore = useDataStore();
 const themeVars = useThemeVars();
-const themeOverrides = ref(<GlobalThemeOverrides>null);
+const themeOverrides = ref<GlobalThemeOverrides | null>(null);
 const showItem = ref(false);
-const selectItem = ref(<ItemType>null);
-const selectGroup = ref(<ItemGroupType>null);
+const selectItem = ref<ItemType | null>(null);
+const selectGroup = ref<ItemGroupType | null>(null);
 
-const parentRef = ref(<HTMLElement>null);
+const parentRef = ref<HTMLElement>();
 
 const showOption = ref(false);
 
@@ -144,7 +144,7 @@ const toItem = (group: ItemGroupType, item: ItemType) => {
     showItem.value = true;
 };
 
-const getItemTitle = (item: ItemType): string => {
+const getItemTitle = (item: ItemType | null | undefined): string => {
     if (!item) {
         return "";
     }

@@ -114,11 +114,11 @@ const initData = async () => {
     loading.value = true;
     const res = await itemFetch.request("getItemData", {
         itemType: props.item.type,
-        itemUUID: props.item.uuid,
+        itemUUID: props.item.uuid!,
         filename
     });
     if (res.code !== 200) {
-        msg.error(res.msg);
+        msg.error(res.msg || "获取失败");
         loading.value = false;
         return;
     }
@@ -130,7 +130,7 @@ const initData = async () => {
 const saveData = async (): Promise<boolean> => {
     const res = await itemFetch.request("updateItemData", {
         itemType: props.item.type,
-        itemUUID: props.item.uuid,
+        itemUUID: props.item.uuid!,
         filename,
         content: JSON.stringify(messageList.value)
     });
@@ -197,15 +197,19 @@ const copyMsg = (text: string) => {
 };
 
 const openEdit = (idx: number) => {
+    const message = messageList.value[idx];
+    if (!message) return;
     editIndex.value = idx;
-    editText.value = messageList.value[idx].content;
+    editText.value = message.content;
     editShow.value = true;
 };
 
 const confirmEdit = async () => {
     if (editIndex.value < 0 || !editText.value.trim()) return;
-    messageList.value[editIndex.value].content = editText.value.trim();
-    messageList.value[editIndex.value].modifyTime = Date.now();
+    const message = messageList.value[editIndex.value];
+    if (!message) return;
+    message.content = editText.value.trim();
+    message.modifyTime = Date.now();
     const ok = await saveData();
     if (ok) {
         editShow.value = false;

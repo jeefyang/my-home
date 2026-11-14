@@ -143,7 +143,7 @@ let savedSuccessfully = false;
 const loadData = async () => {
     const res = await itemFetch.request("getItemData", {
         itemType: props.item.type,
-        itemUUID: props.item.uuid,
+        itemUUID: props.item.uuid!,
         filename
     });
     if (res.code === 200 && res.data) {
@@ -176,7 +176,7 @@ const saveData = async () => {
     saving.value = true;
     const res = await itemFetch.request("updateItemData", {
         itemType: props.item.type,
-        itemUUID: props.item.uuid,
+        itemUUID: props.item.uuid!,
         filename,
         content: JSON.stringify(siteList.value)
     });
@@ -212,9 +212,9 @@ const addSite = () => {
         icon: ""
     });
     setTimeout(() => {
-        const div = document.querySelector(".qa-config-modal-list");
+        const div = document.querySelector<HTMLElement>(".qa-config-modal-list");
 
-        div.scroll({ top: div.scrollHeight, behavior: "smooth" });
+        if (div) div.scroll({ top: div.scrollHeight, behavior: "smooth" });
     }, 200);
 };
 
@@ -225,7 +225,7 @@ const deleteSite = (idx: number) => {
 const moveToTop = (idx: number) => {
     if (idx === 0) return;
     const item = siteList.value.splice(idx, 1)[0];
-    siteList.value.unshift(item);
+    if (item) siteList.value.unshift(item);
 };
 
 // ====== 图标上传 ======
@@ -285,7 +285,7 @@ const identifyIcon = async (idx: number) => {
         } else {
             msg.warning(res.msg || "无法获取标题");
         }
-        const filename = await Utils.fetchFaviconToServer(safeUrl, props.item.type, props.item.uuid);
+        const filename = await Utils.fetchFaviconToServer(safeUrl, props.item.type, props.item.uuid!);
         if (!filename) {
             msg.warning("图标获取失败");
         } else {
@@ -354,7 +354,7 @@ const convertIcon = async (idx: number) => {
 const saveConfig = async () => {
     // 处理每个站点的图标：base64 → 上传为文件
     for (let i = 0; i < siteList.value.length; i++) {
-        const site = siteList.value[i];
+        const site = siteList.value[i]!;
         if (!site.icon) continue;
 
         // base64 → 上传到服务器

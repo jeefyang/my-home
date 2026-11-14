@@ -495,10 +495,12 @@ const onDragEnd = () => {
 
 function findNodePath(items: BookmarkCollectionType[], uuid: string, path: string[] = []): string[] | null {
     for (let i = 0; i < items.length; i++) {
-        const cur = [...path, items[i].uuid];
-        if (items[i].uuid === uuid) return cur;
-        if (items[i].children && items[i].children.length > 0) {
-            const found = findNodePath(items[i].children, uuid, cur);
+        const item = items[i];
+        if (!item) continue;
+        const cur = [...path, item.uuid];
+        if (item.uuid === uuid) return cur;
+        if (item.children && item.children.length > 0) {
+            const found = findNodePath(item.children, uuid, cur);
             if (found) return found;
         }
     }
@@ -507,9 +509,14 @@ function findNodePath(items: BookmarkCollectionType[], uuid: string, path: strin
 
 function extractNode(items: BookmarkCollectionType[], uuid: string): BookmarkCollectionType | null {
     for (let i = 0; i < items.length; i++) {
-        if (items[i].uuid === uuid) return items.splice(i, 1)[0];
-        if (items[i].children && items[i].children.length > 0) {
-            const found = extractNode(items[i].children, uuid);
+        const item = items[i];
+        if (!item) continue;
+        if (item.uuid === uuid) {
+            const removed = items.splice(i, 1)[0];
+            return removed ?? null;
+        }
+        if (item.children && item.children.length > 0) {
+            const found = extractNode(item.children, uuid);
             if (found) return found;
         }
     }
@@ -518,11 +525,13 @@ function extractNode(items: BookmarkCollectionType[], uuid: string): BookmarkCol
 
 function insertBefore(items: BookmarkCollectionType[], targetUuid: string, newNode: BookmarkCollectionType): BookmarkCollectionType[] {
     for (let i = 0; i < items.length; i++) {
-        if (items[i].uuid === targetUuid) {
+        const item = items[i];
+        if (!item) continue;
+        if (item.uuid === targetUuid) {
             items.splice(i, 0, newNode);
             return items;
         }
-        if (items[i].children && items[i].children.length > 0) insertBefore(items[i].children, targetUuid, newNode);
+        if (item.children && item.children.length > 0) insertBefore(item.children, targetUuid, newNode);
     }
     return items;
 }
@@ -665,6 +674,7 @@ function doExpandItem(items: BookmarkCollectionType[], uuid: string): number {
     let loopCompareFunc = (root: BookmarkCollectionType[], folder: BookmarkCollectionType) => {
         for (let i = 0; i < folder.children.length; i++) {
             const c = folder.children[i];
+            if (!c) continue;
             const index = root.findIndex((item) => {
                 if (c.isFolder) {
                     return item.title === c.title && item.isFolder;
@@ -676,16 +686,19 @@ function doExpandItem(items: BookmarkCollectionType[], uuid: string): number {
                 root.push(c);
                 continue;
             }
+            const target = root[index];
+            if (!target) continue;
             if (c.isFolder) {
-                loopCompareFunc(root[index].children || [], c);
+                loopCompareFunc(target.children || [], c);
                 continue;
             }
-            root[index].title = c.title;
+            target.title = c.title;
         }
     };
     let loopFindFolderFunc = (root: BookmarkCollectionType[]) => {
         for (let i = root.length - 1; i >= 0; i--) {
             const c = root[i];
+            if (!c) continue;
             if (!c.isFolder) {
                 continue;
             }
@@ -753,11 +766,11 @@ const initData = async () => {
     loading.value = true;
     const res = await itemFetch.request("getItemData", {
         itemType: props.item.type,
-        itemUUID: props.item.uuid,
+        itemUUID: props.item.uuid ?? "",
         filename: `collection-${props.bookmark.uuid}.json`
     });
     if (res.code !== 200) {
-        msg.error(res.msg);
+        msg.error(res.msg ?? "");
         loading.value = false;
         return;
     }
@@ -783,6 +796,7 @@ const checkCurPath = (list: BookmarkCollectionType[] = dataList.value, count: nu
     }
     for (let i = 0; i < list.length; i++) {
         const item = list[i];
+        if (!item) continue;
         if (item.uuid !== curPath.value[count]) {
             continue;
         }
@@ -795,7 +809,7 @@ const checkCurPath = (list: BookmarkCollectionType[] = dataList.value, count: nu
 const saveData = async (): Promise<boolean> => {
     const res = await itemFetch.request("updateItemData", {
         itemType: props.item.type,
-        itemUUID: props.item.uuid,
+        itemUUID: props.item.uuid ?? "",
         filename: `collection-${props.bookmark.uuid}.json`,
         content: JSON.stringify(dataList.value)
     });
@@ -921,7 +935,7 @@ const fetchIcon = async () => {
     const targetUrl = normalizeUrl(formData._iconInput || formData.url);
     iconLoading.value = true;
     try {
-        const filename = await Utils.fetchFaviconToServer(targetUrl, props.item.type, props.item.uuid);
+        const filename = await Utils.fetchFaviconToServer(targetUrl, props.item.type, props.item.uuid ?? "");
         iconLoading.value = false;
         if (filename) {
             formData._iconInput = filename;
@@ -954,7 +968,7 @@ const detectUrl = async (rawUrl?: string) => {
         // 自动获取图标：先用 Google 直链预览，再尝试保存到服务器
         if (!formData._iconInput) {
             // 后台尝试保存到服务器，成功后替换为服务器文件
-            const filename = await Utils.fetchFaviconToServer(safeUrl, props.item.type, props.item.uuid);
+            const filename = await Utils.fetchFaviconToServer(safeUrl, props.item.type, props.item.uuid ?? "");
             if (filename) {
                 formData._iconInput = filename;
             } else {
@@ -1193,7 +1207,7 @@ const toExport = async () => {
     importStatusText.value = totalIcons > 0 ? `正在读取图标 0/${totalIcons}…` : "正在生成 HTML…";
 
     const cloned = JSON.parse(JSON.stringify(exportItems));
-    const resolveWithProgress = async (items) => {
+    const resolveWithProgress = async (items: BookmarkCollectionType[]) => {
         for (const item of items) {
             if (item.icon && !item.icon.startsWith("data:") && !item.icon.startsWith("http")) {
                 try {
@@ -1232,7 +1246,7 @@ const toExport = async () => {
     msg.success("导出成功");
 };
 
-function countIconsNeeded(items, cb) {
+function countIconsNeeded(items: BookmarkCollectionType[], cb: () => void) {
     for (const item of items) {
         if (item.icon && !item.icon.startsWith("data:") && !item.icon.startsWith("http")) cb();
         if (item.children) countIconsNeeded(item.children, cb);

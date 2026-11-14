@@ -32,7 +32,7 @@ export class Utils {
 
                 // 【关键修改】：不要挂在 body 上，挂在当前拥有焦点的元素的父级上（通常是点击的那个按钮所在的容器）
                 // 如果获取不到，就挂载到弹窗内部的任意一个已知 ID 的 div 上
-                const container = document.activeElement ? document.activeElement.parentNode : document.body;
+                const container = document.activeElement?.parentNode ?? document.body;
                 container.appendChild(ta);
 
                 ta.focus();

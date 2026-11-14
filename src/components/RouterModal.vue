@@ -35,8 +35,8 @@ import { computed, ref, watch } from "vue";
 
 const dataStore = useDataStore();
 const msg = useMessage();
-const cachePathID = ref(<string>undefined);
-const cacheSecondCode = ref(<string>undefined);
+const cachePathID = ref<string | undefined>(undefined);
+const cacheSecondCode = ref<string | undefined>(undefined);
 const fixedUrl = ref(0);
 const fixedUrlList: { label: string; value: number }[] = [
     { label: "不修改", value: 0 },
@@ -72,17 +72,19 @@ const submit = async () => {
     } else {
         const res = await userFetch.request("editUserPathID", { newPathID: cachePathID.value, newSecondCode: cacheSecondCode.value });
         if (res.code != 200) {
-            return msg.error(res.msg);
+            return msg.error(res.msg ?? "");
         }
-        dataStore.user = res.data;
-        dataStore.pathid = res.data.pathID;
-        dataStore.secondcode = res.data.secondCode;
+        // code 200 时后端必定返回用户数据
+        const user = res.data!;
+        dataStore.user = user;
+        dataStore.pathid = user.pathID;
+        dataStore.secondcode = user.secondCode ?? "";
         dataStore.save();
-        msg.success(res.msg);
+        msg.success(res.msg ?? "");
     }
     if (fixedUrl.value) {
         const params = new URLSearchParams(window.location.search);
-        const obj = {};
+        const obj: Record<string, string> = {};
         for (const [key, value] of params) {
             obj[key] = value;
         }

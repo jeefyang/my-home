@@ -21,7 +21,7 @@ export const vTouch: Directive = {
         const onTouchStart = (e: TouchEvent | MouseEvent) => {
             if (e instanceof TouchEvent && e.touches.length > 1) return; // 忽略多指
 
-            const touch = e instanceof TouchEvent ? e.touches[0] : e;
+            const touch = e instanceof TouchEvent ? e.touches[0]! : e;
             startX = touch.clientX;
             startY = touch.clientY;
             isLongPress = false;
@@ -39,7 +39,7 @@ export const vTouch: Directive = {
         };
 
         const onTouchMove = (e: TouchEvent | MouseEvent) => {
-            const touch = e instanceof TouchEvent ? e.touches[0] : e;
+            const touch = e instanceof TouchEvent ? e.touches[0]! : e;
             const moveX = touch.clientX;
             const moveY = touch.clientY;
 

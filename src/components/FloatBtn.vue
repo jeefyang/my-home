@@ -10,16 +10,16 @@
             right: props.isRight ? realX + 'px' : undefined,
             scale: curScale
         }"
-        v-touch:swipe.left="(e) => handleSelect('left', e)"
-        v-touch:swipe.right="(e) => handleSelect('right', e)"
-        v-touch:swipe.top="(e) => handleSelect('top', e)"
-        v-touch:swipe.bottom="(e) => handleSelect('bottom', e)"
-        v-touch:longtap="(e) => handleSelect('longtap', e)"
-        v-touch:press="(e) => handleSelect('press', e)"
-        v-touch:tap="(e) => handleSelect('tap', e)"
+        v-touch:swipe.left="(e: TouchEvent) => handleSelect('left', e)"
+        v-touch:swipe.right="(e: TouchEvent) => handleSelect('right', e)"
+        v-touch:swipe.top="(e: TouchEvent) => handleSelect('top', e)"
+        v-touch:swipe.bottom="(e: TouchEvent) => handleSelect('bottom', e)"
+        v-touch:longtap="(e: TouchEvent) => handleSelect('longtap', e)"
+        v-touch:press="(e: TouchEvent) => handleSelect('press', e)"
+        v-touch:tap="(e: TouchEvent) => handleSelect('tap', e)"
         dragOutside
-        v-touch:drag="(e) => handleSelect('drag', e)"
-        @dblclick="(e) => handleSelect('dblclick', e)"
+        v-touch:drag="(e: TouchEvent) => handleSelect('drag', e)"
+        @dblclick="(e: MouseEvent) => handleSelect('dblclick', e)"
     >
         <slot></slot>
     </div>
@@ -98,8 +98,16 @@ const isScale = ref(false);
 const isOpacity = ref(true);
 
 const mainRef = ref<HTMLElement>();
-/** 悬浮按钮尺寸 */
-let floatBtnRect: { width: number; height: number } = undefined;
+/** 悬浮按钮尺寸,首次使用时从 DOM 读取 */
+let floatBtnRect: { width: number; height: number } | undefined = undefined;
+
+/** 获取悬浮按钮尺寸,未读取过时从 DOM 补读 */
+const getFloatBtnRect = (): { width: number; height: number } => {
+    if (floatBtnRect == undefined) {
+        floatBtnRect = mainRef.value?.getBoundingClientRect() || { width: 0, height: 0 };
+    }
+    return floatBtnRect;
+};
 
 /** 当前透明度 */
 const curOpacity = computed(() => {
@@ -189,8 +197,12 @@ const setMove = () => {
             if (e.cancelable) {
                 e.preventDefault();
             }
-            x = e.touches[0].clientX;
-            y = e.touches[0].clientY;
+            const touch = e.touches[0];
+            if (!touch) {
+                return;
+            }
+            x = touch.clientX;
+            y = touch.clientY;
         } else {
             x = e.clientX;
             y = e.clientY;
@@ -245,9 +257,7 @@ const setLongPress = (e: any) => {
 };
 
 const updateRealX = (v: number) => {
-    if (floatBtnRect == undefined) {
-        floatBtnRect = mainRef?.value?.getBoundingClientRect?.() || { width: 0, height: 0 };
-    }
+    const rect = getFloatBtnRect();
     if (!props.isAdsorb) {
         realX.value = v;
         return;
@@ -258,7 +268,7 @@ const updateRealX = (v: number) => {
     }
     const boxWidth = getModelBoxWidth();
     // 转为中心点
-    let centerX = v + floatBtnRect.width / 2;
+    let centerX = v + rect.width / 2;
     // 转为左上角
     if (props.isRight) {
         centerX = boxWidth - centerX;
@@ -266,25 +276,26 @@ const updateRealX = (v: number) => {
     const list = [props.adsorbLeft == undefined ? undefined : Math.abs(centerX - props.adsorbPadding), props.adsorbRight == undefined ? undefined : Math.abs(boxWidth - centerX - props.adsorbPadding)];
     // 左边
     if (list[0] != undefined && (list[1] == undefined || list[0] <= list[1])) {
-        if (props.forceAdsorb || list[0] <= props.adsorbDistance + floatBtnRect.width / 2 + props.adsorbPadding) {
-            centerX = props.adsorbPadding + floatBtnRect.width / 2 + props.adsorbLeft;
+        if (props.forceAdsorb || list[0] <= props.adsorbDistance + rect.width / 2 + props.adsorbPadding) {
+            centerX = props.adsorbPadding + rect.width / 2 + props.adsorbLeft;
         }
     }
     // 右边
     else if (list[1] != undefined && (list[0] == undefined || list[1] < list[0])) {
-        if (props.forceAdsorb || list[1] <= props.adsorbDistance + floatBtnRect.width / 2 + props.adsorbPadding) {
-            centerX = boxWidth - props.adsorbPadding - floatBtnRect.width / 2 - props.adsorbRight;
+        if (props.forceAdsorb || list[1] <= props.adsorbDistance + rect.width / 2 + props.adsorbPadding) {
+            centerX = boxWidth - props.adsorbPadding - rect.width / 2 - props.adsorbRight;
         }
     }
     //恢复坐标位置
     if (props.isRight) {
-        realX.value = boxWidth - centerX - floatBtnRect.width / 2;
+        realX.value = boxWidth - centerX - rect.width / 2;
     } else {
-        realX.value = centerX - floatBtnRect.width / 2;
+        realX.value = centerX - rect.width / 2;
     }
 };
 
 const updateRealY = (v: number) => {
+    const rect = getFloatBtnRect();
     if (!props.isAdsorb) {
         realY.value = v;
         return;
@@ -295,7 +306,7 @@ const updateRealY = (v: number) => {
     }
     const boxHeight = getModelBoxHeight();
     // 转为中心点
-    let centerY = v + floatBtnRect.height / 2;
+    let centerY = v + rect.height / 2;
     // 转为左上角
     if (props.isBottom) {
         centerY = boxHeight - centerY;
@@ -306,22 +317,22 @@ const updateRealY = (v: number) => {
     ];
     // 上边
     if (list[0] != undefined && (list[1] == undefined || list[0] <= list[1])) {
-        if (props.forceAdsorb || list[0] <= props.adsorbDistance + floatBtnRect.height / 2 + props.adsorbPadding) {
-            centerY = props.adsorbPadding + floatBtnRect.height / 2 + props.adsorbTop;
+        if (props.forceAdsorb || list[0] <= props.adsorbDistance + rect.height / 2 + props.adsorbPadding) {
+            centerY = props.adsorbPadding + rect.height / 2 + props.adsorbTop;
         }
     }
     // 下边
     else if (list[1] != undefined && (list[0] == undefined || list[1] < list[0])) {
-        if (props.forceAdsorb || list[1] <= props.adsorbDistance + floatBtnRect.height / 2 + props.adsorbPadding) {
-            centerY = boxHeight - props.adsorbPadding - floatBtnRect.height / 2 - props.adsorbBottom;
+        if (props.forceAdsorb || list[1] <= props.adsorbDistance + rect.height / 2 + props.adsorbPadding) {
+            centerY = boxHeight - props.adsorbPadding - rect.height / 2 - props.adsorbBottom;
         }
     }
 
     //恢复坐标位置
     if (props.isBottom) {
-        realY.value = boxHeight - centerY - floatBtnRect.height / 2;
+        realY.value = boxHeight - centerY - rect.height / 2;
     } else {
-        realY.value = centerY - floatBtnRect.height / 2;
+        realY.value = centerY - rect.height / 2;
     }
 };
 
@@ -364,6 +375,9 @@ onMounted(() => {
     watch(
         () => [modelX.value, modelY.value],
         ([x, y]) => {
+            if (x == undefined || y == undefined) {
+                return;
+            }
             setPos(x, y);
         },
         { immediate: true }

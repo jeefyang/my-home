@@ -1,6 +1,6 @@
 import { itemFetch, pageFetch, userFetch } from "@/utils/jFetch";
 import { defineStore } from "pinia";
-import { ref } from "vue";
+import { ref, type Ref } from "vue";
 import { initThemeOverrides } from "./themeOverride";
 import type { GlobalThemeOverrides } from "naive-ui";
 
@@ -8,7 +8,7 @@ import type { GlobalThemeOverrides } from "naive-ui";
 export const useDataStore = defineStore("data", () => {
     const pathid = ref("");
     const secondcode = ref("");
-    const user = ref(<UserType>null);
+    const user = ref(null as unknown as UserType);
     const pageList = ref(<PageType[]>[]);
     const switchPageUUID = ref("");
     const isMobile = ref(/Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent));
@@ -24,6 +24,7 @@ export const useDataStore = defineStore("data", () => {
     const returnData = {
         pathid, secondcode, switchPageUUID, floatBtnX, floatBtnY, themeOverrides
     };
+    type LocalKey = keyof typeof returnData;
 
     const getLocalData = () => {
         const str = localStorage.getItem(saveKey);
@@ -44,8 +45,8 @@ export const useDataStore = defineStore("data", () => {
             localStorage.setItem(saveKey, newObj);
             return;
         }
-        const obj: any = {};
-        for (let key in returnData) {
+        const obj: Record<string, unknown> = {};
+        for (const key of Object.keys(returnData) as LocalKey[]) {
             obj[key] = returnData[key].value;
         }
         localStorage.setItem(saveKey, JSON.stringify(obj));
@@ -61,19 +62,20 @@ export const useDataStore = defineStore("data", () => {
                 console.warn("本地缓存已损坏，已忽略", err);
                 localStorage.removeItem(saveKey);
             }
-            for (let key in obj) {
-                if (returnData[key] && obj[key] != null) {
-                    returnData[key].value = obj[key];
+            for (const key of Object.keys(obj) as LocalKey[]) {
+                const target = returnData[key] as Ref<any> | undefined;
+                if (target && obj[key] != null) {
+                    target.value = obj[key];
                 }
             }
         }
         const params = (new URL(location.href)).searchParams;
-        for (let key in returnData) {
+        for (const key of Object.keys(returnData) as LocalKey[]) {
             const param = params.get(key);
             if (param == null || param == "") {
                 continue;
             }
-            returnData[key].value = param;
+            (returnData[key] as Ref<any>).value = param;
         }
     };
 

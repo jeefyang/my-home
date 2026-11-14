@@ -74,8 +74,8 @@ function parseDL(dlContent: string): BookmarkCollectionType[] {
         // 文件夹：<H3 ...>title</H3>
         const folderMatch = dtContent.match(/<H3\s*([^>]*)>\s*([\s\S]*?)\s*<\/H3>/i);
         if (folderMatch) {
-            const attrs = parseAttributes(folderMatch[1]);
-            const title = decodeEntities(folderMatch[2].trim());
+            const attrs = parseAttributes(folderMatch[1] ?? "");
+            const title = decodeEntities((folderMatch[2] ?? "").trim());
 
             // 提取此 DT 内部嵌套的 <DL> 内容
             const subDl = extractDLContent(dtContent);
@@ -98,8 +98,8 @@ function parseDL(dlContent: string): BookmarkCollectionType[] {
         // 书签：<A ...>title</A>
         const linkMatch = dtContent.match(/<A\s+([^>]*)>\s*([\s\S]*?)\s*<\/A>/i);
         if (linkMatch) {
-            const attrs = parseAttributes(linkMatch[1]);
-            const title = decodeEntities(linkMatch[2].trim());
+            const attrs = parseAttributes(linkMatch[1] ?? "");
+            const title = decodeEntities((linkMatch[2] ?? "").trim());
 
             items.push({
                 uuid: nanoid(10),
@@ -130,13 +130,13 @@ function findNextTopLevelDT(content: string, startIdx: number): number {
         // 检查是否以 <DT 开头（顶层）
         if (depth === 0 && content[i] === '<' && i + 2 < len &&
             content[i + 1] === 'D' && content[i + 2] === 'T' &&
-            (i + 3 >= len || !/[a-zA-Z]/.test(content[i + 3]) || content[i + 3] === '>')) {
+            (i + 3 >= len || !/[a-zA-Z]/.test(content[i + 3] ?? "") || content[i + 3] === '>')) {
             return i;
         }
         // 检查 <DL（进入嵌套）
         if (content[i] === '<' && i + 2 < len &&
             content[i + 1] === 'D' && content[i + 2] === 'L' &&
-            (i + 3 >= len || !/[a-zA-Z]/.test(content[i + 3]) || content[i + 3] === '>')) {
+            (i + 3 >= len || !/[a-zA-Z]/.test(content[i + 3] ?? "") || content[i + 3] === '>')) {
             depth++;
             i += 3;
             continue;
@@ -144,7 +144,7 @@ function findNextTopLevelDT(content: string, startIdx: number): number {
         // 检查 </DL（退出嵌套）
         if (content[i] === '<' && content[i + 1] === '/' && i + 3 < len &&
             content[i + 2] === 'D' && content[i + 3] === 'L' &&
-            (i + 4 >= len || !/[a-zA-Z]/.test(content[i + 4]) || content[i + 4] === '>')) {
+            (i + 4 >= len || !/[a-zA-Z]/.test(content[i + 4] ?? "") || content[i + 4] === '>')) {
             depth--;
             i += 4;
             continue;
@@ -160,7 +160,10 @@ function parseAttributes(attrStr: string): Record<string, string> {
     const regex = /(\w+)\s*=\s*"([\s\S]*?)"/gi;
     let match: RegExpExecArray | null;
     while ((match = regex.exec(attrStr)) !== null) {
-        attrs[match[1].toUpperCase()] = match[2];
+        const key = match[1];
+        const value = match[2];
+        if (key === undefined || value === undefined) continue;
+        attrs[key.toUpperCase()] = value;
     }
     return attrs;
 }
@@ -288,6 +291,7 @@ export function checkSameItemAtPath(root: BookmarkCollectionType[], newItem: Boo
     if (root.length === 0) return false;
     for (let i = 0; i < root.length; i++) {
         const c = root[i];
+        if (!c) continue;
         if (c.isFolder) {
             if (c.children && c.children.length > 0) {
                 const check = checkSameItemAtPath(c.children, newItem, updateTitle);

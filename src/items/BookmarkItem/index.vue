@@ -48,7 +48,7 @@
                         :item="props.item"
                         :pageUUID="props.pageUUID"
                         :itemGroupUUID="props.itemGroupUUID"
-                        v-model:bookmark="dataList[index]"
+                        :bookmark="bookmark"
                         :refresh-key="refreshKey"
                         style="flex: 1; min-height: 0"
                     />
@@ -150,11 +150,11 @@ const toAddBookmark = async () => {
 
     const res = await itemFetch.request("updateItemData", {
         itemType: props.item.type,
-        itemUUID: props.item.uuid,
+        itemUUID: props.item.uuid ?? "",
         filename,
         content: JSON.stringify(list)
     });
-    if (res.code != 200) return msg.error(res.msg);
+    if (res.code != 200) return msg.error(res.msg ?? "");
     dataList.value = list;
     switchTab.value = uuid;
     return msg.success("添加成功");
@@ -164,7 +164,7 @@ const toAddBookmark = async () => {
 const saveDataList = async () => {
     const res = await itemFetch.request("updateItemData", {
         itemType: props.item.type,
-        itemUUID: props.item.uuid,
+        itemUUID: props.item.uuid ?? "",
         filename,
         content: JSON.stringify(dataList.value)
     });
@@ -222,7 +222,7 @@ const confirmDelete = async () => {
     await itemFetch
         .request("deleteItemData", {
             itemType: props.item.type,
-            itemUUID: props.item.uuid,
+            itemUUID: props.item.uuid ?? "",
             filename: `collection-${uuid}.json`
         })
         .catch(() => {});
@@ -242,13 +242,14 @@ const confirmDelete = async () => {
 const init = async () => {
     const res = await itemFetch.request("getItemData", {
         itemType: props.item.type,
-        itemUUID: props.item.uuid,
+        itemUUID: props.item.uuid ?? "",
         filename
     });
-    if (res.code != 200) return msg.error(res.msg);
+    if (res.code != 200) return msg.error(res.msg ?? "");
     dataList.value = res.data ? JSON.parse(res.data) : [];
     const index = dataList.value.findIndex((item) => item.isDefault);
-    switchTab.value = index != -1 ? dataList.value[index].uuid : dataList.value[0]?.uuid || "";
+    const defaultBookmark = index != -1 ? dataList.value[index] : undefined;
+    switchTab.value = defaultBookmark ? defaultBookmark.uuid : dataList.value[0]?.uuid || "";
 };
 
 onMounted(() => {

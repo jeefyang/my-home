@@ -78,7 +78,7 @@ const toForceLogin = async () => {
     const res = await userFetch.request("verifyUser");
     loading.value = false;
     if (res.code != 200) {
-        msg.error(res.msg);
+        msg.error(res.msg ?? "");
         return;
     }
     await toLogin();
@@ -90,7 +90,7 @@ const toLogin = async () => {
     dataStore.save();
     if (fixedUrl.value) {
         const params = new URLSearchParams(window.location.search);
-        const obj = {};
+        const obj: Record<string, string> = {};
         for (const [key, value] of params) {
             obj[key] = value;
         }

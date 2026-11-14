@@ -143,9 +143,9 @@ const toSubEngine = (index: number) => {
 };
 
 const getEngineList = async () => {
-    const res = await itemFetch.request("getItemData", { itemUUID: props.item.uuid, itemType: props.item.type, filename: engineListFileName });
+    const res = await itemFetch.request("getItemData", { itemUUID: props.item.uuid!, itemType: props.item.type, filename: engineListFileName });
     if (res.code != 200) {
-        return msg.error(res.msg);
+        return msg.error(res.msg || "获取失败");
     }
     const data = res.data ? JSON.parse(res.data) : [];
     engineList.value = data;
@@ -164,9 +164,9 @@ const updateEngineList = async (list: EngineType[]) => {
         delete c._iconUrl;
     });
     const str = JSON.stringify(newList);
-    const res = await itemFetch.request("updateItemData", { itemUUID: props.item.uuid, itemType: props.item.type, filename: engineListFileName, content: str });
+    const res = await itemFetch.request("updateItemData", { itemUUID: props.item.uuid!, itemType: props.item.type, filename: engineListFileName, content: str });
     if (res.code != 200) {
-        msg.error(res.msg);
+        msg.error(res.msg || "保存失败");
         return null;
     }
     return newList;
@@ -193,7 +193,7 @@ const toCreateIcon = async (item: EngineType) => {
     if (res.code != 200) {
         return msg.error(res.msg || res.err);
     }
-    item.icon = res.data;
+    item.icon = res.data ?? "";
 };
 
 const toLink = (isNew: boolean) => {

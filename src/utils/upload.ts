@@ -10,15 +10,16 @@ export function textToFile(content: string, filename?: string, mimeType = 'text/
 export function base64ToFile(base64: string, filename?: string) {
     // 提取 MIME 类型和纯 base64 数据
     const arr = base64.split(',');
-    const mime = arr[0].match(/:(.*?);/)![1];
-    const bstr = atob(arr[1]);
+    const mimeMatch = arr[0]?.match(/:(.*?);/);
+    const mime = mimeMatch?.[1] ?? "";
+    const bstr = atob(arr[1] ?? "");
 
     let n = bstr.length;
     const u8arr = new Uint8Array(n);
     while (n--) {
         u8arr[n] = bstr.charCodeAt(n);
     }
-    filename = filename || nanoid(16) + `.${mime.split('/')[1].trim()}`;
+    filename = filename || nanoid(16) + `.${(mime.split('/')[1] ?? "png").trim()}`;
     return new File([u8arr], filename, { type: mime });
 }
 
@@ -37,7 +38,7 @@ export async function myUpload(myFile: MyUploadFileType, o: MyUploadOptions
 ): Promise<MyUploadResultType> {
 
     const formData = new FormData();
-    let filename = "";
+    let filename: string | undefined = "";
     let file: File | undefined = undefined;
     if (myFile.type == "file") {
         file = myFile.data as File;
@@ -51,7 +52,7 @@ export async function myUpload(myFile: MyUploadFileType, o: MyUploadOptions
         filename = myFile.filename;
         file = base64ToFile(myFile.data as string, filename);
     }
-    formData.append('file', file);
+    formData.append('file', file!);
     try {
         const res = await fetch(o.url, { method: "POST", headers: o.other?.headers, body: formData });
         if (!res.ok) {
