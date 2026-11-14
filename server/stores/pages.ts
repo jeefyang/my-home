@@ -7,8 +7,19 @@ import { UrlsUtils } from "../utils/urls";
 
 export const pageFileName = "page.jsonc";
 
+/** 页面读缓存：以文件 mtime 为版本，写盘/删除时失效 */
+const pageCache = new Map<string, { mtimeMs: number; page: PageType }>();
+
 function readPage(uuid: string) {
-    return JSON.parse(fs.readFileSync(path.join(DATA_DIR, PagesFolder, uuid, pageFileName), 'utf-8')) as PageType;
+    const file = path.join(DATA_DIR, PagesFolder, uuid, pageFileName);
+    const mtimeMs = fs.statSync(file).mtimeMs;
+    const cached = pageCache.get(uuid);
+    if (cached && cached.mtimeMs === mtimeMs) {
+        return cached.page;
+    }
+    const page = JSON.parse(fs.readFileSync(file, 'utf-8')) as PageType;
+    pageCache.set(uuid, { mtimeMs, page });
+    return page;
 }
 
 function writePage(page: PageType) {
@@ -19,6 +30,7 @@ function writePage(page: PageType) {
     // 先写临时文件再 rename，避免进程中断留下半截 JSON
     fs.writeFileSync(tmp, JSON.stringify(page, null, '\t'));
     fs.renameSync(tmp, file);
+    pageCache.delete(page.uuid);
 }
 
 export function initPages(): [PageType[] | undefined, any] {
@@ -82,6 +94,7 @@ export function deletePage(uuid: string): [string | undefined, any] {
     }
     try {
         fs.rmSync(path.join(DATA_DIR, PagesFolder, uuid), { recursive: true });
+        pageCache.delete(uuid);
         return [uuid, undefined];
     }
     catch (e) {

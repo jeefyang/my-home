@@ -29,13 +29,13 @@ function writeUserFile(dir: string, user: UserType) {
 
 /** 同步刷新缓存，避免改名/改口令后命中旧对象 */
 function refreshUserCache(user: UserType) {
-    const index = cacheUserList.findIndex(v => v.uuid == user.uuid);
-    if (index != -1) {
-        cacheUserList[index] = user;
+    // 先把同一 uuid 的旧条目全部清掉，避免改名换路径后缓存里留下两份
+    for (let i = cacheUserList.length - 1; i >= 0; i--) {
+        if (cacheUserList[i].uuid === user.uuid) {
+            cacheUserList.splice(i, 1);
+        }
     }
-    else {
-        cacheUserList.push(user);
-    }
+    cacheUserList.push(user);
     if (cacheUserList.length > cacheUserMax) {
         cacheUserList.shift();
     }
@@ -44,8 +44,6 @@ function refreshUserCache(user: UserType) {
 
 /** 创建用户 */
 export function createUser(type: UserTypeType): [UserType | undefined, any] {
-    // 提前触发,阻止重复创建
-    dataOptions.isEmptyUser = false;
     const pathID = nanoid(10);
     const user: UserType = {
         type,
@@ -61,7 +59,9 @@ export function createUser(type: UserTypeType): [UserType | undefined, any] {
         fs.mkdirSync(p);
         fs.mkdirSync(path.join(p, dataFolder), { recursive: true });
         fs.mkdirSync(path.join(p, filesFolder), { recursive: true });
-        fs.writeFileSync(path.join(p, UserFileName), JSON.stringify(user, null, '\t'));
+        writeUserFile(p, user);
+        // 只有写盘成功才翻转状态，否则首次启动会漏掉自动建管理员
+        dataOptions.isEmptyUser = false;
         return [user, undefined];
     }
     catch (e) {

@@ -165,6 +165,28 @@ try {
         assert.equal(pageData.status, 403);
     });
 
+    // 5.1 元件归属隔离：initPages 的模板里第二页有 www 元件
+    const adminItemUUID = (init.json.data || [])
+        .flatMap((pg) => (pg.itemGroupList || []).flatMap((g) => g.list || []))
+        .find((it) => it && it.uuid)?.uuid;
+    check("初始化页面里包含可测试元件", () => {
+        assert.ok(adminItemUUID);
+    });
+    const itemSteal = await api("POST", "/api/item/getItemData", {
+        body: { itemType: "www", itemUUID: adminItemUUID, filename: "data.json" },
+        headers: normalHeaders,
+    });
+    check("普通用户读取他人元件数据返回 403", () => {
+        assert.equal(itemSteal.status, 403);
+        assert.equal(itemSteal.json.code, 403);
+    });
+    const itemNoAuth = await api("POST", "/api/item/getItemData", {
+        body: { itemType: "www", itemUUID: adminItemUUID, filename: "data.json" },
+    });
+    check("未认证 getItemData 返回 401", () => {
+        assert.equal(itemNoAuth.status, 401);
+    });
+
     // 6. 上传文件名 / 扩展名校验
     async function upload(query, filename, type) {
         const form = new FormData();
