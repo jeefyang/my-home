@@ -34,22 +34,23 @@ onMounted(async () => {
             };
         };
     });
-    const userRes = await dataStore.initUser();
-    if (userRes.code != 200) {
-        console.log(userRes);
-        showLogin.value = true;
-        return;
+    try {
+        const userRes = await dataStore.initUser();
+        if (userRes.code != 200) {
+            console.log(userRes);
+            showLogin.value = true;
+            return;
+        }
+        const pageRes = await dataStore.initPages();
+        if (pageRes.code != 200) {
+            console.warn("初始化页面失败", pageRes);
+        }
+    } catch (err) {
+        console.error("应用初始化失败", err);
+    } finally {
+        // 无论初始化成功与否都必须收起全屏 loading，否则用户会卡在启动页
+        isLoading.value = false;
     }
-    const pageRes = await dataStore.initPages();
-    if (pageRes.code != 200) {
-        console.log(pageRes);
-        return;
-    }
-    // setTimeout(() => {
-    // isLoading.value = false;
-
-    // }, 10000);
-    isLoading.value = false;
     window.addEventListener("resize", () => {
         dataStore.resize();
     });

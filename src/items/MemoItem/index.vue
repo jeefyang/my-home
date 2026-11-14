@@ -169,18 +169,26 @@ const send = async () => {
     const text = inputText.value.trim();
     if (!text) return;
     const now = Date.now();
-    messageList.value.push({
+    const message = {
         uuid: nanoid(10),
         content: text,
         createTime: now,
         modifyTime: now
-    });
+    };
+    messageList.value.push(message);
     inputText.value = "";
     const ok = await saveData();
     if (ok) {
         scrollToBottom();
         isUserScrolling = false;
+        return;
     }
+    // 保存失败要回滚，否则界面显示的是没落盘的消息
+    const idx = messageList.value.indexOf(message);
+    if (idx > -1) {
+        messageList.value.splice(idx, 1);
+    }
+    inputText.value = text;
 };
 
 // ====== 编辑 ======

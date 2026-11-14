@@ -202,7 +202,7 @@ const toLink = (isNew: boolean) => {
     }
     if (switchSearchIndex.value == -1) {
         let newUrl = searchKey.value;
-        if (!searchKey.value.startsWith("https://") || !searchKey.value.startsWith("http://")) {
+        if (!/^https?:\/\//i.test(searchKey.value)) {
             newUrl = "http://" + newUrl;
         }
         if (isNew) {

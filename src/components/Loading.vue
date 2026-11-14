@@ -1,5 +1,5 @@
 <template>
-    <n-flex class="fullLoading" justify="center" align="center" vertical :style="props.froceTop ? { position: 'fixed', top: 0, 'z-indx': 999999 } : {}">
+    <n-flex class="fullLoading" justify="center" align="center" vertical :style="{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, zIndex: props.froceTop ? 999999 : 999 }">
         <n-flex vertical>
             <n-spin size="large" />
             <n-text>{{ props.title || "正在加载..." }}</n-text>

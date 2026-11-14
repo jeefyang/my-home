@@ -25,7 +25,7 @@
     </div>
 </template>
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from "vue";
+import { computed, onMounted, onUnmounted, ref, watch } from "vue";
 
 const props = withDefaults(
     defineProps<{
@@ -185,6 +185,10 @@ const setMove = () => {
         let x = -1;
         let y = -1;
         if (e instanceof TouchEvent) {
+            // 拖动时阻止页面跟着滚动；touchmove 必须以 passive:false 注册
+            if (e.cancelable) {
+                e.preventDefault();
+            }
             x = e.touches[0].clientX;
             y = e.touches[0].clientY;
         } else {
@@ -212,11 +216,13 @@ const setMove = () => {
         document.body.removeEventListener("touchmove", moveFn);
         document.body.removeEventListener("mouseup", endFn);
         document.body.removeEventListener("touchend", endFn);
+        document.body.removeEventListener("touchcancel", endFn);
     };
     document.body.addEventListener("mousemove", moveFn);
     document.body.addEventListener("mouseup", endFn);
-    document.body.addEventListener("touchmove", moveFn);
+    document.body.addEventListener("touchmove", moveFn, { passive: false });
     document.body.addEventListener("touchend", endFn);
+    document.body.addEventListener("touchcancel", endFn);
 };
 
 const setLongPress = (e: any) => {
@@ -347,6 +353,13 @@ const initPos = () => {
     modelY.value = realY.value;
 };
 
+const onResize = () => {
+    // 等待父组件完成布局后再重算位置
+    setTimeout(() => {
+        initPos();
+    }, 100);
+};
+
 onMounted(() => {
     watch(
         () => [modelX.value, modelY.value],
@@ -359,13 +372,17 @@ onMounted(() => {
     setTimeout(() => {
         initPos();
     }, 100);
-    window.addEventListener("resize", () => {
-        console.log("resize");
-        // 等待父组件初始化先
-        setTimeout(() => {
-            initPos();
-        }, 100);
-    });
+    window.addEventListener("resize", onResize);
+});
+
+onUnmounted(() => {
+    window.removeEventListener("resize", onResize);
+    if (longPressTimer) {
+        clearTimeout(longPressTimer);
+    }
+    if (noPacityTimer) {
+        clearTimeout(noPacityTimer);
+    }
 });
 </script>
 <style scoped>

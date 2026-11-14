@@ -30,7 +30,13 @@ export const useDataStore = defineStore("data", () => {
         if (!str) {
             return {};
         }
-        return JSON.parse(str);
+        try {
+            return JSON.parse(str) || {};
+        } catch (err) {
+            console.warn("本地缓存已损坏，已重置", err);
+            localStorage.removeItem(saveKey);
+            return {};
+        }
     };
 
     const save = (newObj?: any) => {
@@ -48,12 +54,17 @@ export const useDataStore = defineStore("data", () => {
     const load = () => {
         const config = localStorage.getItem(saveKey);
         if (config) {
-            const obj = JSON.parse(config);
+            let obj: any = {};
+            try {
+                obj = JSON.parse(config) || {};
+            } catch (err) {
+                console.warn("本地缓存已损坏，已忽略", err);
+                localStorage.removeItem(saveKey);
+            }
             for (let key in obj) {
-                if (returnData[key]) {
+                if (returnData[key] && obj[key] != null) {
                     returnData[key].value = obj[key];
                 }
-
             }
         }
         const params = (new URL(location.href)).searchParams;
@@ -76,11 +87,18 @@ export const useDataStore = defineStore("data", () => {
             return userRes;
         }
         user.value = userRes.data!;
-        pathid.value = user.value.pathID;
-        secondcode.value = userRes.data!.secondCode;
+        pathid.value = user.value.pathID || "";
+        secondcode.value = user.value.secondCode || "";
         const themeRes = await userFetch.request("getUserData", { filename: "themeOverrides.json" });
         if (themeRes.code == 200) {
-            const data = themeRes.data ? JSON.parse(themeRes.data) : {};
+            let data: any = {};
+            if (themeRes.data) {
+                try {
+                    data = JSON.parse(themeRes.data) || {};
+                } catch (err) {
+                    console.warn("主题配置解析失败，使用默认主题", err);
+                }
+            }
             themeOverrides.value = initThemeOverrides(data || {} as any);
         }
         save();
@@ -88,19 +106,29 @@ export const useDataStore = defineStore("data", () => {
     };
 
     const initPages = async () => {
-        const pageRes = user.value.pageUUIDList.length != 0 ? await pageFetch.request("getPageList", { uuidList: user.value.pageUUIDList }) : await pageFetch.request("initPages");
-        user.value.pageUUIDList = pageRes.data!.map(item => item.uuid);
-        pageList.value = pageRes.data!;
+        const uuidList = user.value.pageUUIDList || [];
+        const pageRes = uuidList.length != 0 ? await pageFetch.request("getPageList", { uuidList }) : await pageFetch.request("initPages");
+        if (pageRes.code != 200 || !Array.isArray(pageRes.data)) {
+            return pageRes;
+        }
+        pageList.value = pageRes.data;
+        user.value.pageUUIDList = pageRes.data.map((item) => item.uuid);
+        if (pageList.value.length == 0) {
+            // 没有任何页面时保持空态，不能去取 pageList[0]
+            switchPageUUID.value = "";
+            save();
+            return pageRes;
+        }
         let pageIndex = pageList.value.findIndex(item => item.uuid == switchPageUUID.value);
         if (pageIndex != -1) {
             return pageRes;
         }
         pageIndex = pageList.value.findIndex(item => item.isDefault);
         if (pageIndex != -1) {
-            switchPageUUID.value = pageList.value[pageIndex].uuid;
+            switchPageUUID.value = pageList.value[pageIndex]!.uuid;
             return pageRes;
         }
-        switchPageUUID.value = pageList.value[0].uuid;
+        switchPageUUID.value = pageList.value[0]!.uuid;
         save();
         return pageRes;
     };

@@ -108,7 +108,7 @@ import { useDataStore } from "@/stores/data";
 import { pageFetch } from "@/utils/jFetch";
 import { ItemRouterList } from "@common/utils/itemRouterouterList";
 import { useThemeVars, type GlobalThemeOverrides } from "naive-ui";
-import { computed, defineAsyncComponent, KeepAlive, onMounted, ref, watch } from "vue";
+import { computed, defineAsyncComponent, KeepAlive, nextTick, onMounted, ref, watch } from "vue";
 import ItemView from "@/components/ItemView.vue";
 import FloatBtn from "@/components/FloatBtn.vue";
 import ToolBar from "@/components/ToolBar.vue";
@@ -167,9 +167,10 @@ const getItemIcon = (item: ItemType): string => {
 };
 
 const openOption = () => {
-    setTimeout(() => {
+    // 用 nextTick 替代固定 100ms 延迟，避免每次打开工具栏都等一拍
+    nextTick(() => {
         showOption.value = true;
-    }, 100);
+    });
 };
 
 const getItemAbsIcon = (item: ItemType): string => {
@@ -183,8 +184,12 @@ const getItemAbsIcon = (item: ItemType): string => {
 
 onMounted(async () => {
     const themeRes = await pageFetch.request("getPageData", { pageUUID: props.pageUUID, filename: "theme.json" });
-    if (themeRes.code == 200) {
-        themeOverrides.value = themeRes.data ? JSON.parse(themeRes.data) : {};
+    if (themeRes.code == 200 && themeRes.data) {
+        try {
+            themeOverrides.value = JSON.parse(themeRes.data);
+        } catch (err) {
+            console.warn("页面主题配置解析失败，使用默认主题", err);
+        }
     }
 });
 </script>
