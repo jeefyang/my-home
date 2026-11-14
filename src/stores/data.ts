@@ -22,7 +22,7 @@ export const useDataStore = defineStore("data", () => {
     const saveKey = "data";
 
     const returnData = {
-        pathid, secondcode, switchPageUUID, floatBtnX, floatBtnY
+        pathid, secondcode, switchPageUUID, floatBtnX, floatBtnY, themeOverrides
     };
 
     const getLocalData = () => {
@@ -89,20 +89,29 @@ export const useDataStore = defineStore("data", () => {
         user.value = userRes.data!;
         pathid.value = user.value.pathID || "";
         secondcode.value = user.value.secondCode || "";
-        const themeRes = await userFetch.request("getUserData", { filename: "themeOverrides.json" });
-        if (themeRes.code == 200) {
-            let data: any = {};
-            if (themeRes.data) {
-                try {
-                    data = JSON.parse(themeRes.data) || {};
-                } catch (err) {
-                    console.warn("主题配置解析失败，使用默认主题", err);
-                }
-            }
-            themeOverrides.value = initThemeOverrides(data || {} as any);
-        }
         save();
         return userRes;
+    };
+
+    /**
+     * 主题与页面数据互不依赖，调用方可以并行发起，省掉一次串行往返。
+     * 失败时保留本地缓存的主题，不清空。
+     */
+    const initTheme = async () => {
+        const themeRes = await userFetch.request("getUserData", { filename: "themeOverrides.json" });
+        if (themeRes.code != 200) {
+            return themeRes;
+        }
+        if (themeRes.data) {
+            try {
+                const data = JSON.parse(themeRes.data) || {};
+                themeOverrides.value = initThemeOverrides(data);
+            } catch (err) {
+                console.warn("主题配置解析失败，使用已缓存主题", err);
+            }
+        }
+        save();
+        return themeRes;
     };
 
     const initPages = async () => {
@@ -147,5 +156,5 @@ export const useDataStore = defineStore("data", () => {
 
     load();
 
-    return { ...returnData, user, pageList, load, save, clear, initUser, initPages, isMobile, isSmallScreen, resize, themeOverrides, getLocalData, fullLoading, fullLoadingTitle, turnLoading };
+    return { ...returnData, user, pageList, load, save, clear, initUser, initPages, initTheme, isMobile, isSmallScreen, resize, themeOverrides, getLocalData, fullLoading, fullLoadingTitle, turnLoading };
 });

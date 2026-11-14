@@ -41,7 +41,8 @@ onMounted(async () => {
             showLogin.value = true;
             return;
         }
-        const pageRes = await dataStore.initPages();
+        // 主题和页面互不依赖，并行请求，启动少等一次往返
+        const [pageRes] = await Promise.all([dataStore.initPages(), dataStore.initTheme()]);
         if (pageRes.code != 200) {
             console.warn("初始化页面失败", pageRes);
         }
