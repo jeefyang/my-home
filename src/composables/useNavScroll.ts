@@ -1,5 +1,15 @@
 import { nextTick, onBeforeUnmount, onMounted, ref, watch, type Ref } from "vue";
 
+/** 目标项是否完整落在可视区内（与 DOM 解耦，便于单测） */
+export function isFullyVisible(left: number, right: number, viewLeft: number, viewRight: number): boolean {
+    return left >= viewLeft && right <= viewRight;
+}
+
+/** 把目标项居中所需的 scrollLeft */
+export function centeredScrollLeft(left: number, itemWidth: number, clientWidth: number): number {
+    return left - (clientWidth - itemWidth) / 2;
+}
+
 /**
  * 底部导航的横向滚动状态：
  * - canLeft / canRight 控制两侧 16px 渐隐；
@@ -51,10 +61,10 @@ export function useNavScroll(count: Ref<number>, activeUUID: Ref<string | undefi
         const viewLeft = el.scrollLeft;
         const viewRight = viewLeft + el.clientWidth;
         // 已经完整可见就不打扰用户
-        if (left >= viewLeft && right <= viewRight) {
+        if (isFullyVisible(left, right, viewLeft, viewRight)) {
             return;
         }
-        el.scrollTo({ left: left - (el.clientWidth - target.offsetWidth) / 2, behavior });
+        el.scrollTo({ left: centeredScrollLeft(left, target.offsetWidth, el.clientWidth), behavior });
     };
 
     const onResize = () => {
