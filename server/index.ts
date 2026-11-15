@@ -1,8 +1,6 @@
 import type { Express } from 'express';
 import express from 'express';
 import cors from 'cors';
-import { createServer } from 'vite';
-import http from 'http';
 import path from 'path';
 import helmet from 'helmet';
 import compression from 'compression';
@@ -61,40 +59,9 @@ app.get('/health', (_req, res) => {
 });
 
 
-if (isDev) {
-    (async () => {
-        try {
-            // ✅ 1. 创建原生 HTTP 服务器（必须！）
-            const httpServer = http.createServer(app);
-
-            // ✅ 2. 启动 Vite，传入 httpServer（Vite 5+ 标准方式）
-            const vite = await createServer({
-                server: {
-                    middlewareMode: true,
-                    // 在 Vite 7/8 中，也可以显式指定 hmr.server
-                    hmr: {
-                        server: httpServer
-                    }
-                },
-                configFile: path.resolve('./vite.config.ts'),
-                root: path.resolve('./')
-            });
-
-            // ✅ 3. 挂载中间件
-            app.use(vite.middlewares);
-
-            // ✅ 4. 监听端口
-            const PORT = parseInt(String(process.env.PORT || process.env.SERVER_PORT || '3000'), 10);
-            httpServer.listen(PORT, () => {
-                console.log(`🚀 Dev server running on http://localhost:${PORT}`);
-            });
-        } catch (error) {
-            console.error('❌ Server startup failed:', error);
-            process.exit(1);
-        }
-    })();
-}
-else {
+// 开发模式下由 vite.config.server.ts 的 Vite 服务器直接挂载本 app（vite-plugin-node），
+// 这里不再自建第二个 HTTP server + Vite，否则会出现“页面在 3000、HMR 在另一个端口”的错位。
+if (!isDev) {
 
 
 

@@ -36,17 +36,40 @@ export default defineConfig(({ mode }) => {
             outDir: 'dist/server',
         },
         plugins: [
-            ...VitePluginNode({
-                adapter: 'express',
-                appPath: './server/index.ts',
-                exportName: 'viteNodeApp',
-            }),
+            ...(isDev
+                ? [
+                    // 开发模式：Vite 自己服务前端页面。Express app 必须拿到 next，
+                    // 没匹配到路由时继续走 Vite 的页面/静态资源中间件，
+                    // 否则 Express 的 404 会吞掉 / 和所有前端资源请求。
+                    {
+                        name: 'my-home-dev-node',
+                        apply: 'serve',
+                        configureServer(server: any) {
+                            let appPromise: Promise<any> | null = null;
+                            server.middlewares.use(async (req: any, res: any, next: any) => {
+                                const mod = await server.ssrLoadModule('./server/index.ts');
+                                appPromise ??= Promise.resolve(mod.viteNodeApp);
+                                const app = await appPromise;
+                                // 传入 next：Express 没匹配到路由时继续走 Vite 的
+                                // 页面/静态资源中间件，而不是由 Express 直接 404。
+                                app(req, res, next);
+                            });
+                        }
+                    }
+                ]
+                : VitePluginNode({
+                    adapter: 'express',
+                    appPath: './server/index.ts',
+                    exportName: 'viteNodeApp',
+                })),
             [...(isDev ? [memoryMonitorPlugin()] : [])]
         ],
         server: {
             // 后端进程跑在 3000，对外不可见，只给前端 Proxy 用
             port: Number(process.env.SERVER_PORT || 3000),
-            host: '0.0.0.0'
+            host: '0.0.0.0',
+            // HMR 和页面共用同一个端口；显式给 host，避免客户端连到 0.0.0.0
+            hmr: { host: 'localhost' }
         },
         resolve: {
             alias: {
