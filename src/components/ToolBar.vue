@@ -15,6 +15,12 @@
                         <n-icon :component="DocumentOnePage20Regular"></n-icon>
                     </template>
                 </n-button>
+                <!-- 导航管理 -->
+                <n-button quaternary circle type="primary" title="导航管理" aria-label="导航管理" @click="showNavManager = true">
+                    <template #icon>
+                        <n-icon :component="Navigation20Regular"></n-icon>
+                    </template>
+                </n-button>
                 <!-- 项目设置 -->
                 <n-button quaternary circle type="primary">
                     <template #icon>
@@ -42,17 +48,21 @@
             </n-flex>
         </n-flex>
         <PageConfigModal v-model:show="showPageConfig" :pageUUID="props.pageUUID"></PageConfigModal>
+        <NavManagerDrawer v-model:show="showNavManager"></NavManagerDrawer>
         <RouterModal v-model:show="showRouter"></RouterModal>
         <LoginModal v-model:show="showLogin"></LoginModal>
     </div>
 </template>
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed, defineAsyncComponent, ref } from "vue";
 import PageConfigModal from "./PageConfigModal.vue";
 import RouterModal from "./RouterModal.vue";
 import LoginModal from "./LoginModal.vue";
+
+// 导航管理抽屉按需加载，避免 80KB 图标数据进入首屏包
+const NavManagerDrawer = defineAsyncComponent(() => import("./NavManagerDrawer.vue"));
 import { User } from "@vicons/carbon";
-import { DocumentOnePage20Regular, Cookies20Regular } from "@vicons/fluent";
+import { DocumentOnePage20Regular, Cookies20Regular, Navigation20Regular } from "@vicons/fluent";
 import { ControlOutlined } from "@vicons/antd";
 import { RouterOutlined, LogInFilled } from "@vicons/material";
 
@@ -61,6 +71,7 @@ const loginIcon = ``;
 const showPageConfig = ref(false);
 const showRouter = ref(false);
 const showLogin = ref(false);
+const showNavManager = ref(false);
 
 const props = defineProps({
     show: {

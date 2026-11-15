@@ -144,6 +144,87 @@ export const useDataStore = defineStore("data", () => {
         return pageRes;
     };
 
+    /** 把服务端返回的 uuidList 落成新顺序 */
+    const applyOrder = (uuidList: string[]) => {
+        const map = new Map(pageList.value.map((item) => [item.uuid, item]));
+        const next = uuidList.map((uuid) => map.get(uuid)).filter((item): item is PageType => !!item);
+        if (next.length === uuidList.length) {
+            pageList.value = next;
+        }
+        if (user.value) {
+            user.value.pageUUIDList = uuidList;
+        }
+    };
+
+    const addPage = async (payload: { title?: string; icon?: string }) => {
+        const res = await pageFetch.request("addPage", payload);
+        if (res.code != 200 || !res.data) {
+            return { ok: false, msg: res.msg || "新增页面失败" };
+        }
+        const { page, uuidList } = res.data;
+        pageList.value = [...pageList.value, page];
+        applyOrder(uuidList);
+        if (!switchPageUUID.value) {
+            switchPageUUID.value = page.uuid;
+        }
+        save();
+        return { ok: true, msg: res.msg || "已添加页面", page };
+    };
+
+    const updatePage = async (uuid: string, patch: { title?: string; icon?: string }) => {
+        const res = await pageFetch.request("updatePage", { uuid, obj: patch });
+        if (res.code != 200 || !res.data) {
+            return { ok: false, msg: res.msg || "保存页面失败" };
+        }
+        const index = pageList.value.findIndex((item) => item.uuid === uuid);
+        if (index === -1) {
+            return { ok: false, msg: "页面已不存在，请刷新后重试" };
+        }
+        pageList.value[index] = res.data;
+        pageList.value = [...pageList.value];
+        save();
+        return { ok: true, msg: res.msg || "已保存页面", page: res.data };
+    };
+
+    const deletePage = async (uuid: string) => {
+        const index = pageList.value.findIndex((item) => item.uuid === uuid);
+        if (index === -1) {
+            return { ok: false, msg: "页面已不存在，请刷新后重试" };
+        }
+        const removed = pageList.value[index]!;
+        const res = await pageFetch.request("deletePage", { uuid });
+        if (res.code != 200 || !res.data) {
+            return { ok: false, msg: res.msg || "删除页面失败" };
+        }
+        pageList.value = pageList.value.filter((item) => item.uuid !== uuid);
+        applyOrder(res.data.uuidList);
+        if (switchPageUUID.value === uuid) {
+            const fallback = pageList.value[index] ?? pageList.value[index - 1] ?? pageList.value[0];
+            switchPageUUID.value = fallback?.uuid || "";
+        }
+        if (removed.isDefault) {
+            // 与服务端保持一致：默认标记交给被删页的后一页，没有则前一页
+            const successor = pageList.value[index] ?? pageList.value[index - 1];
+            if (successor) {
+                pageList.value.forEach((item) => {
+                    item.isDefault = item.uuid === successor.uuid;
+                });
+            }
+        }
+        save();
+        return { ok: true, msg: res.msg || "已删除页面" };
+    };
+
+    const updatePageOrder = async (uuidList: string[]) => {
+        const res = await pageFetch.request("updatePageOrder", { uuidList });
+        if (res.code != 200 || !res.data) {
+            return { ok: false, msg: res.msg || "调整顺序失败" };
+        }
+        applyOrder(res.data.uuidList);
+        save();
+        return { ok: true, msg: res.msg || "已调整顺序" };
+    };
+
     const resize = () => {
         isSmallScreen.value = window.innerWidth < 768;
     };
@@ -158,5 +239,5 @@ export const useDataStore = defineStore("data", () => {
 
     load();
 
-    return { ...returnData, user, pageList, load, save, clear, initUser, initPages, initTheme, isMobile, isSmallScreen, resize, themeOverrides, getLocalData, fullLoading, fullLoadingTitle, turnLoading };
+    return { ...returnData, user, pageList, load, save, clear, initUser, initPages, initTheme, isMobile, isSmallScreen, resize, themeOverrides, getLocalData, fullLoading, fullLoadingTitle, turnLoading, addPage, updatePage, deletePage, updatePageOrder };
 });

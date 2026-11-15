@@ -106,6 +106,8 @@ export function deletePage(uuid: string): [string | undefined, any] {
 export function addPage(obj: Partial<PageType>): [PageType | undefined, any] {
     try {
         const newObj = {
+            style: {},
+            isDefault: false,
             ...obj,
             uuid: nanoid(10),
             createTime: Date.now(),
@@ -113,7 +115,11 @@ export function addPage(obj: Partial<PageType>): [PageType | undefined, any] {
             // 强制为空,不增加系统复杂性
             itemGroupList: []
         } as PageType;
-        fs.mkdirSync(path.join(DATA_DIR, PagesFolder, newObj.uuid), { recursive: true });
+        const pageDir = path.join(DATA_DIR, PagesFolder, newObj.uuid);
+        fs.mkdirSync(pageDir, { recursive: true });
+        // 与 initPages 保持一致：页面目录下预留 data/ 与 files/
+        fs.mkdirSync(path.join(pageDir, "data"), { recursive: true });
+        fs.mkdirSync(path.join(pageDir, "files"), { recursive: true });
         writePage(newObj);
         return [newObj, undefined];
     }
