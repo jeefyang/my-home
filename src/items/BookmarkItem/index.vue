@@ -1,6 +1,6 @@
 <template>
-    <div>
-        <div v-if="dataList && dataList.length > 0" class="flex flex-col xx" style="min-height: 0">
+    <div class="bookmark-root">
+        <div v-if="dataList && dataList.length > 0" class="flex flex-col xx" style="flex: 1; min-height: 0">
             <n-tabs :bar-width="28" type="line" class="custom-tabs" v-model:value="switchTab">
                 <template #prefix>
                     <n-button size="tiny" quaternary type="primary" @click="refreshCurrent">
@@ -258,6 +258,17 @@ onMounted(() => {
 </script>
 
 <style lang="scss" scoped>
+.bookmark-root {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+}
+
+.custom-tabs {
+    flex-shrink: 0;
+}
+
 :deep(.n-tabs .n-tabs-nav__prefix) {
     padding-right: 0 !important;
     margin-right: 4px;

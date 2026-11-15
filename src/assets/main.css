@@ -207,3 +207,31 @@ a,
         width: 360px;
     }
 }
+
+/* 公共细滚动条：桌面 Chromium 精确 6px；Firefox 走标准属性降级 */
+.scroll-thin::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.scroll-thin::-webkit-scrollbar-thumb {
+    background: #45475a;
+    border-radius: 3px;
+}
+
+.scroll-thin::-webkit-scrollbar-thumb:hover {
+    background: #585b70;
+}
+
+.scroll-thin::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+/* Firefox：标准属性放在 @supports 里，避免 Chrome 121+ 切到标准滚动条后丢掉上面的精确宽度/圆角 */
+@supports (-moz-appearance: none) {
+    .scroll-thin {
+        scrollbar-width: thin;
+        scrollbar-color: #45475a transparent;
+    }
+}
+

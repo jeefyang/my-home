@@ -1,7 +1,7 @@
 <template>
-    <n-flex vertical style="width: 100%">
+    <n-flex vertical style="width: 100%; height: 100%; min-height: 0">
         <!-- 工具栏：仅图标按钮 -->
-        <n-flex justify="center" align="center" style="gap: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none" class="mb-1">
+        <n-flex justify="center" align="center" style="gap: 8px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; flex-shrink: 0" class="mb-1">
             <n-tooltip trigger="hover">
                 <template #trigger>
                     <n-button quaternary type="info" size="small" @click="initData">
@@ -61,20 +61,20 @@
         </n-flex>
 
         <!-- 导入进度条 -->
-        <div v-if="importing" style="margin: 4px 0">
+        <div v-if="importing" style="margin: 4px 0; flex-shrink: 0">
             <n-progress type="line" :percentage="importProgress" :height="6" :border-radius="3" />
             <div style="font-size: 11px; color: #888; margin-top: 2px; text-align: center">{{ importStatusText }}</div>
         </div>
 
         <!-- 搜索框 -->
-        <n-input placeholder="搜索书签…" clearable :debounce="300" :value="searchKey" @update:value="onSearchChange" @clear="onSearchClear">
+        <n-input placeholder="搜索书签…" clearable :debounce="300" :value="searchKey" style="flex-shrink: 0" @update:value="onSearchChange" @clear="onSearchClear">
             <template #prefix>
                 <n-icon :component="Search" />
             </template>
         </n-input>
 
         <!-- 面包屑路径（搜索时隐藏），返回按钮在右侧 -->
-        <n-flex v-if="!searchKey && breadcrumbList.length > 0" style="margin-top: 6px; gap: 2px; align-items: center; min-width: 0; width: 100%" :wrap="false">
+        <n-flex v-if="!searchKey && breadcrumbList.length > 0" style="margin-top: 6px; gap: 2px; align-items: center; min-width: 0; width: 100%; flex-shrink: 0" :wrap="false">
             <n-flex style="gap: 2px; align-items: center; overflow: hidden; min-width: 0; flex: 1">
                 <template v-for="(crumb, idx) in breadcrumbList" :key="crumb.uuid">
                     <n-button
@@ -101,7 +101,7 @@
 
         <!-- 书签列表（当前目录，可滚动） -->
         <template v-if="displayList.length > 0">
-            <div class="bookmark-list" @contextmenu.prevent>
+            <div ref="listRef" class="bookmark-list scroll-thin" @contextmenu.prevent>
                 <n-flex vertical style="margin-top: 6px; gap: 10px">
                     <div
                         v-for="node in displayList"
@@ -221,7 +221,9 @@
             </div>
         </template>
 
-        <n-empty v-else-if="!loading" class="mt-30" description="此目录为空" />
+        <div v-else-if="!loading" class="bookmark-empty">
+            <n-empty description="此目录为空" />
+        </div>
 
         <!-- 移动端长按菜单 -->
         <x-modal v-model:show="contextShow" title="" :content-max-height="'auto'">
@@ -340,7 +342,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onUnmounted, reactive, ref, watch } from "vue";
+import { computed, nextTick, onActivated, onMounted, onUnmounted, reactive, ref, watch } from "vue";
 import type { BookmarkCollectionType, BookmarkType } from "..";
 import { Refresh, Edit, Trash, Folder, File } from "@vicons/tabler";
 import { BookmarkAdd, FolderAdd, Search, Launch, ArrowLeft, ArrowRight, Link as LinkIcon, Copy, QrCode, Code, Information, Move } from "@vicons/carbon";
@@ -395,6 +397,7 @@ const importStatusText = ref("");
 const dataList = ref(<BookmarkCollectionType[]>[]); // 完整树
 const curPath = ref(<string[]>[]); // 当前目录 UUID 路径
 const searchKey = ref("");
+const listRef = ref<HTMLElement | null>(null);
 
 // 导入
 const importInputRef = ref<HTMLInputElement | null>(null);
@@ -603,10 +606,11 @@ const navigateToSeg = (uuid: string) => {
     contextShow.value = false;
     if (uuid === "__root__") {
         curPath.value = [];
-        return;
+    } else {
+        const path = findNodePath(dataList.value, uuid);
+        if (path) curPath.value = path;
     }
-    const path = findNodePath(dataList.value, uuid);
-    if (path) curPath.value = path;
+    scrollListToTop();
 };
 
 const getItemPathText = (uuid: string | undefined): string => {
@@ -782,6 +786,7 @@ const initData = async () => {
     searchKey.value = "";
     loading.value = false;
     msg.success("加载完成");
+    scrollListToTop();
 };
 
 /**
@@ -824,22 +829,33 @@ const saveData = async (): Promise<boolean> => {
 
 const navigateTo = (breadcrumbIndex: number) => {
     curPath.value = curPath.value.slice(0, breadcrumbIndex);
+    scrollListToTop();
+};
+
+/** 列表回到顶部：切页签 / 进出目录 / 改搜索词后调用 */
+const scrollListToTop = () => {
+    nextTick(() => {
+        if (listRef.value) listRef.value.scrollTop = 0;
+    });
 };
 
 const goToParent = () => {
     if (curPath.value.length > 0) {
         curPath.value = curPath.value.slice(0, -1);
     }
+    scrollListToTop();
 };
 
 // ========== 搜索 ==========
 
 const onSearchChange = (val: string | null) => {
     searchKey.value = val || "";
+    scrollListToTop();
 };
 
 const onSearchClear = () => {
     searchKey.value = "";
+    scrollListToTop();
 };
 
 // ========== 点击 ==========
@@ -848,6 +864,7 @@ const onItemClick = (item: BookmarkCollectionType) => {
     if (item.isFolder) {
         // 进入文件夹
         curPath.value = [...curPath.value, item.uuid];
+        scrollListToTop();
     } else if (item.url) {
         openUrl(item.url);
     }
@@ -1260,6 +1277,10 @@ watch(
 );
 
 onMounted(() => initData());
+
+onActivated(() => {
+    scrollListToTop();
+});
 </script>
 
 <style scoped>
@@ -1267,7 +1288,6 @@ onMounted(() => initData());
     overflow-y: auto;
     flex: 1;
     min-height: 0;
-    scrollbar-width: none;
 
     -webkit-touch-callout: none; /* 禁用系统默认菜单 */
     -webkit-user-select: none; /* 禁用文本选择 */
@@ -1275,8 +1295,12 @@ onMounted(() => initData());
     -webkit-tap-highlight-color: transparent; /* 去除点击高亮 */
 }
 
-.bookmark-list::-webkit-scrollbar {
-    display: none;
+.bookmark-empty {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .bookmark-row {
