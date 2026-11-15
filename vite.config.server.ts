@@ -2,6 +2,7 @@ import { defineConfig, loadEnv } from 'vite';
 import { VitePluginNode } from 'vite-plugin-node';
 import { fileURLToPath, URL } from 'node:url';
 import { memoryMonitorPlugin } from "./plugins/memoryMonitorPlugin";
+import clientConfig from './vite.config';
 import fs from "fs";
 
 
@@ -31,11 +32,15 @@ for (let dir of dirList) {
 export default defineConfig(({ mode }) => {
   
     const isDev = mode === 'development';
+    const clientAlias = (clientConfig.resolve?.alias ?? {}) as Record<string, string>;
     return {
         build: {
             outDir: 'dist/server',
         },
         plugins: [
+            // 开发模式页面由这个 Vite 服务，必须带上客户端插件
+            // （Vue、UnoCSS、Naive UI 自动导入），否则 virtual:uno.css 等解析失败。
+            ...(isDev ? (clientConfig.plugins ?? []) : []),
             ...(isDev
                 ? [
                     // 开发模式：Vite 自己服务前端页面。Express app 必须拿到 next，
@@ -73,6 +78,7 @@ export default defineConfig(({ mode }) => {
         },
         resolve: {
             alias: {
+                ...clientAlias,
                 "@common": fileURLToPath(new URL('./common', import.meta.url)),
             }
         }
