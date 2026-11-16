@@ -14,3 +14,4 @@
 - [CryptoItem 暗号工具](crypto-item.md) — 佛论禅/核心价值观/Base64 加密解密
 - [2026-11 安全加固](security-hardening-2026-11.md) — P0 越权/穿越/SSRF/XSS 修复 + P1/P2 体验修复 + scripts/security-check.mjs
 - [2026-11 工程化与性能](engineering-hardening-2026-11.md) — strict 收口 399 错 + 分批挂载 + gzip + vitest 单测 + pnpm/git 环境坑
+- [2026-11 多用户管理](multi-user-admin-2026-11.md) — 管理员专用用户管理抽屉 + admin CRUD + 级联删除 + 一次性凭据

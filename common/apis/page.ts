@@ -10,7 +10,7 @@ export const PageApiUrl = apiUrlsTrans("page/", {
         from: {} as { uuidList: string[]; },
         to: {} as PageType[]
     },
-    deletePage: { method: "POST", from: {} as { uuid: string; }, to: {} as { uuidList: string[]; } },
+    deletePage: { method: "POST", from: {} as { uuid: string; }, to: {} as { uuidList: string[]; warnings?: string[]; } },
     updatePageOrder: { method: "POST", from: {} as { uuidList: string[]; }, to: {} as { uuidList: string[]; } },
     updatePage: { method: "POST", from: {} as { uuid: string; obj: Partial<PageType>; }, to: {} as PageType },
     addPage: {

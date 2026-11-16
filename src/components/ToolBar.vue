@@ -3,10 +3,18 @@
         <div class="mask" @click="modelShow = false"></div>
         <n-flex class="bar" justify="center">
             <n-flex class="toolbar smallBox" justify="center">
-                <!-- 用户设置 -->
-                <n-button quaternary circle type="primary">
+                <!-- 用户管理（仅管理员） -->
+                <n-button
+                    v-if="dataStore.user?.type === 'admin'"
+                    quaternary
+                    circle
+                    type="primary"
+                    title="用户管理"
+                    aria-label="用户管理"
+                    @click="showUserManager = true"
+                >
                     <template #icon>
-                        <n-icon :component="User"></n-icon>
+                        <n-icon :component="People20Regular"></n-icon>
                     </template>
                 </n-button>
                 <!-- 页面设置 -->
@@ -49,6 +57,7 @@
         </n-flex>
         <PageConfigModal v-model:show="showPageConfig" :pageUUID="props.pageUUID"></PageConfigModal>
         <NavManagerDrawer v-model:show="showNavManager"></NavManagerDrawer>
+        <UserManagerDrawer v-model:show="showUserManager"></UserManagerDrawer>
         <RouterModal v-model:show="showRouter"></RouterModal>
         <LoginModal v-model:show="showLogin"></LoginModal>
     </div>
@@ -59,10 +68,11 @@ import PageConfigModal from "./PageConfigModal.vue";
 import RouterModal from "./RouterModal.vue";
 import LoginModal from "./LoginModal.vue";
 
-// 导航管理抽屉按需加载，避免 80KB 图标数据进入首屏包
+// 导航/用户管理抽屉按需加载，避免图标数据进入首屏包
 const NavManagerDrawer = defineAsyncComponent(() => import("./NavManagerDrawer.vue"));
-import { User } from "@vicons/carbon";
-import { DocumentOnePage20Regular, Cookies20Regular, Navigation20Regular } from "@vicons/fluent";
+const UserManagerDrawer = defineAsyncComponent(() => import("./UserManagerDrawer.vue"));
+import { useDataStore } from "@/stores/data";
+import { DocumentOnePage20Regular, Cookies20Regular, Navigation20Regular, People20Regular } from "@vicons/fluent";
 import { ControlOutlined } from "@vicons/antd";
 import { RouterOutlined, LogInFilled } from "@vicons/material";
 
@@ -72,6 +82,8 @@ const showPageConfig = ref(false);
 const showRouter = ref(false);
 const showLogin = ref(false);
 const showNavManager = ref(false);
+const showUserManager = ref(false);
+const dataStore = useDataStore();
 
 const props = defineProps({
     show: {

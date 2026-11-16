@@ -54,7 +54,11 @@ export function usePageApi(router: Router) {
                 code: 500
             };
         }
-        oldUUIDList.forEach(uuid => deletePage(uuid));
+        const warnings = oldUUIDList.flatMap(uuid => {
+            const [, , pageWarnings] = deletePage(uuid);
+            return pageWarnings || [];
+        });
+        warnings.forEach(warning => console.error(warning));
         return { data: pageList };
     });
 
@@ -221,7 +225,7 @@ export function usePageApi(router: Router) {
             }
             return { err: userErr, msg: "保存页面列表失败", code: 500 };
         }
-        const [, delErr] = deletePage(from.uuid);
+        const [, delErr, warnings] = deletePage(from.uuid);
         if (delErr) {
             updateUser(user!.pathID, { ...user!, pageUUIDList: uuidList });
             if (migratedDefaultUUID) {
@@ -230,7 +234,12 @@ export function usePageApi(router: Router) {
             }
             return { err: delErr, msg: "删除页面失败", code: 500 };
         }
-        return { data: { uuidList: nextList } };
+        return {
+            data: {
+                uuidList: nextList,
+                ...(warnings?.length ? { warnings } : {}),
+            },
+        };
     });
 
     pageRouter.setRouter("updatePageOrder", async (from, req, res) => {

@@ -1,5 +1,7 @@
 import { apiUrlsTrans } from "./tools/apiUrlsTrans";
 
+type UserPublicPatch = Pick<UserType, "customData" | "style" | "options">;
+
 export const UserApiUrl = apiUrlsTrans("user/", {
 
     getUser: {
@@ -8,24 +10,32 @@ export const UserApiUrl = apiUrlsTrans("user/", {
     },
     userList: {
         method: "GET",
-        to: {} as Partial<UserType>[]
+        to: {} as AdminUserItem[]
     },
     deleteUser: {
         method: "POST",
-        from: {} as { uuid: string; }
-    },
-    overCancelUser: {
-        method: "POST",
+        from: {} as { uuid: string; },
+        to: {} as { deleted: true; warnings?: string[]; }
     },
     createUser: {
         method: "POST",
-        from: {} as { type: UserTypeType; },
-        to: {} as UserType
+        from: {} as { type: UserTypeType; name?: string; pathID?: string; secondCode?: string; },
+        to: {} as { user: AdminUserItem; secondCode?: string; }
+    },
+    adminUpdateUser: {
+        method: "POST",
+        from: {} as { uuid: string; name?: string; type?: UserTypeType; },
+        to: {} as AdminUserItem
+    },
+    adminResetUserSecondCode: {
+        method: "POST",
+        from: {} as { uuid: string; secondCode?: string; },
+        to: {} as { user: AdminUserItem; secondCode?: string; cleared: boolean; }
     },
     updateUser: {
         method: "POST",
-        from: {} as Partial<UserType>,
-        to: {} as UserType
+        from: {} as Partial<UserPublicPatch>,
+        to: {} as AdminUserItem
     },
     verifyUser: {
         method: "POST",

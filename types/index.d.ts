@@ -25,6 +25,12 @@ type UserType = {
     secondCode?: string;
 };
 
+/** 管理端用户列表的只读投影，故意不包含 secondCode */
+type AdminUserItem = Pick<
+    UserType,
+    "uuid" | "name" | "pathID" | "type" | "pageUUIDList" | "createTime" | "modifyTime"
+>;
+
 type ItemDisplayType = "btn" | "icon" | 'fullPage' | "box" | "widthBox";
 
 type ItemGroupOptionType = {

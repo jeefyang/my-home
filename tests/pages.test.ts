@@ -1,4 +1,4 @@
-import { mkdtempSync, rmSync } from "node:fs";
+import { existsSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterAll, describe, expect, it } from "vitest";
@@ -43,5 +43,28 @@ describe("page store CRUD", () => {
         expect(read).toBeUndefined();
         expect(readErr).toBeTruthy();
         expect(store.deletePage(page!.uuid)[1]).toBeTruthy();
+    });
+
+    it("deletePage 级联删除页面内元件目录并返回 warnings", () => {
+        const [page] = store.addPage({ title: "级联" });
+        const [group] = store.addPageItemGroup(page!.uuid, { title: "组" }, 0);
+        const [item] = store.addPageItem(page!.uuid, group!.uuid, { type: "memo" });
+        const itemDir = join(dir, "items", `${item!.type}-${item!.uuid}`);
+        expect(existsSync(itemDir)).toBe(true);
+        const [uuid, err, warnings] = store.deletePage(page!.uuid);
+        expect(err).toBeUndefined();
+        expect(uuid).toBe(page!.uuid);
+        expect(warnings).toEqual([]);
+        expect(existsSync(itemDir)).toBe(false);
+        expect(existsSync(join(dir, "pages", page!.uuid))).toBe(false);
+    });
+
+    it("deletePagesForUser 缺页时返回 warning 且不抛异常", () => {
+        const [page] = store.addPage({ title: "待删" });
+        const warnings = store.deletePagesForUser([page!.uuid, "missing-page"]);
+        expect(warnings).toHaveLength(1);
+        expect(warnings[0]).toContain("missing-page");
+        expect(warnings[0]).toContain("页面");
+        expect(store.getPage(page!.uuid)[0]).toBeUndefined();
     });
 });

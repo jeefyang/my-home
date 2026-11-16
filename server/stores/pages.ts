@@ -85,22 +85,71 @@ export function getPage(uuid: string): [PageType | undefined, any] {
     }
 }
 
-export function deletePage(uuid: string): [string | undefined, any] {
-    if (!uuid) {
-        return [undefined, "页面不存在"];
-    }
-    if (!fs.existsSync(path.join(DATA_DIR, PagesFolder, uuid))) {
-        return [undefined, "页面不存在"];
+/** 删除单个元件目录；失败返回 warning，成功或已不存在返回 undefined */
+function removeItemDir(item: ItemType): string | undefined {
+    if (!item?.type || !item?.uuid) {
+        return `元件 ${item?.uuid ?? "未知"} 缺少类型或 uuid，跳过`;
     }
     try {
+        const p = getItemPath(item.type, item.uuid);
+        if (fs.existsSync(p)) {
+            fs.rmSync(p, { recursive: true });
+        }
+        return undefined;
+    }
+    catch (e: any) {
+        console.error(e);
+        return `元件 ${item.uuid} 清理失败：${e?.message || e}`;
+    }
+}
+
+/** 删除页面并级联清理页面内所有元件；页面目录删失败时保留已删元件，返回 warnings */
+export function deletePage(uuid: string): [string | undefined, any, string[]?] {
+    const warnings: string[] = [];
+    if (!uuid || !fs.existsSync(path.join(DATA_DIR, PagesFolder, uuid))) {
+        return [undefined, "页面不存在", warnings];
+    }
+    const pageData = getPage(uuid);
+    if (pageData[1]) {
+        return [undefined, pageData[1], warnings];
+    }
+    try {
+        const page = pageData[0]!;
+        for (const group of page.itemGroupList || []) {
+            for (const item of group.list || []) {
+                const warning = removeItemDir(item);
+                if (warning) {
+                    warnings.push(warning);
+                }
+            }
+        }
         fs.rmSync(path.join(DATA_DIR, PagesFolder, uuid), { recursive: true });
         pageCache.delete(uuid);
-        return [uuid, undefined];
+        return [uuid, undefined, warnings];
     }
     catch (e) {
         console.error(e);
-        return [undefined, e];
+        return [undefined, e, warnings];
     }
+}
+
+/** 按用户快照逐页清理；不抛异常，缺失/失败都降级为 warning */
+export function deletePagesForUser(uuids: string[]): string[] {
+    const warnings: string[] = [];
+    for (const uuid of uuids) {
+        const [deleted, err, pageWarnings] = deletePage(uuid);
+        if (pageWarnings?.length) {
+            warnings.push(...pageWarnings);
+        }
+        if (err) {
+            const msg = typeof err === "string" ? err : (err?.msg || String(err));
+            warnings.push(`页面 ${uuid} 清理失败：${msg}`);
+        }
+        else if (!deleted) {
+            warnings.push(`页面 ${uuid} 清理失败`);
+        }
+    }
+    return warnings;
 }
 
 export function addPage(obj: Partial<PageType>): [PageType | undefined, any] {
@@ -235,9 +284,9 @@ export function deletePageItemGroup(pageUUID: string, itemGroupUUID: string): [s
         }
         const itemGroup = page.itemGroupList.splice(index, 1)[0];
         (itemGroup.list || []).forEach(item => {
-            const p = getItemPath(item.type, item.uuid!);
-            if (fs.existsSync(p)) {
-                fs.rmSync(p, { recursive: true });
+            const warning = removeItemDir(item);
+            if (warning) {
+                console.error(warning);
             }
         });
         writePage(page);
@@ -319,9 +368,9 @@ export function deletePageItem(pageUUID: string, itemUUID: string): [ItemGroupTy
         }
         const item = page.itemGroupList[index.groupIndex].list[index.itemIndex];
         page.itemGroupList[index.groupIndex].list.splice(index.itemIndex, 1);
-        const p = getItemPath(item.type, item.uuid!);
-        if (fs.existsSync(p)) {
-            fs.rmSync(p, { recursive: true });
+        const warning = removeItemDir(item);
+        if (warning) {
+            console.error(warning);
         }
         writePage(page);
         return [page.itemGroupList, undefined];

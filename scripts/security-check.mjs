@@ -137,18 +137,69 @@ try {
     });
 
     // 4. 普通用户不能自建管理员
-    const created = await api("POST", "/api/user/createUser", { body: { type: "user" }, headers: adminHeaders });
+    const created = await api("POST", "/api/user/createUser", {
+        body: { type: "user", secondCode: "normal-secret" },
+        headers: adminHeaders,
+    });
     check("管理员可以创建普通用户", () => {
         assert.equal(created.status, 200);
-        assert.equal(created.json.data.type, "user");
+        assert.equal(created.json.data.user.type, "user");
+        assert.ok(created.json.data.user.pathID);
+        assert.equal(created.json.data.secondCode, "normal-secret");
+        assert.ok(!("secondCode" in created.json.data.user));
     });
     const normalHeaders = {
-        pathid: created.json.data.pathID,
-        secondcode: created.json.data.secondCode || "",
+        pathid: created.json.data.user.pathID,
+        secondcode: "normal-secret",
     };
     const escalate = await api("POST", "/api/user/createUser", { body: { type: "admin" }, headers: normalHeaders });
-    check("普通用户不能创建管理员", () => {
-        assert.equal(escalate.status, 401);
+    check("普通用户不能创建管理员（403）", () => {
+        assert.equal(escalate.status, 403);
+        assert.equal(escalate.json.code, 403);
+    });
+
+    const listNoAuth = await api("GET", "/api/user/userList");
+    check("未认证 userList 返回 401", () => {
+        assert.equal(listNoAuth.status, 401);
+    });
+    const listAsUser = await api("GET", "/api/user/userList", { headers: normalHeaders });
+    check("普通用户 userList 返回 403", () => {
+        assert.equal(listAsUser.status, 403);
+    });
+    const listAsAdmin = await api("GET", "/api/user/userList", { headers: adminHeaders });
+    check("管理员 userList 返回 pathID 且不含 secondCode", () => {
+        assert.equal(listAsAdmin.status, 200);
+        assert.ok(Array.isArray(listAsAdmin.json.data));
+        assert.ok(listAsAdmin.json.data.some((u) => u.pathID === normalHeaders.pathid));
+        assert.ok(listAsAdmin.json.data.every((u) => !("secondCode" in u)));
+    });
+
+    const backdoor = await api("POST", "/api/user/updateUser", {
+        body: { name: "hacked" },
+        headers: normalHeaders,
+    });
+    check("普通用户不能通过 updateUser 改名（400）", () => {
+        assert.equal(backdoor.status, 400);
+    });
+    const afterBackdoor = await api("GET", "/api/user/getUser", { headers: normalHeaders });
+    check("updateUser 改名后门没有生效", () => {
+        assert.equal(afterBackdoor.status, 200);
+        assert.notEqual(afterBackdoor.json.data.name, "hacked");
+    });
+
+    const selfDelete = await api("POST", "/api/user/deleteUser", {
+        body: { uuid: first.json.data.uuid },
+        headers: adminHeaders,
+    });
+    check("管理员不能删除自己（409）", () => {
+        assert.equal(selfDelete.status, 409);
+    });
+    const selfDowngrade = await api("POST", "/api/user/adminUpdateUser", {
+        body: { uuid: first.json.data.uuid, type: "user" },
+        headers: adminHeaders,
+    });
+    check("管理员不能降级自己（409）", () => {
+        assert.equal(selfDowngrade.status, 409);
     });
 
     // 5. 页面归属隔离
