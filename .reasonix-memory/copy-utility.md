@@ -11,3 +11,7 @@
 
 - CryptoItem、DockerConvertItem、MagnetItem、PathConvertItem 等改为调用 `Utils.copyStr`
 - XModal、page.vue、BookmarkItem 等同步修改
+
+## 2026-11 补充
+
+- `Utils.copyStr` 参数对象新增可选 `dom?: HTMLElement`，降级路径容器优先级变为 `obj.dom → activeElement.parentNode → body`；MemoItem 传入根节点 `memoRef` 修复移动端复制失败

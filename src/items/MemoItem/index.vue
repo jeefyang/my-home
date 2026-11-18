@@ -1,5 +1,5 @@
 <template>
-    <div class="memo-wrap">
+    <div class="memo-wrap" ref="memoRef">
         <n-divider v-if="props.display != 'btn' && props.display != 'icon'" style="margin-top: 0; margin-bottom: 2px" dashed>
             <div style="font-size: 12px">{{ props.item?.options?.title || "备忘录" }}</div>
         </n-divider>
@@ -68,6 +68,8 @@ import { useMessage } from "naive-ui";
 import { nanoid } from "nanoid";
 import XModal from "@/components/XModal.vue";
 import { Utils } from "@/utils";
+
+const memoRef = ref<HTMLElement | undefined>(undefined);
 
 type MemoType = {
     uuid: string;
@@ -193,7 +195,7 @@ const send = async () => {
 
 // ====== 编辑 ======
 const copyMsg = (text: string) => {
-    Utils.copyStr(msg, text, { successMsg: "已复制" });
+    Utils.copyStr(msg, text, { successMsg: "已复制", dom: memoRef.value });
 };
 
 const openEdit = (idx: number) => {
