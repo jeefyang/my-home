@@ -5,8 +5,8 @@
         <n-dialog-provider>
             <n-message-provider>
                 <loading v-if="isLoading"></loading>
+                <login-gate v-else-if="showLogin"></login-gate>
                 <home v-else></home>
-                <LoginModal v-model:show="showLogin" forceLogin></LoginModal>
             </n-message-provider>
         </n-dialog-provider>
     </n-config-provider>
@@ -18,7 +18,7 @@ import { itemFetch, pageFetch, toolsImgFetch, toolsUrlFetch, userFetch } from ".
 import { useDataStore } from "./stores/data";
 import home from "./layout/home.vue";
 import Loading from "./components/Loading.vue";
-import LoginModal from "./components/LoginModal.vue";
+import LoginGate from "./components/LoginGate.vue";
 
 const dataStore = useDataStore();
 const isLoading = ref(true);
