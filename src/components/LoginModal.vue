@@ -1,5 +1,5 @@
 <template>
-    <x-modal v-model:show="modelShow" class="LoginModal" :mask-closable="!props.forceLogin">
+    <x-modal v-model:show="modelShow" class="LoginModal">
         <template #header>
             <div>登录</div>
         </template>
@@ -15,7 +15,7 @@
         </n-radio-group>
         <template #footer>
             <n-flex>
-                <n-button @click="modelShow = false" v-if="!props.forceLogin">取消</n-button>
+                <n-button @click="modelShow = false">取消</n-button>
                 <n-button type="primary" @click="submit" :loading="loading">登录</n-button>
             </n-flex>
         </template>
@@ -24,9 +24,8 @@
 <script setup lang="ts">
 import XModal from "@/components/XModal.vue";
 import { useDataStore } from "@/stores/data";
-import { userFetch } from "@/utils/jFetch";
+import { useCredentialLogin } from "@/composables/useCredentialLogin";
 import { useMessage } from "naive-ui";
-import path from "path";
 import { computed, ref, watch } from "vue";
 
 const dataStore = useDataStore();
@@ -39,11 +38,10 @@ const fixedUrlList: { label: string; value: number }[] = [
     { label: "显示", value: 1 },
     { label: "隐藏", value: -1 }
 ];
-const loading = ref(false);
+const { loading, error, login } = useCredentialLogin();
 
 const props = defineProps<{
     show: boolean;
-    forceLogin?: boolean;
 }>();
 
 const emits = defineEmits(["update:show"]);
@@ -65,49 +63,18 @@ watch(
 );
 
 const submit = async () => {
-    if (props.forceLogin) {
-        await toForceLogin();
-    } else {
-        await toLogin();
-    }
-};
-const toForceLogin = async () => {
-    loading.value = true;
-    dataStore.pathid = pathID.value;
-    dataStore.secondcode = secondCode.value;
-    const res = await userFetch.request("verifyUser");
-    loading.value = false;
-    if (res.code != 200) {
-        msg.error(res.msg ?? "");
+    if (!pathID.value.trim()) {
+        msg.error("请输入唯一路径");
         return;
     }
-    await toLogin();
-};
-
-const toLogin = async () => {
-    dataStore.pathid = pathID.value;
-    dataStore.secondcode = secondCode.value;
-    dataStore.save();
-    if (fixedUrl.value) {
-        const params = new URLSearchParams(window.location.search);
-        const obj: Record<string, string> = {};
-        for (const [key, value] of params) {
-            obj[key] = value;
-        }
-        if (fixedUrl.value == 1) {
-            obj["pathid"] = dataStore.pathid || "";
-            obj["secondcode"] = dataStore.secondcode || "";
-        } else if (fixedUrl.value == -1) {
-            delete obj["pathid"];
-            delete obj["secondcode"];
-        }
-        const origin = window.location.origin + "?" + new URLSearchParams(obj).toString();
-        window.location.href = origin;
-    } else {
-        window.location.reload();
+    const ok = await login({
+        pathID: pathID.value.trim(),
+        secondCode: secondCode.value,
+        fixedUrl: fixedUrl.value
+    });
+    if (!ok) {
+        msg.error(error.value);
     }
-
-    modelShow.value = false;
 };
 </script>
 <style lang="scss" scoped></style>
